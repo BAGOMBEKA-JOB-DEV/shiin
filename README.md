@@ -128,12 +128,8 @@ Shiin is licensed under the [Apache License, Version 2.0](LICENSE).
 See [NOTICE](NOTICE) for attribution.
 Contributions are accepted under the same license with a DCO sign-off and no contributor license agreement ([ADR-0004](docs/adr/0004-apache-2-license-and-dco.md)).
 
-
-
-
-
 - For a problem in a specification, open an issue using the spec feedback form.
 - For anything that might be a way to bypass Shiin, do not open a public issue.
   Follow [SECURITY.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/SECURITY.md) instead.
 - For larger changes, read the [RFC process](rfcs/README.md).
->>>>>>> 31d2eb34b04abdee3b26c79baf618924101d35ae
+
