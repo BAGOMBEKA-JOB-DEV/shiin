@@ -224,3 +224,20 @@ pub(crate) fn strip_inline_code(line: &str) -> String {
     }
     prose
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{prose_lines, strip_inline_code};
+
+    #[test]
+    fn prose_lines_skip_fenced_code_including_nested_fences() {
+        let text = "one\n````markdown\n```json\n{}\n```\n````\ntwo\n~~~\nthree\n~~~\nfour";
+        let lines: Vec<(usize, &str)> = prose_lines(text).collect();
+        assert_eq!(lines, vec![(1, "one"), (7, "two"), (11, "four")]);
+    }
+
+    #[test]
+    fn strip_inline_code_keeps_only_prose() {
+        assert_eq!(strip_inline_code("use `MUST` here but MAY there"), "use  here but MAY there");
+    }
+}

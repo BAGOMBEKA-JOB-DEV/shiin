@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-use jsonschema::{Draft, Resource, Validator};
+use jsonschema::{Draft, Registry, Validator};
 use serde_json::Value;
 use walkdir::WalkDir;
 
@@ -52,13 +52,30 @@ fn load_schemas(docs: &Path, patterns: &Patterns, report: &mut Report) -> BTreeM
 /// Builds a validator for each schema, with every schema registered so `$ref` by `$id` resolves.
 fn compile_validators(schemas: &BTreeMap<String, Value>, report: &mut Report) -> BTreeMap<String, Validator> {
     let mut validators = BTreeMap::new();
+    let mut builder = Registry::new();
     for (rel, schema) in schemas {
-        let mut options = jsonschema::options().with_draft(Draft::Draft202012);
-        for other in schemas.values() {
-            if let Some(id) = other.get("$id").and_then(Value::as_str) {
-                options = options.with_resource(id, Resource::from_contents(other.clone()));
+        let Some(id) = schema.get("$id").and_then(Value::as_str) else {
+            continue;
+        };
+        builder = match builder.add(id, schema.clone()) {
+            Ok(builder) => builder,
+            Err(error) => {
+                report.error(rel, format!("cannot register schema: {error}"));
+                return validators;
             }
+        };
+    }
+    let registry = match builder.prepare() {
+        Ok(registry) => registry,
+        Err(error) => {
+            report.error(SCHEMA_DIRECTORY, format!("cannot resolve schema references: {error}"));
+            return validators;
         }
+    };
+    for (rel, schema) in schemas {
+        let options = jsonschema::options()
+            .with_draft(Draft::Draft202012)
+            .with_registry(&registry);
         match options.build(schema) {
             Ok(validator) => {
                 validators.insert(rel.clone(), validator);
@@ -172,4 +189,48 @@ fn read_json_files(docs: &Path, directory: &str, report: &mut Report) -> Vec<(St
         }
     }
     files
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use serde_json::json;
+
+    use super::{compile_validators, first_violation};
+    use crate::docs_check::Report;
+
+    #[test]
+    fn urn_references_resolve_across_schemas() {
+        let common = json!({
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "urn:shiin:schema:common:v1",
+            "$defs": {
+                "uuid": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" }
+            }
+        });
+        let example = json!({
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": "urn:shiin:schema:example:v1",
+            "type": "object",
+            "required": ["id"],
+            "properties": { "id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" } }
+        });
+        let schemas = BTreeMap::from([
+            ("spec/schemas/common.v1.schema.json".to_owned(), common),
+            ("spec/schemas/example.v1.schema.json".to_owned(), example),
+        ]);
+
+        let mut report = Report::default();
+        let validators = compile_validators(&schemas, &mut report);
+        assert!(report.errors.is_empty(), "unexpected errors: {:?}", report.errors);
+
+        let validator = validators
+            .get("spec/schemas/example.v1.schema.json")
+            .expect("the example schema compiles");
+        let valid = json!({ "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b" });
+        let invalid = json!({ "id": 42 });
+        assert!(first_violation(validator, &valid).is_none());
+        assert!(first_violation(validator, &invalid).is_some());
+    }
 }
