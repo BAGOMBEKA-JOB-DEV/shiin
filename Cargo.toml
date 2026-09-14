@@ -1,0 +1,33 @@
+[workspace]
+resolver = "3"
+members = ["xtask"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.96"
+license = "Apache-2.0"
+repository = "https://github.com/BAGOMBEKA-JOB-DEV/shiin"
+authors = ["The Shiin Contributors"]
+
+[workspace.dependencies]
+jsonschema = { version = "0.56", default-features = false }
+regex = "1.13"
+serde_json = "1.0.151"
+walkdir = "2.5"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "deny"
+todo = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+allow_attributes_without_reason = "deny"
+undocumented_unsafe_blocks = "deny"

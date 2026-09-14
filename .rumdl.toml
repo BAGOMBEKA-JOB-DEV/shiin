@@ -1,0 +1,7 @@
+# rumdl configuration: https://github.com/rvben/rumdl
+# Shiin writes one sentence per line (see docs/project/docs-style-guide.md), so line length is not limited (MD013).
+# The style guide uses `$` prompts in `console` blocks even when no output is shown (MD014).
+
+[global]
+disable = ["MD013", "MD014"]
+exclude = ["target", "docs/mermaid.min.js", "docs/mermaid-init.js"]

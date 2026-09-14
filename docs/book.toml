@@ -1,0 +1,18 @@
+[book]
+title = "Shiin"
+description = "An agent-agnostic authorization layer for AI agent actions"
+authors = ["The Shiin Contributors"]
+language = "en"
+src = "."
+
+[build]
+build-dir = "../target/book"
+create-missing = false
+
+[output.html]
+git-repository-url = "https://github.com/BAGOMBEKA-JOB-DEV/shiin"
+edit-url-template = "https://github.com/BAGOMBEKA-JOB-DEV/shiin/edit/main/docs/{path}"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"

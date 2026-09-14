@@ -1,0 +1,10 @@
+# lychee configuration: https://github.com/lycheeverse/lychee
+# Pull-request checks verify local files and heading anchors only.
+# External links are checked on a schedule so an unrelated outage cannot block a pull request.
+
+offline = true
+include_fragments = "full"
+no_progress = true
+
+# Regular expressions for paths that are not checked.
+exclude_path = ["(^|/)target/", "docs/mermaid(\\.min|-init)\\.js$"]
