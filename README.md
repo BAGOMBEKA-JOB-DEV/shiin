@@ -127,8 +127,8 @@ Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), nev
 Shiin is licensed under the [Apache License, Version 2.0](LICENSE).
 See [NOTICE](NOTICE) for attribution.
 Contributions are accepted under the same license with a DCO sign-off and no contributor license agreement ([ADR-0004](docs/adr/0004-apache-2-license-and-dco.md)).
-=======
-<!-- shiin-doc: kind=index status=draft implementation=none milestone=m0 reviewed=2026-09-14 -->
+
+
 
 
 
