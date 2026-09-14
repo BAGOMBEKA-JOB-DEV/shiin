@@ -1,0 +1,58 @@
+name: docs
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: Documentation checks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+
+      - name: Cache Cargo build output
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # v1.23.0
+
+      - name: Install documentation tools
+        run: >-
+          cargo binstall --no-confirm --locked
+          mdbook@0.5.4 mdbook-mermaid@0.17.1 lychee@0.24.2 typos-cli@1.50.1 rumdl@0.2.73
+
+      - name: Check Rust formatting
+        run: cargo fmt --all --check
+
+      - name: Lint repository tooling
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Check documentation rules
+        run: cargo xtask docs-check
+
+      - name: Lint Markdown
+        run: rumdl check .
+
+      - name: Check spelling
+        run: typos
+
+      - name: Check links and anchors
+        run: lychee --config lychee.toml './*.md' docs
+
+      - name: Build the book
+        run: mdbook build docs
