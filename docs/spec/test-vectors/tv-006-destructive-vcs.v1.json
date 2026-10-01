@@ -1,0 +1,38 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-006",
+  "name": "A destructive VCS operation",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a10",
+    "session": "sess-001",
+    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "action_type": "shell.exec",
+    "effects": [
+      { "kind": "command", "value": "git push --force", "confidence": "exact" }
+    ],
+    "task": null,
+    "policy_snapshot": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "host": { "name": "claude-code", "tool": "Bash" }
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "rules": [
+          {
+            "id": "allow-vcs",
+            "effect": "allow",
+            "action_types": ["shell.exec"],
+            "commands": ["git *"]
+          }
+        ]
+      }
+    ],
+    "default": "deny",
+    "risk": { "destructive_vcs": "pending" }
+  },
+  "expected": { "decision": "pending", "reason": "pending.risk" }
+}

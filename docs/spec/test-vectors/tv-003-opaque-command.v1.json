@@ -1,0 +1,31 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-003",
+  "name": "A command with unknown effects",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0d",
+    "session": "sess-001",
+    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "action_type": "shell.exec",
+    "effects": [
+      { "kind": "command", "value": "python scripts/cleanup.py", "confidence": "opaque" }
+    ],
+    "task": null,
+    "policy_snapshot": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "host": { "name": "claude-code", "tool": "Bash" }
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "rules": []
+      }
+    ],
+    "default": "deny",
+    "risk": { "opaque_command": "pending" }
+  },
+  "expected": { "decision": "pending", "reason": "pending.opaque" }
+}

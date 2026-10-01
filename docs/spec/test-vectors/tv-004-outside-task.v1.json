@@ -1,0 +1,37 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-004",
+  "name": "An action outside the task",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0e",
+    "session": "sess-001",
+    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "action_type": "fs.write",
+    "effects": [
+      { "kind": "path", "value": "/home/dev/project/migrations/0042.sql", "confidence": "exact" }
+    ],
+    "task": "task-001",
+    "policy_snapshot": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "host": { "name": "claude-code", "tool": "Write" }
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "rules": [
+          {
+            "id": "allow-workspace-writes",
+            "effect": "allow",
+            "action_types": ["fs.write"],
+            "resources": ["./**"]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "expected": { "decision": "deny", "reason": "deny.intent" }
+}

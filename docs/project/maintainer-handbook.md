@@ -33,5 +33,6 @@ A release is cut from `main` when the milestone's exit criteria are met.
 A failing check blocks merging once branch protection is configured.
 
 ## Read next
+
 - [Governance model](../adr/0005-governance-model.md)
 - [Release engineering](../engineering/release-engineering.md)

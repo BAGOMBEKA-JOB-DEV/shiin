@@ -12,7 +12,7 @@ Test vectors encode the [golden use cases](../overview/use-cases.md) and are the
 
 Each test vector is a JSON file in `docs/spec/test-vectors/` validated against `test-vector.v1.schema.json`.
 
-A test vector records one action request, the policy snapshot it is evaluated against, and the expected decision.
+A test vector records one action request, the policy it is evaluated against, and the expected decision.
 
 ## Golden use cases
 

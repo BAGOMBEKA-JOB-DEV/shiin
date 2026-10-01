@@ -35,7 +35,11 @@
         "additionalProperties": false
       }
     },
-    "default": { "type": "string", "enum": ["deny", "pending"] }
+    "default": { "type": "string", "enum": ["deny", "pending"] },
+    "risk": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "enum": ["allow", "deny", "pending"] }
+    }
   },
   "additionalProperties": false
 }

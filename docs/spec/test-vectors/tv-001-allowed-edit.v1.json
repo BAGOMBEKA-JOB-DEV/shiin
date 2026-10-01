@@ -1,0 +1,37 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-001",
+  "name": "An allowed edit",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
+    "session": "sess-001",
+    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "action_type": "fs.write",
+    "effects": [
+      { "kind": "path", "value": "/home/dev/project/src/login.rs", "confidence": "exact" }
+    ],
+    "task": null,
+    "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "host": { "name": "claude-code", "tool": "Write" }
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [
+          {
+            "id": "edit-source",
+            "effect": "allow",
+            "action_types": ["fs.read", "fs.write", "fs.create"],
+            "resources": ["./src/**", "./tests/**"]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "expected": { "decision": "allow", "reason": "allow.policy" }
+}
