@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:evaluation:v1",
+  "title": "Shiin evaluation trace",
+  "type": "object",
+  "required": ["schema", "request_id", "decision", "reason", "trace"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.evaluation/v1-draft.1" },
+    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
+    "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "trace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "result", "reason"],
+        "properties": {
+          "stage": { "type": "string", "enum": ["identity", "capability", "policy", "intent", "risk"] },
+          "result": { "type": "string", "enum": ["allow", "deny", "pending", "pass"] },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

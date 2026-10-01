@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:approval-protocol:v1",
+  "title": "Shiin approval request",
+  "type": "object",
+  "required": ["schema", "request_id", "decision", "reason", "message", "ticket", "created_at", "expires_at"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.approval-protocol/v1-draft.1" },
+    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
+    "decision": { "type": "string", "const": "pending" },
+    "reason": { "type": "string", "minLength": 1 },
+    "message": { "type": "string", "minLength": 1 },
+    "ticket": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "resolution": {
+      "type": ["string", "null"],
+      "enum": ["allow_once", "allow_always", "deny", null]
+    }
+  },
+  "additionalProperties": false
+}

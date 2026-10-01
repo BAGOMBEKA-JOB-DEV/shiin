@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:local-api:v1",
+  "title": "Shiin local API JSON-RPC request",
+  "type": "object",
+  "required": ["jsonrpc", "id", "method", "params"],
+  "properties": {
+    "jsonrpc": { "type": "string", "const": "2.0" },
+    "id": { "type": "string" },
+    "method": {
+      "type": "string",
+      "enum": ["shiin.evaluate", "shiin.policy.validate", "shiin.approve.resolve"]
+    },
+    "params": { "type": "object" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:policy-syntax:v1",
+  "title": "Shiin policy syntax (JSON form)",
+  "type": "object",
+  "required": ["schema", "default"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.policy-syntax/v1-draft.1" },
+    "default": { "type": "string", "enum": ["deny", "pending"] },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "effect"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "effect": { "type": "string", "enum": ["allow", "deny", "pending"] },
+          "action_types": { "type": "array", "items": { "type": "string" } },
+          "resources": { "type": "array", "items": { "type": "string" } },
+          "commands": { "type": "array", "items": { "type": "string" } },
+          "agents": { "type": "array", "items": { "type": "string" } },
+          "sessions": { "type": "array", "items": { "type": "string" } },
+          "tasks": { "type": "array", "items": { "type": "string" } },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "allow": { "type": "boolean" },
+          "deny": { "type": "boolean" },
+          "action_types": { "type": "array", "items": { "type": "string" } },
+          "agents": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "enum": ["allow", "deny", "pending"] }
+    }
+  },
+  "additionalProperties": false
+}

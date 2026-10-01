@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:risk-signals:v1",
+  "title": "Shiin risk signal trace",
+  "type": "object",
+  "required": ["schema", "signals"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.risk-signals/v1-draft.1" },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "triggered", "decision"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "triggered": { "type": "boolean" },
+          "decision": { "type": "string", "enum": ["deny", "pending", "pass"] },
+          "reason": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

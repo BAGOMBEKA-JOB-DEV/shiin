@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:receipts:v1",
+  "title": "Shiin receipt",
+  "type": "object",
+  "required": ["schema", "key_id", "request_id", "decision", "reason", "policy_snapshot", "signed_at", "signature"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.receipt/v1-draft.1" },
+    "key_id": { "type": "string", "minLength": 1 },
+    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
+    "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "policy_snapshot": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
+    "signed_at": { "type": "string", "format": "date-time" },
+    "signature": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
