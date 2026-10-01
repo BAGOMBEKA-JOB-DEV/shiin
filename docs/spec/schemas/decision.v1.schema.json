@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:decision:v1",
+  "title": "Shiin decision",
+  "type": "object",
+  "required": ["schema", "request_id", "decision", "reason", "message"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.decision/v1-draft.1" },
+    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
+    "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "message": { "type": "string", "minLength": 1 },
+    "trace": { "type": ["array", "null"] },
+    "approval": { "type": ["object", "null"] }
+  },
+  "additionalProperties": false
+}

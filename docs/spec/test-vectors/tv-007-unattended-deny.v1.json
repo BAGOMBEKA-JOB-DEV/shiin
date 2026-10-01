@@ -1,0 +1,37 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-007",
+  "name": "An unattended deny",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a11",
+    "session": "sess-001",
+    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "action_type": "shell.exec",
+    "effects": [
+      { "kind": "command", "value": "terraform apply", "confidence": "exact" }
+    ],
+    "task": null,
+    "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+    "host": { "name": "custom-agent" }
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        "rules": [
+          {
+            "id": "require-approval-for-terraform",
+            "effect": "pending",
+            "action_types": ["shell.exec"],
+            "commands": ["terraform apply"]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "expected": { "decision": "deny", "reason": "deny.failure" }
+}
