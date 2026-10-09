@@ -3,7 +3,8 @@
 # ADR-0041: Remote approver transport
 
 > [!NOTE]
-> **Architecture decision: deferred to v0.6.**
+> **Architecture decision: deferred.**
+> Deferred to v0.6.
 
 - **Date:** 2026-09-14
 - **Deciders:** Founding maintainer

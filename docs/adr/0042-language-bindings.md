@@ -3,7 +3,8 @@
 # ADR-0042: Language bindings
 
 > [!NOTE]
-> **Architecture decision: deferred until after 1.0.**
+> **Architecture decision: deferred.**
+> Deferred until after 1.0.
 
 - **Date:** 2026-09-14
 - **Deciders:** Founding maintainer

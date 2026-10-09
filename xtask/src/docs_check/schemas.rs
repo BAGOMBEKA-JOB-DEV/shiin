@@ -1,6 +1,6 @@
 //! Checks JSON Schemas, validated examples embedded in pages, and specification test vectors.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
@@ -95,10 +95,15 @@ fn check_examples(
 ) {
     for page in pages {
         let lines: Vec<&str> = page.text.lines().collect();
+        // Markers inside fenced code blocks document the syntax itself, so they are not examples.
+        let prose: BTreeSet<usize> = super::prose_lines(&page.text).map(|(number, _)| number).collect();
         for (index, line) in lines.iter().enumerate() {
             let Some(captures) = patterns.validate_marker.captures(line) else {
                 continue;
             };
+            if !prose.contains(&(index + 1)) {
+                continue;
+            }
             let location = format!("{}:{}", page.rel, index + 1);
             let should_pass = captures.get(1).is_some_and(|m| m.as_str() == "validate");
             let schema_path = captures.get(2).map_or("", |m| m.as_str());
