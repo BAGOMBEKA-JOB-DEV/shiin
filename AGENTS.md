@@ -8,9 +8,11 @@ Work here accordingly: stay inside the task you were given, and leave an honest 
 
 ## What this repository is
 
-Shiin is in its specification phase.
-There is no product code: only documentation, specifications, decision records, and a Rust tool (`xtask`) that checks the documentation.
-Do not create crates, modules, or source files for unbuilt features unless you were asked to implement that milestone.
+Shiin is pre-alpha and has no releases, so nothing here is installable from a package manager.
+
+What exists is the documentation set, the specifications and their conformance corpus, the decision records, a Rust tool (`xtask`) that checks the documentation, and the crates that decide actions today: `shiin-schema`, `shiin-classify`, `shiin-policy`, `shiin-engine`, `shiin-audit`, `shiin-hooks`, and the `shiin` command-line interface.
+
+Do not create crates, modules, or source files for unbuilt milestones unless you were asked to implement that milestone. The [roadmap](docs/project/roadmap.md) says which milestone owns what, and each page's banner says whether its subject exists yet.
 
 ## Rules
 
