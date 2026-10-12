@@ -211,10 +211,12 @@ mod tests {
             canonical_path("src/../../etc/passwd", ROOT),
             "/shiin-test-root/etc/passwd"
         );
-        // A traversal cannot climb above the root.
+        // A traversal cannot climb above the root. The target has to be a path that
+        // exists nowhere: resolving `/etc` would be correct behaviour, because macOS
+        // makes it a symlink to `/private/etc`, and that is not what this asserts.
         assert_eq!(
-            canonical_path("../../../../etc", "/shiin-test-root"),
-            "/etc"
+            canonical_path("../../../../shiin-nowhere", "/shiin-test-root"),
+            "/shiin-nowhere"
         );
         assert_eq!(
             canonical_path("./src/login.rs", ROOT),
