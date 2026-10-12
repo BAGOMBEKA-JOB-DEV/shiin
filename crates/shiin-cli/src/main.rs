@@ -347,7 +347,9 @@ fn load_usage(task: Option<&TaskDeclaration>) -> Result<TaskUsage, String> {
 fn save_usage(usage: TaskUsage) -> Result<(), String> {
     let text = serde_json::to_string(&usage).map_err(|error| format!("SHIIN-GEN-0001: {error}"))?;
     fs::write(USAGE_PATH, text).map_err(|error| format!("{USAGE_PATH}: {error}"))?;
-    File::open(USAGE_PATH)
+    File::options()
+        .write(true)
+        .open(USAGE_PATH)
         .and_then(|file| file.sync_all())
         .map_err(|error| format!("{USAGE_PATH}: {error}"))
 }
@@ -832,4 +834,47 @@ fn doctor() -> String {
         "reminder      Shiin only sees actions a host sends it. Pair it with a sandbox.".to_owned(),
     );
     lines.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{HostKind, install_panic_hook};
+
+    #[test]
+    #[expect(clippy::panic, reason = "inject a panic in an isolated test process")]
+    fn a_panic_emits_one_denial_in_each_adapter_protocol() {
+        if let Ok(host) = std::env::var("SHIIN_TEST_PANIC_HOST") {
+            let kind = match host.as_str() {
+                "cursor" => HostKind::Cursor,
+                "codex" => HostKind::Codex,
+                _ => HostKind::ClaudeCode,
+            };
+            install_panic_hook(kind);
+            panic!("EXAMPLE injected hook panic");
+        }
+        for host in ["claude-code", "codex", "cursor"] {
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "tests::a_panic_emits_one_denial_in_each_adapter_protocol",
+                    "--nocapture",
+                ])
+                .env("SHIIN_TEST_PANIC_HOST", host)
+                .output()
+                .unwrap();
+            assert!(!output.status.success(), "the injected panic must occur");
+            let text = String::from_utf8_lossy(&output.stdout);
+            let responses: Vec<serde_json::Value> = text
+                .lines()
+                .filter_map(|line| serde_json::from_str(line).ok())
+                .collect();
+            assert_eq!(responses.len(), 1, "{host}: {text}");
+            let decision = if host == "cursor" {
+                &responses[0]["permission"]
+            } else {
+                &responses[0]["hookSpecificOutput"]["permissionDecision"]
+            };
+            assert_eq!(decision, "deny", "{host}: {text}");
+        }
+    }
 }
