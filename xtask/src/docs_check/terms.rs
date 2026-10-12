@@ -39,16 +39,17 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
             if patterns.code_block_word.is_match(line) {
                 report.error(&location, "the decision value is `deny`, not `block`");
             }
-            if !is_spec && !line.starts_with("<!--") {
-                if let Some(keyword) = patterns.requirement_keyword.find(&prose) {
-                    report.error(
-                        &location,
-                        format!(
-                            "requirement keyword `{}` is only allowed on kind=spec pages",
-                            keyword.as_str()
-                        ),
-                    );
-                }
+            if !is_spec
+                && !line.starts_with("<!--")
+                && let Some(keyword) = patterns.requirement_keyword.find(&prose)
+            {
+                report.error(
+                    &location,
+                    format!(
+                        "requirement keyword `{}` is only allowed on kind=spec pages",
+                        keyword.as_str()
+                    ),
+                );
             }
         }
     }

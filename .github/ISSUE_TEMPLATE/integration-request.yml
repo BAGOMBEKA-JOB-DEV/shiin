@@ -1,0 +1,56 @@
+name: Integration request
+description: Ask for support for an agent, host, or tool server
+title: "integration: "
+labels: ["area/adapters", "kind/feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Shiin can only enforce what it can intercept, so the most valuable part of this report is how the host lets an external program see and decide an action before it runs.
+  - type: input
+    id: host
+    attributes:
+      label: Host name and version
+    validations:
+      required: true
+  - type: dropdown
+    id: mechanism
+    attributes:
+      label: Interception mechanism
+      options:
+        - Hooks that run an external program before a tool is used
+        - A proxy the host can be pointed at, such as MCP
+        - An API or plugin interface
+        - None that is documented
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: before
+    attributes:
+      label: Can the mechanism refuse an action before it happens?
+      options:
+        - "Yes, it can return allow or deny"
+        - "Yes, and it can also ask a human"
+        - "No, it only observes after the fact"
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Timeout and failure behavior
+      description: What does the host do if the program is slow, crashes, or returns nothing? Many hosts allow the action in that case.
+  - type: input
+    id: links
+    attributes:
+      label: Links to the host's documentation
+      description: Needed so the behavior can be verified before it is documented.
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Help
+      options:
+        - label: I am willing to help build or maintain this adapter.

@@ -1,0 +1,18 @@
+# Code owners for Shiin.
+# While there is only one maintainer, do not enable "require review from code owners"
+# in branch protection: it would block the founding maintainer's own pull requests.
+# Enable it once a second maintainer is listed in MAINTAINERS.md.
+
+*                           @BAGOMBEKA-JOB-DEV
+
+# Normative and security-sensitive areas.
+/docs/spec/                 @BAGOMBEKA-JOB-DEV
+/docs/security/             @BAGOMBEKA-JOB-DEV
+/SECURITY.md                @BAGOMBEKA-JOB-DEV
+
+# Supply chain and build.
+/.github/workflows/         @BAGOMBEKA-JOB-DEV
+/Cargo.toml                 @BAGOMBEKA-JOB-DEV
+/Cargo.lock                 @BAGOMBEKA-JOB-DEV
+/rust-toolchain.toml        @BAGOMBEKA-JOB-DEV
+/xtask/                     @BAGOMBEKA-JOB-DEV

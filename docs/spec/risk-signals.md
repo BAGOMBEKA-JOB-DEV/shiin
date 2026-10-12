@@ -37,6 +37,8 @@ Shiin does not use numeric risk scores.
 
 **[RISK-007]** `bulk_delete` is triggered when a single action would delete more files than a configured threshold.
 
+**[RISK-007a]** A signal that uses a threshold MUST read it from its policy entry's `threshold` field, and MUST apply the documented default of 20 files when the entry gives no threshold.
+
 ### `opaque_command`
 
 **[RISK-008]** `opaque_command` is triggered when an action carries an [opaque effect](../glossary.md#opaque-effect).

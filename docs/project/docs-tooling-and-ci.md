@@ -64,7 +64,7 @@ To preview it with live reload, run `mdbook serve docs`.
 | Requirement IDs | Defined once, only in their owning `kind=spec` page; every mention refers to a defined ID |
 | Threat IDs | Defined once, only in the threat model; every mention refers to a defined threat |
 | ADRs | Unique numbers, `ADR-NNNN:` titles, listed in the index; every `ADR-NNNN` mention exists |
-| Terminology | Requirement keywords only on specifications; no `block` decision value; no exclusionary terms; no mischaracterization of Shiin; the former working name only where allowed |
+| Terminology | Requirement keywords only on specifications; `deny` as the decision value rather than the word it replaces; no exclusionary terms; no mischaracterization of Shiin; the former working name only where allowed |
 | JSON Schemas | Draft 2020-12, `urn:shiin:schema:` identifiers matching file names, valid against the metaschema, and compilable with cross-schema references |
 | Examples | JSON blocks after `validate` markers match their schema; blocks after `validate-fail` markers do not |
 | Test vectors | Every file in `spec/test-vectors/` matches the test-vector schema |

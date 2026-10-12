@@ -1,0 +1,59 @@
+name: Specification feedback
+description: Report an ambiguity, contradiction, gap, or concern in a specification
+title: "spec: "
+labels: ["area/spec", "kind/spec-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Specifications are the contracts implementations will be tested against, so this is the most useful feedback the project can receive.
+
+        If the concern is exploitable, do not file it here. Report it privately at
+        https://github.com/BAGOMBEKA-JOB-DEV/shiin/security/advisories/new
+  - type: dropdown
+    id: spec
+    attributes:
+      label: Specification
+      options:
+        - spec/action-types.md
+        - spec/action-request.md
+        - spec/decision.md
+        - spec/evaluation.md
+        - spec/identity.md
+        - spec/policy-model.md
+        - spec/policy-syntax.md
+        - spec/intent-binding.md
+        - spec/risk-signals.md
+        - spec/approval-protocol.md
+        - spec/audit-events.md
+        - spec/receipts.md
+        - spec/adapter-contract.md
+        - spec/local-api.md
+        - security/security-model.md
+        - More than one, or not sure
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Section or requirement identifier
+      description: For example "Combining rules" or EVAL-007.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of problem
+      options:
+        - Ambiguity, more than one reading is possible
+        - Contradiction with another specification or page
+        - Missing requirement or unhandled case
+        - Cannot be implemented as written
+        - Security concern that is not exploitable today
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Quote the text, explain the problem, and suggest what it should say.
+    validations:
+      required: true

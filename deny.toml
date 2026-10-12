@@ -1,0 +1,53 @@
+# cargo-deny configuration. The policy it enforces is documented in
+# docs/engineering/dependencies-and-supply-chain.md and ADR-0038.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+# A yanked crate is a supply-chain signal, not a nuisance.
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+# Permissive licenses only in anything Shiin ships.
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "Unicode-3.0",
+  "CDLA-Permissive-2.0",
+  # Permissive, and standard for the Rust project's own low-level crates.
+  "Apache-2.0 WITH LLVM-exception",
+  # MIT without the attribution requirement.
+  "MIT-0",
+]
+confidence-threshold = 0.93
+# An allowed license that nothing currently uses is not a problem: the list is the
+# policy, not an inventory.
+unused-allowed-license = "allow"
+# MPL-2.0 is considered case by case, and each exception is recorded here.
+exceptions = []
+
+[bans]
+# Duplicate versions bloat the binary and widen the audit surface, but they are
+# usually outside our control, so they warn rather than fail.
+multiple-versions = "warn"
+# A wildcard version means an unreviewed upgrade can arrive silently.
+wildcards = "deny"
+# Shiin's own crates are path dependencies inside this workspace, so they carry no
+# version requirement to review. Only external wildcards are a supply-chain risk.
+allow-wildcard-paths = true
+deny = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+# Releases are built only from crates.io, never from a git dependency.
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

@@ -64,7 +64,7 @@ go through the [RFC process](../rfcs/README.md), and the RFC produces the ADR.
 | 0011 | [Decision values and combining](0011-decision-values-and-combining.md) | accepted |
 | 0012 | [Evaluation stage order](0012-evaluation-stage-order.md) | accepted |
 | 0013 | [Fail-closed failure semantics](0013-fail-closed-failure-semantics.md) | accepted |
-| 0014 | [Cedar policy engine with TOML front-end](0014-cedar-policy-engine-with-toml-front-end.md) | proposed |
+| 0014 | [Cedar policy engine with TOML front-end](0014-cedar-policy-engine-with-toml-front-end.md) | accepted |
 
 ### Policy, classification, intent, and risk
 
@@ -74,7 +74,7 @@ go through the [RFC process](../rfcs/README.md), and the RFC produces the ADR.
 | 0016 | [Built-in protected resources](0016-built-in-protected-resources.md) | accepted |
 | 0017 | [JSON wire format and schemas](0017-json-wire-format-and-schemas.md) | accepted |
 | 0018 | [Conservative action classification](0018-conservative-action-classification.md) | accepted |
-| 0019 | [Path canonicalization](0019-path-canonicalization.md) | proposed |
+| 0019 | [Path canonicalization](0019-path-canonicalization.md) | accepted |
 | 0020 | [Structured intent binding](0020-structured-intent-binding.md) | accepted |
 | 0021 | [Discrete risk signals](0021-discrete-risk-signals.md) | accepted |
 

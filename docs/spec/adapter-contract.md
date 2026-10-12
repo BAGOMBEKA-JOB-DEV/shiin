@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Adapter contract
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.adapter-contract/v1-draft.1`.
@@ -58,4 +58,5 @@ Anything the adapter cannot classify MUST become an [opaque effect](../glossary.
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: the contract matches the hook behavior verified for Claude Code, Codex CLI, and Cursor on 2026-09-14.
 - v1-draft.1 (2026-10-01): Initial draft.

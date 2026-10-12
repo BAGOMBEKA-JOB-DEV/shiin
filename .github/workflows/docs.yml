@@ -45,6 +45,9 @@ jobs:
       - name: Check documentation rules
         run: cargo xtask docs-check
 
+      - name: Run the tests, including the specification conformance corpus
+        run: cargo test --workspace
+
       - name: Lint Markdown
         run: rumdl check .
 

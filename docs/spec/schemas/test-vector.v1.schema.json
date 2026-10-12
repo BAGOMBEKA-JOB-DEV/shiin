@@ -3,21 +3,91 @@
   "$id": "urn:shiin:schema:test-vector:v1",
   "title": "Shiin test vector",
   "type": "object",
-  "required": ["schema", "id", "name", "action_request", "policy", "expected"],
+  "required": [
+    "schema",
+    "id",
+    "name",
+    "action_request",
+    "policy",
+    "expected"
+  ],
   "properties": {
-    "schema": { "type": "string", "const": "shiin.test-vector/v1-draft.1" },
-    "id": { "type": "string", "minLength": 1 },
-    "name": { "type": "string", "minLength": 1 },
-    "action_request": { "$ref": "urn:shiin:schema:action-request:v1" },
-    "policy": { "$ref": "urn:shiin:schema:policy:v1" },
+    "schema": {
+      "type": "string",
+      "const": "shiin.test-vector/v1-draft.1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "action_request": {
+      "$ref": "urn:shiin:schema:action-request:v1"
+    },
+    "policy": {
+      "$ref": "urn:shiin:schema:policy:v1"
+    },
     "expected": {
       "type": "object",
-      "required": ["decision", "reason"],
+      "required": [
+        "decision",
+        "reason"
+      ],
       "properties": {
-        "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
-        "reason": { "type": "string", "minLength": 1 }
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny",
+            "pending"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": false
+    },
+    "task": {
+      "$ref": "urn:shiin:schema:intent-binding:v1#/properties/task",
+      "description": "The active task declaration, when the vector exercises intent binding."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "attended",
+        "unattended"
+      ],
+      "default": "attended",
+      "description": "Whether an approver can be reached. Absent means attended."
+    },
+    "usage": {
+      "description": "What the active task has used before this action, for vectors that exercise limits.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files_written": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files_deleted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "commands": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "now": {
+      "description": "The evaluation time, for vectors that exercise a task expiry. Absent means the task has not expired.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
     }
   },
   "additionalProperties": false

@@ -1,0 +1,65 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-012",
+  "name": "A task asks a person about an action type",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    },
+    "host": {
+      "name": "claude-code",
+      "tool": "Bash"
+    },
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a12",
+    "action_type": "fs.delete",
+    "effects": [
+      {
+        "kind": "path",
+        "value": "/home/dev/project/src/old.rs",
+        "confidence": "exact"
+      }
+    ],
+    "task": "task-012",
+    "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [
+          {
+            "id": "allow-deletes",
+            "effect": "allow",
+            "action_types": [
+              "fs.delete"
+            ],
+            "resources": [
+              "./src/**"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "task": {
+    "id": "task-012",
+    "description": "Fix the login bug",
+    "require_pending_for": [
+      "fs.delete"
+    ]
+  },
+  "expected": {
+    "decision": "pending",
+    "reason": "pending.intent"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-008",
+  "name": "No rule matches",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a08",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "action_type": "net.fetch",
+    "effects": [
+      {
+        "kind": "url",
+        "value": "https://unknown.example.com/upload",
+        "confidence": "exact"
+      }
+    ],
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    },
+    "policy_snapshot": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "host": {
+      "name": "claude-code",
+      "tool": "WebFetch"
+    }
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "rules": [
+          {
+            "id": "edit-source",
+            "effect": "allow",
+            "action_types": [
+              "fs.write"
+            ],
+            "resources": [
+              "./src/**"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.default"
+  }
+}

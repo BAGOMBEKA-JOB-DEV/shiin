@@ -1,0 +1,19 @@
+[package]
+name = "shiin-engine"
+version = "0.0.0"
+description = "Shiin's pure, synchronous decision engine"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+globset = { workspace = true }
+serde_json = { workspace = true }
+shiin-policy = { workspace = true }
+shiin-schema = { workspace = true }
+
+[lints]
+workspace = true

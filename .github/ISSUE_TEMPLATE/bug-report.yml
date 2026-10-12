@@ -1,0 +1,52 @@
+name: Bug report
+description: Report incorrect behavior in Shiin or its tooling
+title: "bug: "
+labels: ["kind/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Shiin has no releases yet, so bugs today are in the documentation tooling or in an example that does not hold up.
+        If the problem is that an action was allowed when it should not have been, report it privately instead:
+        https://github.com/BAGOMBEKA-JOB-DEV/shiin/security/advisories/new
+  - type: checkboxes
+    id: not-a-vulnerability
+    attributes:
+      label: Confirmation
+      options:
+        - label: This is not a security vulnerability, as described in SECURITY.md.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Shiin version or commit
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and architecture
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Agent host and version
+      description: For example Claude Code 2.1.0. Write "none" if it does not apply.
+  - type: textarea
+    id: policy
+    attributes:
+      label: Relevant policy, with secrets removed
+      render: toml
+  - type: textarea
+    id: output
+    attributes:
+      label: Command output
+      description: Include the output of the failing command, or of `shiin explain` once it exists.
+      render: console
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

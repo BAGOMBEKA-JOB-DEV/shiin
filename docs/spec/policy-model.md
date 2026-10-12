@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Policy model
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.policy-model/v1-draft.1`.
@@ -83,4 +83,5 @@ A [policy](../glossary.md#policy) is the complete set of [rules](../glossary.md#
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: the spike compiled policies in this model to Cedar and reproduced every expected decision.
 - v1-draft.1 (2026-10-01): Initial draft.

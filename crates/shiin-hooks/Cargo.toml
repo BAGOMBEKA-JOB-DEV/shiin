@@ -1,0 +1,19 @@
+[package]
+name = "shiin-hooks"
+version = "0.0.0"
+description = "Host hook adapters for Shiin, starting with Claude Code"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+shiin-classify = { workspace = true }
+shiin-schema = { workspace = true }
+
+[lints]
+workspace = true

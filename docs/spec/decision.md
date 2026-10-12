@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Decision
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.decision/v1-draft.1`.
@@ -41,6 +41,8 @@ A [decision](../glossary.md#decision) is the [engine](../glossary.md#engine)'s a
 | `deny.risk` | deny | A risk signal denied the action. |
 | `deny.failure` | deny | A failure produced a fail-closed deny. |
 | `deny.builtin` | deny | A built-in protected resource was touched. |
+| `deny.unattended` | deny | A `pending` result could not be resolved because no approver is available. |
+| `deny.default` | deny | No rule matched, so the default decision applied. |
 | `pending.identity` | pending | The agent identity needs confirmation. |
 | `pending.capability` | pending | The agent capability needs confirmation. |
 | `pending.intent` | pending | The action needs confirmation against the task. |
@@ -98,4 +100,5 @@ A [decision](../glossary.md#decision) is the [engine](../glossary.md#engine)'s a
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: the reason-code registry is now enforced by `cargo xtask docs-check`, and the spike produced every code the corpus expects.
 - v1-draft.1 (2026-10-01): Initial draft.

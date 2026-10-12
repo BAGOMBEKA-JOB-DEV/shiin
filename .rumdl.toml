@@ -4,4 +4,11 @@
 
 [global]
 disable = ["MD013", "MD014"]
-exclude = ["target", "docs/mermaid.min.js", "docs/mermaid-init.js"]
+# .kilo/ holds another tool's planning notes, and a pull-request template body has no title (MD041).
+exclude = [
+  "target",
+  ".kilo",
+  "docs/mermaid.min.js",
+  "docs/mermaid-init.js",
+  ".github/PULL_REQUEST_TEMPLATE.md",
+]

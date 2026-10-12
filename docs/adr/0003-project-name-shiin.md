@@ -19,7 +19,7 @@ The name must be pronounceable, memorable, and free of collisions on crates.io a
 
 ## Decision drivers
 
-- The name should evoke stopping or gating, without implying that Shiin is a sandbox or a blocker.
+- The name should evoke stopping or gating, without suggesting isolation or a blunt refusal of everything.
 - It must not collide with an existing high-profile crate or domain.
 - It should be language-neutral enough for an agent-agnostic tool.
 

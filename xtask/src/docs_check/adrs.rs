@@ -52,13 +52,13 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
     for page in pages {
         for (number, line) in prose_lines(&page.text) {
             for captures in patterns.adr_reference.captures_iter(line) {
-                if let Some(referenced) = captures.get(1) {
-                    if !records.contains_key(referenced.as_str()) {
-                        report.error(
-                            format!("{}:{number}", page.rel),
-                            format!("ADR-{} does not exist", referenced.as_str()),
-                        );
-                    }
+                if let Some(referenced) = captures.get(1)
+                    && !records.contains_key(referenced.as_str())
+                {
+                    report.error(
+                        format!("{}:{number}", page.rel),
+                        format!("ADR-{} does not exist", referenced.as_str()),
+                    );
                 }
             }
         }

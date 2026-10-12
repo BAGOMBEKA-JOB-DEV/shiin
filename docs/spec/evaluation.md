@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Evaluation
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.evaluation/v1-draft.1`.
@@ -22,6 +22,16 @@ The engine performs no I/O and is deterministic: the same inputs always produce 
 **[EVAL-003]** A stage that returns `allow` is a *policy stage*; only the policy stage may produce `allow`.
 
 **[EVAL-004]** The identity, capability, intent, and risk stages are [gates](../glossary.md#gate): they may return `deny`, `pending`, or `pass`, but never `allow`.
+
+## Inputs
+
+**[EVAL-014]** The engine's inputs MUST be exactly the action request, the policy snapshot, the active task declaration if one exists, the evaluation mode, and the current time.
+
+**[EVAL-015]** The engine MUST NOT read any other input, so that the same inputs always produce the same decision ([ADR-0010](../adr/0010-pure-synchronous-engine.md)).
+
+**[EVAL-016]** The evaluation mode MUST be either `attended`, meaning an approver can be reached, or `unattended`, meaning none can.
+
+**[EVAL-017]** In `unattended` mode, a decision that would be `pending` MUST instead be `deny` with reason code `deny.unattended`.
 
 ## Combining
 
@@ -70,4 +80,6 @@ The engine performs no I/O and is deterministic: the same inputs always produce 
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: the ADR-0014 spike implements this pipeline and reproduces all 8 test vectors.
+- v1-draft.2 (2026-10-12): Stated the engine's inputs, and defined attended and unattended evaluation modes (EVAL-014 to EVAL-017).
 - v1-draft.1 (2026-10-01): Initial draft.

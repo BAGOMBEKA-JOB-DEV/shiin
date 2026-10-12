@@ -1,0 +1,65 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-013",
+  "name": "A task limits which hosts may be reached",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    },
+    "host": {
+      "name": "claude-code",
+      "tool": "WebFetch"
+    },
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a13",
+    "action_type": "net.fetch",
+    "effects": [
+      {
+        "kind": "url",
+        "value": "https://paste.example.net/upload",
+        "confidence": "exact"
+      }
+    ],
+    "task": "task-013",
+    "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [
+          {
+            "id": "allow-fetch",
+            "effect": "allow",
+            "action_types": [
+              "net.fetch"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "task": {
+    "id": "task-013",
+    "description": "Read the API documentation",
+    "allow": {
+      "hosts": [
+        "docs.example.com",
+        "*.example.org"
+      ]
+    }
+  },
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.intent"
+  }
+}

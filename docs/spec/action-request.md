@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Action request
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.action-request/v1-draft.1`.
@@ -58,7 +58,11 @@ An [adapter](../glossary.md#adapter) builds it and the [engine](../glossary.md#e
 
 ## Host context
 
-**[AR-008]** The `host` object MUST contain:
+**[AR-008]** An action request MUST carry a `workspace` object with an absolute, canonical `root`.
+
+**[AR-009]** Policy globs written relative to the workspace, such as `./src/**`, MUST be resolved against `workspace.root` before matching, so that a relative pattern can never match a path outside the workspace.
+
+**[AR-010]** The `host` object MUST contain:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -87,6 +91,10 @@ An [adapter](../glossary.md#adapter) builds it and the [engine](../glossary.md#e
     }
   ],
   "task": null,
+  "workspace": {
+    "root": "/home/dev/project",
+    "vcs": "git"
+  },
   "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "host": {
     "name": "claude-code",
@@ -118,4 +126,6 @@ An [adapter](../glossary.md#adapter) builds it and the [engine](../glossary.md#e
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: schemas and every example validate, and the ADR-0014 spike evaluated requests in this shape against the whole corpus.
+- v1-draft.2 (2026-10-12): Added the required `workspace` object, so workspace-relative policy globs can be resolved (AR-008, AR-009). Renumbered the host requirement to AR-010.
 - v1-draft.1 (2026-10-01): Initial draft.
