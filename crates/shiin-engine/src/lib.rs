@@ -406,6 +406,12 @@ mod tests {
     use super::{host_matches, host_of, usage_of};
     use shiin_schema::{ActionRequest, Agent, Assurance, Confidence, Effect, Host, Workspace};
 
+    /// A workspace root that exists on no platform.
+    ///
+    /// Canonicalization resolves real symlinks, so a root that happens to exist is not a
+    /// fixed point: macOS rewrites `/home` through autofs.
+    const ROOT: &str = "/shiin-test-root/project";
+
     fn request(action_type: &str, effects: Vec<Effect>) -> ActionRequest {
         ActionRequest {
             schema: shiin_schema::versions::ACTION_REQUEST.to_owned(),
@@ -419,7 +425,7 @@ mod tests {
             effects,
             task: None,
             workspace: Workspace {
-                root: "/home/dev/project".to_owned(),
+                root: ROOT.to_owned(),
                 vcs: None,
             },
             policy_snapshot: "sha256:0".to_owned(),
@@ -467,7 +473,7 @@ mod tests {
             "shell.exec",
             vec![
                 effect("command", "cp a b", None),
-                effect("path", "/home/dev/project/b", Some("fs.write")),
+                effect("path", "/shiin-test-root/project/b", Some("fs.write")),
             ],
         ));
         assert_eq!(usage.commands, 1);
@@ -479,7 +485,7 @@ mod tests {
         let mut deletion = request(
             "fs.delete",
             vec![
-                effect("path", "/home/dev/project/build", None),
+                effect("path", "/shiin-test-root/project/build", None),
                 effect("count", "50", None),
             ],
         );
