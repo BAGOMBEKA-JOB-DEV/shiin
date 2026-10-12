@@ -6,15 +6,33 @@
     "schema": "shiin.action-request/v1-draft.1",
     "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0f",
     "session": "sess-001",
-    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
     "action_type": "fs.delete",
     "effects": [
-      { "kind": "path", "value": "/home/dev/project/old-outputs", "confidence": "exact" },
-      { "kind": "count", "value": "50", "confidence": "exact" }
+      {
+        "kind": "path",
+        "value": "/home/dev/project/old-outputs",
+        "confidence": "exact"
+      },
+      {
+        "kind": "count",
+        "value": "50",
+        "confidence": "exact"
+      }
     ],
     "task": null,
     "policy_snapshot": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-    "host": { "name": "claude-code", "tool": "Bash" }
+    "host": {
+      "name": "claude-code",
+      "tool": "Bash"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    }
   },
   "policy": {
     "schema": "shiin.policy/v1-draft.1",
@@ -26,14 +44,26 @@
           {
             "id": "allow-deletes",
             "effect": "allow",
-            "action_types": ["fs.delete"],
-            "resources": ["./old-outputs/**"]
+            "action_types": [
+              "fs.delete"
+            ],
+            "resources": [
+              "./old-outputs/**"
+            ]
           }
         ]
       }
     ],
     "default": "deny",
-    "risk": { "bulk_delete": "pending" }
+    "risk": {
+      "bulk_delete": {
+        "decision": "pending",
+        "threshold": 20
+      }
+    }
   },
-  "expected": { "decision": "pending", "reason": "pending.risk" }
+  "expected": {
+    "decision": "pending",
+    "reason": "pending.risk"
+  }
 }

@@ -42,6 +42,7 @@ A [decision](../glossary.md#decision) is the [engine](../glossary.md#engine)'s a
 | `deny.failure` | deny | A failure produced a fail-closed deny. |
 | `deny.builtin` | deny | A built-in protected resource was touched. |
 | `deny.unattended` | deny | A `pending` result could not be resolved because no approver is available. |
+| `deny.default` | deny | No rule matched, so the default decision applied. |
 | `pending.identity` | pending | The agent identity needs confirmation. |
 | `pending.capability` | pending | The agent capability needs confirmation. |
 | `pending.intent` | pending | The action needs confirmation against the task. |

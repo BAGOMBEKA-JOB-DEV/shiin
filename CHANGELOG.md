@@ -17,3 +17,5 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Rust engineering standards covering the workspace, toolchain and minimum supported Rust version, coding standards, error handling, unsafe code, concurrency, dependencies, testing, performance budgets, continuous integration, and releases.
 - `cargo xtask docs-check`, the Rust tool that enforces the documentation rules, together with the mdBook build and the link, spelling, and Markdown checks.
 - Community files: contribution guide, code of conduct, security policy, support, governance, and issue and pull request templates.
+- The ADR-0014 spike in `spikes/cedar/`, which confirmed Cedar as the policy engine by reproducing every specification test vector.
+- Evaluation inputs and attended and unattended modes (EVAL-014 to EVAL-017), a required `workspace` object on the action request (AR-008, AR-009), configurable risk thresholds (RISK-007a), the `deny.unattended` and `deny.default` reason codes, and test vector TV-008.

@@ -45,6 +45,9 @@ jobs:
       - name: Check documentation rules
         run: cargo xtask docs-check
 
+      - name: Check the specification corpus against Cedar (ADR-0014 spike)
+        run: cargo run -q -p spike-cedar
+
       - name: Lint Markdown
         run: rumdl check .
 

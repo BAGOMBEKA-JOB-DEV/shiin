@@ -23,6 +23,10 @@
     "host": {
       "name": "claude-code",
       "tool": "Write"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
     }
   },
   "policy": {

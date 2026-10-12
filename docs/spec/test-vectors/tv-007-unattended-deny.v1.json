@@ -22,6 +22,10 @@
     "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
     "host": {
       "name": "custom-agent"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
     }
   },
   "policy": {

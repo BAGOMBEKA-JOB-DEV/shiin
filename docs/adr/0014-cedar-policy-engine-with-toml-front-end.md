@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=adr status=proposed implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-10-12 -->
 
 # ADR-0014: Cedar policy engine with TOML front-end
 
 > [!NOTE]
-> **Architecture decision: proposed.**
-> Awaiting a spike to confirm Cedar integration or record the fallback.
+> **Architecture decision: accepted.**
+> Confirmed on 2026-10-12 by the spike in `spikes/cedar/`, which reproduced every test vector.
 
 - **Date:** 2026-09-14
 - **Deciders:** Founding maintainer
@@ -38,7 +38,7 @@ Chosen option: "Compile TOML policy to Cedar", because Cedar is formally verifie
 - The `shiin-policy` crate compiles TOML to Cedar at policy load time.
 - Cedar's `cedar-policy` Rust crate performs evaluation.
 - Advanced users can bypass the TOML front-end and write Cedar directly.
-- This decision is proposed and awaits the M0 spike. The spike either confirms Cedar or records a superseding ADR with the fallback.
+- The M0 spike confirmed Cedar, so the fallback of a native evaluator is not needed.
 
 ### Consequences
 
@@ -49,9 +49,24 @@ Chosen option: "Compile TOML policy to Cedar", because Cedar is formally verifie
 
 ### Confirmation
 
-- The M0 exit criterion requires [ADR-0014](0014-cedar-policy-engine-with-toml-front-end.md) to be `accepted`, either confirming Cedar or recording the fallback.
-- The [policy syntax specification](../spec/policy-syntax.md) is stable regardless of the evaluation backend.
-- The use-case checklist in this ADR must pass as a test vector set.
+Confirmed. The spike in `spikes/cedar/`, whose report is `spikes/cedar/README.md`, compiles each
+test vector's policy into Cedar and reproduces all 8 expected decisions and reason codes.
+
+It established three things that shape the implementation:
+
+- Cedar's `forbid` overriding `permit` is exactly "deny always wins", and its diagnostics name
+  the determining policies, which is how reason codes and matched rule identifiers are produced.
+- Cedar has no third outcome, so `pending` is carried as a `@decision("pending")` annotation on a
+  `permit` and downgraded by the caller. The annotation is part of the compilation contract.
+- Cedar never sees a path. Globs are precomputed in Rust and passed as `context.matched_rules`,
+  so policy analysis over paths is outside Cedar's reach.
+
+The spike also found four specification defects, which were fixed and the spike re-run:
+the missing workspace root, the missing risk threshold, the missing `deny.default` reason code,
+and two test vectors that could not be decided from their own inputs.
+
+Ongoing confirmation is the conformance corpus: `shiin-policy` must reproduce every vector in
+`docs/spec/test-vectors/` before v0.1 ships.
 
 ## Pros and cons of the options
 

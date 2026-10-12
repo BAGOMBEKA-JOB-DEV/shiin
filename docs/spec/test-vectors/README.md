@@ -32,6 +32,7 @@ Two optional fields carry the remaining engine inputs, so that every vector can 
 | TV-005 | A bulk deletion | `tv-005-bulk-delete.v1.json` |
 | TV-006 | A destructive VCS operation | `tv-006-destructive-vcs.v1.json` |
 | TV-007 | An unattended deny | `tv-007-unattended-deny.v1.json` |
+| TV-008 | No rule matches, so the default decision applies | `tv-008-default-deny.v1.json` |
 
 ## Running
 
@@ -39,5 +40,5 @@ Implementations run every vector and check the decision matches.
 
 ## Revision history
 
-- v1-draft.2 (2026-10-12): Added the optional `task` and `mode` fields, so TV-004 and TV-007 are decidable from their own inputs.
+- v1-draft.2 (2026-10-12): Added TV-008 for the default decision, a workspace root to every request, and the optional `task` and `mode` fields, so TV-004 and TV-007 are decidable from their own inputs.
 - v1-draft.1 (2026-10-01): Initial draft.

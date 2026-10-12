@@ -37,14 +37,14 @@
 
 - The documentation set in `docs/`, including every specification listed in [About the specifications](../spec/README.md).
 - JSON Schemas and test vectors that encode the [use cases](../overview/use-cases.md).
-- The Cedar spike required by [ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md).
+- The Cedar spike required by [ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), done: it reproduced every test vector, so ADR-0014 is accepted.
 
 **Exit criteria.**
 
 - The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`.
 - The threat model has been reviewed by at least one person outside the project.
 - Every golden use case has test vectors.
-- ADR-0014 is `accepted`, either confirming Cedar or recording the fallback.
+- ADR-0014 is `accepted`. Done on 2026-10-12.
 
 ## v0.1: Gate
 

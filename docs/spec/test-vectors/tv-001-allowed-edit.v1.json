@@ -6,14 +6,28 @@
     "schema": "shiin.action-request/v1-draft.1",
     "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
     "session": "sess-001",
-    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
     "action_type": "fs.write",
     "effects": [
-      { "kind": "path", "value": "/home/dev/project/src/login.rs", "confidence": "exact" }
+      {
+        "kind": "path",
+        "value": "/home/dev/project/src/login.rs",
+        "confidence": "exact"
+      }
     ],
     "task": null,
     "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "host": { "name": "claude-code", "tool": "Write" }
+    "host": {
+      "name": "claude-code",
+      "tool": "Write"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    }
   },
   "policy": {
     "schema": "shiin.policy/v1-draft.1",
@@ -25,13 +39,23 @@
           {
             "id": "edit-source",
             "effect": "allow",
-            "action_types": ["fs.read", "fs.write", "fs.create"],
-            "resources": ["./src/**", "./tests/**"]
+            "action_types": [
+              "fs.read",
+              "fs.write",
+              "fs.create"
+            ],
+            "resources": [
+              "./src/**",
+              "./tests/**"
+            ]
           }
         ]
       }
     ],
     "default": "deny"
   },
-  "expected": { "decision": "allow", "reason": "allow.policy" }
+  "expected": {
+    "decision": "allow",
+    "reason": "allow.policy"
+  }
 }

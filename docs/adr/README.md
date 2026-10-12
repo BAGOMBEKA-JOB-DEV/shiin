@@ -64,7 +64,7 @@ go through the [RFC process](../rfcs/README.md), and the RFC produces the ADR.
 | 0011 | [Decision values and combining](0011-decision-values-and-combining.md) | accepted |
 | 0012 | [Evaluation stage order](0012-evaluation-stage-order.md) | accepted |
 | 0013 | [Fail-closed failure semantics](0013-fail-closed-failure-semantics.md) | accepted |
-| 0014 | [Cedar policy engine with TOML front-end](0014-cedar-policy-engine-with-toml-front-end.md) | proposed |
+| 0014 | [Cedar policy engine with TOML front-end](0014-cedar-policy-engine-with-toml-front-end.md) | accepted |
 
 ### Policy, classification, intent, and risk
 

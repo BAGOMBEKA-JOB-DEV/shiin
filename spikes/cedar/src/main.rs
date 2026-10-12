@@ -23,9 +23,8 @@ use cedar_policy::{
 use globset::GlobBuilder;
 use serde_json::Value;
 
-/// Deletions above this count raise `bulk_delete`.
-/// The policy schema has no field for a threshold, so the spike hard-codes it.
-const BULK_DELETE_THRESHOLD: u64 = 20;
+/// The default threshold for `bulk_delete`, used when the policy entry gives none.
+const DEFAULT_BULK_DELETE_THRESHOLD: u64 = 20;
 
 /// One stage's contribution to a decision.
 enum StageResult {
@@ -45,8 +44,8 @@ fn main() -> ExitCode {
     };
 
     println!(
-        "{:<8} {:<30} {:<26} {:<26} {}",
-        "vector", "name", "expected", "actual", "result"
+        "{:<8} {:<30} {:<26} {:<26} result",
+        "vector", "name", "expected", "actual"
     );
     let mut failures = 0_usize;
     for (path, vector) in &vectors {
@@ -71,10 +70,8 @@ fn main() -> ExitCode {
             }
             Err(error) => {
                 failures += 1;
-                println!(
-                    "{id:<8} {name:<30} {expected:<26} {:<26} ERROR: {error}",
-                    "-"
-                );
+                let actual = "-";
+                println!("{id:<8} {name:<30} {expected:<26} {actual:<26} ERROR: {error}");
                 println!("         ({})", path.display());
             }
         }
@@ -82,7 +79,10 @@ fn main() -> ExitCode {
 
     println!();
     if failures == 0 {
-        println!("all {} vectors reproduced: Cedar expresses the semantics", vectors.len());
+        println!(
+            "all {} vectors reproduced: Cedar expresses the semantics",
+            vectors.len()
+        );
         ExitCode::SUCCESS
     } else {
         println!("{failures} of {} vectors did not reproduce", vectors.len());
@@ -92,11 +92,15 @@ fn main() -> ExitCode {
 
 fn load_vectors() -> Result<Vec<(PathBuf, Value)>, String> {
     let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/spec/test-vectors");
-    let entries = fs::read_dir(&directory).map_err(|error| format!("{}: {error}", directory.display()))?;
+    let entries =
+        fs::read_dir(&directory).map_err(|error| format!("{}: {error}", directory.display()))?;
     let mut paths: Vec<PathBuf> = Vec::new();
     for entry in entries {
         let path = entry.map_err(|error| error.to_string())?.path();
-        if path.extension().is_some_and(|extension| extension == "json") {
+        if path
+            .extension()
+            .is_some_and(|extension| extension == "json")
+        {
             paths.push(path);
         }
     }
@@ -104,7 +108,8 @@ fn load_vectors() -> Result<Vec<(PathBuf, Value)>, String> {
 
     let mut vectors = Vec::new();
     for path in paths {
-        let text = fs::read_to_string(&path).map_err(|error| format!("{}: {error}", path.display()))?;
+        let text =
+            fs::read_to_string(&path).map_err(|error| format!("{}: {error}", path.display()))?;
         let value: Value =
             serde_json::from_str(&text).map_err(|error| format!("{}: {error}", path.display()))?;
         vectors.push((path, value));
@@ -122,48 +127,57 @@ fn evaluate(vector: &Value) -> Result<(String, String), String> {
     let empty = Vec::new();
     let effects = request["effects"].as_array().unwrap_or(&empty);
     let agent = request["agent"]["id"].as_str().unwrap_or("");
+    let workspace = request["workspace"]["root"]
+        .as_str()
+        .ok_or("the action request has no workspace root")?;
 
-    let matched = matched_rules(policy, action_type, effects, agent);
+    let matched = matched_rules(policy, action_type, effects, agent, workspace);
     let policy_stage = policy_stage(policy, action_type, agent, &matched)?;
-    let intent_stage = intent_stage(vector, action_type, effects);
+    let intent_stage = intent_stage(vector, action_type, effects, workspace);
     let risk_stage = risk_stage(policy, effects);
 
     // Combining, in the order the evaluation specification fixes.
-    let mut decision = "deny".to_owned();
-    let mut reason = "deny.policy".to_owned();
     let stages = [&policy_stage, &intent_stage, &risk_stage];
-
-    if let Some(code) = stages.iter().find_map(|stage| match stage {
+    let denied = stages.iter().find_map(|stage| match stage {
         StageResult::Deny(code) => Some(*code),
         _ => None,
-    }) {
-        decision = "deny".to_owned();
-        reason = code.to_owned();
-    } else if let Some(code) = stages.iter().find_map(|stage| match stage {
+    });
+    let held = stages.iter().find_map(|stage| match stage {
         StageResult::Pending(code) => Some(*code),
         _ => None,
-    }) {
-        decision = "pending".to_owned();
-        reason = code.to_owned();
-    } else if matches!(policy_stage, StageResult::Allow) {
-        decision = "allow".to_owned();
-        reason = "allow.policy".to_owned();
-    }
+    });
 
-    // An unattended engine cannot hold an action for a human.
-    if decision == "pending" && vector["mode"].as_str() == Some("unattended") {
-        decision = "deny".to_owned();
-        reason = "deny.unattended".to_owned();
-    }
-    Ok((decision, reason))
+    let (decision, reason) = if let Some(code) = denied {
+        ("deny", code)
+    } else if let Some(code) = held {
+        // An unattended engine cannot hold an action for a human.
+        if vector["mode"].as_str() == Some("unattended") {
+            ("deny", "deny.unattended")
+        } else {
+            ("pending", code)
+        }
+    } else if matches!(policy_stage, StageResult::Allow) {
+        ("allow", "allow.policy")
+    } else {
+        ("deny", "deny.default")
+    };
+    Ok((decision.to_owned(), reason.to_owned()))
 }
 
 /// Rule identifiers whose matchers the request satisfies, computed in Rust because
 /// Cedar's `like` operator has only one wildcard and cannot express path globs.
-fn matched_rules(policy: &Value, action_type: &str, effects: &[Value], agent: &str) -> Vec<String> {
+fn matched_rules(
+    policy: &Value,
+    action_type: &str,
+    effects: &[Value],
+    agent: &str,
+    workspace: &str,
+) -> Vec<String> {
     let mut matched = Vec::new();
     for rule in rules(policy) {
-        let Some(id) = rule["id"].as_str() else { continue };
+        let Some(id) = rule["id"].as_str() else {
+            continue;
+        };
         if !list_matches(&rule["action_types"], |pattern| {
             action_type_matches(pattern, action_type)
         }) {
@@ -174,14 +188,14 @@ fn matched_rules(policy: &Value, action_type: &str, effects: &[Value], agent: &s
         }
         if !rule["resources"].is_null()
             && !list_matches(&rule["resources"], |pattern| {
-                effect_matches(effects, "path", pattern)
+                effect_matches(effects, "path", pattern, workspace)
             })
         {
             continue;
         }
         if !rule["commands"].is_null()
             && !list_matches(&rule["commands"], |pattern| {
-                effect_matches(effects, "command", pattern)
+                effect_matches(effects, "command", pattern, workspace)
             })
         {
             continue;
@@ -201,7 +215,9 @@ fn policy_stage(
     let mut set = PolicySet::new();
     let mut pending_rules = Vec::new();
     for rule in rules(policy) {
-        let Some(id) = rule["id"].as_str() else { continue };
+        let Some(id) = rule["id"].as_str() else {
+            continue;
+        };
         let effect = rule["effect"].as_str().unwrap_or("deny");
         let keyword = if effect == "deny" { "forbid" } else { "permit" };
         let annotation = if effect == "pending" {
@@ -264,7 +280,12 @@ fn policy_stage(
 }
 
 /// Checks the action against the active task declaration.
-fn intent_stage(vector: &Value, action_type: &str, effects: &[Value]) -> StageResult {
+fn intent_stage(
+    vector: &Value,
+    action_type: &str,
+    effects: &[Value],
+    workspace: &str,
+) -> StageResult {
     let task = &vector["task"];
     if !task.is_object() {
         return StageResult::Pass;
@@ -289,7 +310,7 @@ fn intent_stage(vector: &Value, action_type: &str, effects: &[Value]) -> StageRe
             !scope
                 .iter()
                 .filter_map(|pattern| pattern.as_str())
-                .any(|pattern| glob_matches(pattern, path))
+                .any(|pattern| glob_matches(pattern, path, workspace))
         });
         if outside && !paths.is_empty() {
             return StageResult::Deny("deny.intent");
@@ -300,16 +321,27 @@ fn intent_stage(vector: &Value, action_type: &str, effects: &[Value]) -> StageRe
 
 /// Raises the configured risk signals for this request.
 fn risk_stage(policy: &Value, effects: &[Value]) -> StageResult {
-    let configured = |signal: &str| policy["risk"][signal].as_str().map(ToOwned::to_owned);
+    let entry = |signal: &str| policy["risk"].get(signal).cloned();
+    let configured = |signal: &str| {
+        entry(signal).and_then(|value| match &value {
+            Value::String(decision) => Some(decision.clone()),
+            Value::Object(_) => value["decision"].as_str().map(ToOwned::to_owned),
+            _ => None,
+        })
+    };
+    let threshold = |signal: &str| {
+        entry(signal)
+            .and_then(|value| value["threshold"].as_u64())
+            .unwrap_or(DEFAULT_BULK_DELETE_THRESHOLD)
+    };
     let mut raised: Vec<(&'static str, String)> = Vec::new();
 
     if effects
         .iter()
         .any(|effect| effect["confidence"].as_str() == Some("opaque"))
+        && let Some(decision) = configured("opaque_command")
     {
-        if let Some(decision) = configured("opaque_command") {
-            raised.push(("pending.opaque", decision));
-        }
+        raised.push(("pending.opaque", decision));
     }
     let deleted = effects
         .iter()
@@ -318,18 +350,17 @@ fn risk_stage(policy: &Value, effects: &[Value]) -> StageResult {
         .filter_map(|value| value.parse::<u64>().ok())
         .max()
         .unwrap_or(0);
-    if deleted > BULK_DELETE_THRESHOLD {
-        if let Some(decision) = configured("bulk_delete") {
-            raised.push(("pending.risk", decision));
-        }
+    if deleted > threshold("bulk_delete")
+        && let Some(decision) = configured("bulk_delete")
+    {
+        raised.push(("pending.risk", decision));
     }
     if effects.iter().any(|effect| {
         effect["kind"].as_str() == Some("command")
             && effect["value"].as_str().is_some_and(is_destructive_vcs)
-    }) {
-        if let Some(decision) = configured("destructive_vcs") {
-            raised.push(("pending.risk", decision));
-        }
+    }) && let Some(decision) = configured("destructive_vcs")
+    {
+        raised.push(("pending.risk", decision));
     }
 
     if raised.iter().any(|(_, decision)| decision == "deny") {
@@ -363,20 +394,16 @@ fn rules(policy: &Value) -> Vec<&Value> {
 
 /// Whether any entry of a JSON string array satisfies the predicate.
 fn list_matches(list: &Value, predicate: impl Fn(&str) -> bool) -> bool {
-    list.as_array().is_some_and(|values| {
-        values
-            .iter()
-            .filter_map(Value::as_str)
-            .any(|value| predicate(value))
-    })
+    list.as_array()
+        .is_some_and(|values| values.iter().filter_map(Value::as_str).any(predicate))
 }
 
-fn effect_matches(effects: &[Value], kind: &str, pattern: &str) -> bool {
+fn effect_matches(effects: &[Value], kind: &str, pattern: &str, workspace: &str) -> bool {
     effects
         .iter()
         .filter(|effect| effect["kind"].as_str() == Some(kind))
         .filter_map(|effect| effect["value"].as_str())
-        .any(|value| glob_matches(pattern, value))
+        .any(|value| glob_matches(pattern, value, workspace))
 }
 
 fn action_type_matches(pattern: &str, action_type: &str) -> bool {
@@ -389,13 +416,17 @@ fn action_type_matches(pattern: &str, action_type: &str) -> bool {
 
 /// Matches a policy glob against a value.
 ///
-/// Workspace-relative and home-relative patterns are rewritten to match anywhere,
-/// because the action request carries no workspace root or home directory.
-fn glob_matches(pattern: &str, value: &str) -> bool {
-    let rewritten = pattern
-        .strip_prefix("./")
-        .or_else(|| pattern.strip_prefix("~/"))
-        .map_or_else(|| pattern.to_owned(), |rest| format!("**/{rest}"));
+/// A workspace-relative pattern resolves against the request's workspace root, so it
+/// can never match outside the workspace. A home-relative pattern is left to match
+/// anywhere, because home expansion happens when policy is compiled (ADR-0019).
+fn glob_matches(pattern: &str, value: &str, workspace: &str) -> bool {
+    let rewritten = if let Some(rest) = pattern.strip_prefix("./") {
+        format!("{}/{rest}", workspace.trim_end_matches('/'))
+    } else if let Some(rest) = pattern.strip_prefix("~/") {
+        format!("**/{rest}")
+    } else {
+        pattern.to_owned()
+    };
     GlobBuilder::new(&rewritten)
         .literal_separator(false)
         .build()
