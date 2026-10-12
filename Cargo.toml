@@ -53,3 +53,8 @@ print_stdout = "deny"
 print_stderr = "deny"
 allow_attributes_without_reason = "deny"
 undocumented_unsafe_blocks = "deny"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

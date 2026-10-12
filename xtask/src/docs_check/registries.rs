@@ -11,6 +11,11 @@ const DECISION: &str = "spec/decision.md";
 /// The page that owns the action-type registry.
 const ACTION_TYPES: &str = "spec/action-types.md";
 
+/// Suffixes that make a dotted name a file rather than a code, such as `deny.toml`.
+const FILE_SUFFIXES: &[&str] = &[
+    "toml", "json", "jsonl", "md", "rs", "yml", "yaml", "cedar", "lock", "txt", "js",
+];
+
 /// Namespaces an action type can start with, so that unrelated dotted names are ignored.
 const NAMESPACES: &[&str] = &[
     "fs.", "shell.", "net.", "mcp.", "db.", "vcs.", "pkg.", "agent.",
@@ -69,8 +74,14 @@ pub(crate) fn check(pages: &[Page], report: &mut Report) {
                     continue;
                 };
                 let location = format!("{}:{number}", page.rel);
-                // A reason code is unambiguous; `allow.*` collides with constraint names.
+                // A reason code is unambiguous, except that a file name has the same
+                // shape: `deny.toml` is a file, not a decision.
+                let is_file_name = name
+                    .rsplit('.')
+                    .next()
+                    .is_some_and(|suffix| FILE_SUFFIXES.contains(&suffix));
                 if (name.starts_with("deny.") || name.starts_with("pending."))
+                    && !is_file_name
                     && !reason_codes.contains(name)
                 {
                     report.error(

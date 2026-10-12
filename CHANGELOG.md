@@ -29,4 +29,7 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Stable error codes are emitted by the crates and documented, and `cargo xtask docs-check` now rejects a code documented as emitted that no crate emits, a code marked reserved that a crate does emit, and a code in the source that is documented nowhere.
 - Fault-injection tests cover the paths that would otherwise become an allow: an unparsable policy, an unknown policy key, an unwritable audit log, an empty payload, a tampered log, and a decision that arrives too close to a host timeout.
 - The getting-started guides, the policy guide, and the CLI, configuration, and error-code references now describe what a source build does, with each command and setting marked as working today or planned.
+- Release engineering: `dist-workspace.toml` for the six supported targets with shell and PowerShell installers, the dist-generated `release.yml` with every action pinned by commit, build provenance attestations, and `sbom.yml`, which produces a CycloneDX bill of materials and attaches it to a release.
+- `deny.toml`, which enforces the documented dependency policy, and a `ci.yml` workflow running tests per platform tier, the minimum supported Rust version, `cargo deny`, and a check that no action is pinned by tag or branch.
+- `shiin version`, so a bug report can name the build.
 

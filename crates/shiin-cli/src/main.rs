@@ -88,11 +88,21 @@ fn main() -> ExitCode {
         }
         ["verify"] => report(verify()),
         ["doctor"] => report(Ok(doctor())),
+        ["version" | "--version" | "-V"] => report(Ok(version())),
         _ => {
             usage();
             ExitCode::FAILURE
         }
     }
+}
+
+/// What this build is, so a bug report can name it.
+fn version() -> String {
+    format!(
+        "shiin {} (engine {}, pre-alpha: no releases yet)",
+        env!("CARGO_PKG_VERSION"),
+        shiin_engine::ENGINE_VERSION
+    )
 }
 
 fn usage() {
@@ -108,6 +118,7 @@ fn usage() {
     eprintln!("  log [count]               show recent audit events");
     eprintln!("  verify                    check the audit log's hash chain");
     eprintln!("  doctor                    check this workspace's setup");
+    eprintln!("  version                   print the version of this build");
 }
 
 /// Prints an outcome and turns it into an exit code.

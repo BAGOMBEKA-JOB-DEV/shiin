@@ -48,6 +48,17 @@ Chosen option: "xtask-managed release with cargo-release or equivalent, GitHub A
 
 ### Confirmation
 
+Partly confirmed on 2026-10-12. dist is configured for the six target platforms with
+installers and build provenance, and the workflow it generates is checked in with every
+action pinned by commit. Two gaps are recorded rather than hidden: dist rewrites its own
+workflow with tag references, so a pin check in `ci.yml` guards the pins, and dist offers no
+option for `cargo auditable`, so that metadata is not in released binaries. The bill of
+materials is produced by a separate workflow whose command has been verified locally.
+
+The decision is only fully confirmed when a real tag produces a verifiable release.
+
+### Original confirmation
+
 - The [release engineering page](../engineering/release-engineering.md) documents the full process.
 - Release binaries are signed with the signing key from [ADR-0032](0032-signing-key-storage.md).
 
