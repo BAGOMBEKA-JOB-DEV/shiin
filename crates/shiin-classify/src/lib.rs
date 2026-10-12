@@ -198,24 +198,34 @@ fn program_name(word: &str) -> String {
 mod tests {
     use super::*;
 
+    /// A workspace root that exists on no platform.
+    ///
+    /// Canonicalization resolves real symlinks, so a root that happens to exist is not a
+    /// fixed point: macOS resolves `/home` through autofs, which rewrote these paths and
+    /// made the tests pass on Linux and fail there.
+    const ROOT: &str = "/shiin-test-root/project";
+
     #[test]
     fn a_traversal_cannot_step_outside_the_workspace_lexically() {
         assert_eq!(
-            canonical_path("src/../../etc/passwd", "/home/dev/project"),
-            "/home/dev/etc/passwd"
+            canonical_path("src/../../etc/passwd", ROOT),
+            "/shiin-test-root/etc/passwd"
         );
         // A traversal cannot climb above the root.
-        assert_eq!(canonical_path("../../../../etc", "/home"), "/etc");
         assert_eq!(
-            canonical_path("./src/login.rs", "/home/dev/project"),
-            "/home/dev/project/src/login.rs"
+            canonical_path("../../../../etc", "/shiin-test-root"),
+            "/etc"
+        );
+        assert_eq!(
+            canonical_path("./src/login.rs", ROOT),
+            "/shiin-test-root/project/src/login.rs"
         );
     }
 
     #[test]
     fn canonicalization_is_idempotent() {
-        let once = canonical_path("src/./login.rs", "/home/dev/project");
-        let twice = canonical_path(&once, "/home/dev/project");
+        let once = canonical_path("src/./login.rs", ROOT);
+        let twice = canonical_path(&once, ROOT);
         assert_eq!(once, twice);
     }
 
@@ -229,11 +239,11 @@ mod tests {
 
     #[test]
     fn a_reader_exposes_the_path_it_reads_as_a_read() {
-        let (action, effects) = classify_command("cat .env", "/home/dev/project");
+        let (action, effects) = classify_command("cat .env", ROOT);
         assert_eq!(action, "shell.exec");
         let read = effects
             .iter()
-            .find(|effect| effect.value == "/home/dev/project/.env")
+            .find(|effect| effect.value == "/shiin-test-root/project/.env")
             .expect("the read is exposed");
         assert_eq!(read.action_type.as_deref(), Some("fs.read"));
     }

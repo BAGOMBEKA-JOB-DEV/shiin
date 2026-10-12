@@ -88,13 +88,21 @@ fn run(root: &Path, arguments: &[&str]) -> String {
 }
 
 fn payload(root: &Path, tool: &str, input: &str) -> String {
-    format!(
-        r#"{{"session_id":"sess-1","cwd":"{}","tool_name":"{tool}","tool_input":{input}}}"#,
-        root.display()
-    )
+    let arguments: serde_json::Value =
+        serde_json::from_str(input).expect("the tool arguments are valid JSON");
+    serde_json::json!({
+        "session_id": "sess-1",
+        "cwd": root.to_string_lossy(),
+        "tool_name": tool,
+        "tool_input": arguments,
+    })
+    .to_string()
 }
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn a_policy_denial_reaches_the_host_as_a_denial() {
     let root = workspace("deny");
     let response = run_hook(&root, &payload(&root, "Read", r#"{"file_path":".env"}"#));
@@ -106,6 +114,9 @@ fn a_policy_denial_reaches_the_host_as_a_denial() {
 }
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn an_allowed_edit_reaches_the_host_as_an_allow() {
     let root = workspace("allow");
     let response = run_hook(
@@ -160,6 +171,9 @@ fn a_missing_policy_denies_rather_than_allowing() {
 }
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn decisions_are_recorded_and_the_chain_verifies() {
     let root = workspace("audit");
     run_hook(&root, &payload(&root, "Read", r#"{"file_path":".env"}"#));
@@ -314,6 +328,9 @@ fn a_decision_arrives_well_inside_a_host_timeout() {
 // Task declarations: the constraint that applies only to the work the person asked for.
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn a_task_scopes_and_budgets_an_agent_then_releases_it() {
     let root = workspace("task");
     // The policy allows writes anywhere in the workspace, so only the task narrows it.
@@ -375,6 +392,9 @@ fn a_task_scopes_and_budgets_an_agent_then_releases_it() {
 }
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn a_task_refuses_work_outside_its_scope() {
     let root = workspace("taskscope");
     fs::write(
@@ -421,12 +441,18 @@ fn an_unknown_task_option_is_refused_rather_than_ignored() {
 // Other hosts speak their own protocols, and a decision has to arrive in each one.
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn codex_hears_a_decision_in_its_own_protocol() {
     let root = workspace("codex");
-    let payload = format!(
-        r#"{{"session_id":"s","cwd":"{}","tool_name":"apply_patch","tool_input":{{"path":"src/login.rs"}}}}"#,
-        root.display()
-    );
+    let payload = serde_json::json!({
+        "session_id": "s",
+        "cwd": root.to_string_lossy(),
+        "tool_name": "apply_patch",
+        "tool_input": { "path": "src/login.rs" },
+    })
+    .to_string();
     let output = Command::new(env!("CARGO_BIN_EXE_shiin"))
         .args(["hook", "codex"])
         .current_dir(&root)
@@ -452,12 +478,18 @@ fn codex_hears_a_decision_in_its_own_protocol() {
 }
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn cursor_hears_a_denial_for_a_secret_read_through_a_command() {
     let root = workspace("cursor");
-    let payload = format!(
-        r#"{{"hook_event_name":"beforeShellExecution","conversation_id":"c","workspace_roots":["{}"],"command":"cat .env"}}"#,
-        root.display()
-    );
+    let payload = serde_json::json!({
+        "hook_event_name": "beforeShellExecution",
+        "conversation_id": "c",
+        "workspace_roots": [root.to_string_lossy()],
+        "command": "cat .env",
+    })
+    .to_string();
     let mut child = Command::new(env!("CARGO_BIN_EXE_shiin"))
         .args(["hook", "cursor"])
         .current_dir(&root)
@@ -482,24 +514,36 @@ fn cursor_hears_a_denial_for_a_secret_read_through_a_command() {
 }
 
 #[test]
+// Path matching needs canonicalization, which Windows does not have yet:
+// see ADR-0019 and docs/reference/platform-support.md.
+#[cfg(unix)]
 fn policy_cases_pass_and_a_wrong_expectation_fails() {
     let root = workspace("policytest");
     fs::create_dir_all(root.join(".shiin/tests")).expect("the case directory is created");
     let case = |id: &str, decision: &str, reason: &str| {
-        format!(
-            r#"{{"schema":"shiin.test-vector/v1-draft.1","id":"{id}","name":"{id}",
-                "action_request":{{"schema":"shiin.action-request/v1-draft.1",
-                "id":"0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9aa3","session":"m",
-                "agent":{{"id":"claude-code","assurance":"asserted"}},
-                "action_type":"fs.read",
-                "effects":[{{"kind":"path","value":"{}/.env","confidence":"exact"}}],
-                "workspace":{{"root":"{}"}},
-                "policy_snapshot":"sha256:0000000000000000000000000000000000000000000000000000000000000000",
-                "host":{{"name":"claude-code","tool":"Read"}}}},
-                "expected":{{"decision":"{decision}","reason":"{reason}"}}}}"#,
-            root.display(),
-            root.display()
-        )
+        let workspace = root.to_string_lossy().into_owned();
+        serde_json::json!({
+            "schema": "shiin.test-vector/v1-draft.1",
+            "id": id,
+            "name": id,
+            "action_request": {
+                "schema": "shiin.action-request/v1-draft.1",
+                "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9aa3",
+                "session": "m",
+                "agent": { "id": "claude-code", "assurance": "asserted" },
+                "action_type": "fs.read",
+                "effects": [{
+                    "kind": "path",
+                    "value": format!("{workspace}/.env"),
+                    "confidence": "exact",
+                }],
+                "workspace": { "root": workspace },
+                "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "host": { "name": "claude-code", "tool": "Read" },
+            },
+            "expected": { "decision": decision, "reason": reason },
+        })
+        .to_string()
     };
     fs::write(
         root.join(".shiin/tests/right.json"),

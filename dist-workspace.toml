@@ -7,6 +7,10 @@ members = ["cargo:."]
 cargo-dist-version = "0.32.0"
 # CI backends to support
 ci = "github"
+# ADR-0038 requires every action to be pinned by commit, and dist writes tag
+# references, so release.yml is edited after generation. This tells dist not to fail
+# on that difference; ci.yml enforces the pins instead.
+allow-dirty = ["ci"]
 # The installers to generate for each app
 installers = ["shell", "powershell"]
 # Target platforms to build apps for (Rust target-triple syntax)
