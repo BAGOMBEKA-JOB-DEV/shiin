@@ -342,6 +342,22 @@ fn risk_stage(request: &ActionRequest, policy: &Policy) -> Stage {
         reasons::PENDING_OPAQUE,
         request.has_opaque_effect(),
     );
+    consider(
+        "secret_path",
+        reasons::PENDING_RISK,
+        request.values_of("path").any(|path| {
+            ["**/.env", "**/.env.*", "**/.ssh/**", "**/credentials"]
+                .iter()
+                .any(|pattern| glob_matches(pattern, path))
+        }),
+    );
+    consider(
+        "outside_workspace",
+        reasons::PENDING_RISK,
+        request
+            .values_of("path")
+            .any(|path| !std::path::Path::new(path).starts_with(&request.workspace.root)),
+    );
     let threshold = policy
         .risk
         .get("bulk_delete")

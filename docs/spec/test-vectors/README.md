@@ -14,7 +14,7 @@ Each test vector is a JSON file in `docs/spec/test-vectors/` validated against `
 
 A test vector records one action request, the policy it is evaluated against, and the expected decision.
 
-Two optional fields carry the remaining engine inputs, so that every vector can be decided from the vector alone:
+Optional fields carry the remaining engine inputs, so that every vector can be decided from the vector alone:
 
 | Field | Meaning |
 |---|---|
@@ -44,6 +44,8 @@ Two optional fields carry the remaining engine inputs, so that every vector can 
 | TV-015 | A task forbids a read performed through a shell command | `tv-015-task-forbidden-effect.v1.json` |
 | TV-016 | Workspace-relative task scope excludes another workspace | `tv-016-task-scope-root.v1.json` |
 | TV-017 | A spent task budget wins over required approval | `tv-017-task-budget-before-pending.v1.json` |
+| TV-018 | Outside-workspace risk denies an otherwise allowed write | `tv-018-outside-workspace-risk.v1.json` |
+| TV-019 | Secret-path risk denies an otherwise allowed read | `tv-019-secret-path-risk.v1.json` |
 
 ## Running
 
@@ -51,7 +53,7 @@ Implementations run every vector and check the decision matches.
 
 ## Revision history
 
-- v1-draft.5 (2026-10-12): Added TV-014 to TV-017 for task denial precedence, forbidden effects, and workspace-relative scope boundaries.
+- v1-draft.5 (2026-10-12): Added TV-014 to TV-019 for task denial precedence, forbidden effects, workspace-relative scope boundaries, and configured path risk signals.
 - v1-draft.4 (2026-10-12): Added TV-010 to TV-013 for task limits, expiry, ask-for, and host constraints, and the `usage` and `now` fields they need.
 - v1-draft.3 (2026-10-12): Added TV-009, which pins UC-02: a rule written for `fs.read` must also cover a read performed by a shell command.
 - v1-draft.2 (2026-10-12): Added TV-008 for the default decision, a workspace root to every request, and the optional `task` and `mode` fields, so TV-004 and TV-007 are decidable from their own inputs.
