@@ -176,10 +176,16 @@ fn classify(payload: &PreToolUse, workspace_root: &str) -> (String, Vec<Effect>)
 mod tests {
     use super::*;
 
+    /// A workspace root that exists on no platform.
+    ///
+    /// Canonicalization resolves real symlinks, so a root that happens to exist is not a
+    /// fixed point: macOS rewrites `/home` through autofs.
+    const ROOT: &str = "/shiin-test-root/project";
+
     fn payload(tool: &str, input: Value) -> PreToolUse {
         PreToolUse {
             session_id: "sess-1".to_owned(),
-            cwd: "/home/dev/project".to_owned(),
+            cwd: ROOT.to_owned(),
             tool_name: tool.to_owned(),
             tool_input: input,
         }
@@ -189,10 +195,13 @@ mod tests {
     fn a_write_becomes_a_path_effect() {
         let request = to_action_request(
             &payload("Write", serde_json::json!({"file_path": "src/login.rs"})),
-            "/home/dev/project",
+            ROOT,
         );
         assert_eq!(request.action_type, "fs.write");
-        assert_eq!(request.effects[0].value, "/home/dev/project/src/login.rs");
+        assert_eq!(
+            request.effects[0].value,
+            "/shiin-test-root/project/src/login.rs"
+        );
         assert_eq!(request.agent.assurance, Assurance::Asserted);
     }
 
@@ -200,7 +209,7 @@ mod tests {
     fn an_interpreter_command_is_opaque() {
         let request = to_action_request(
             &payload("Bash", serde_json::json!({"command": "python cleanup.py"})),
-            "/home/dev/project",
+            ROOT,
         );
         assert_eq!(request.action_type, "shell.exec");
         assert!(request.has_opaque_effect());
@@ -208,7 +217,7 @@ mod tests {
 
     #[test]
     fn an_unknown_tool_becomes_a_vendor_extension() {
-        let request = to_action_request(&payload("SomeNewTool", Value::Null), "/home/dev/project");
+        let request = to_action_request(&payload("SomeNewTool", Value::Null), ROOT);
         assert_eq!(request.action_type, "x-claude-code.somenewtool");
         assert!(request.has_opaque_effect());
     }

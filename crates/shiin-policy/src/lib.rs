@@ -353,16 +353,22 @@ fn action_type_matches(pattern: &str, action_type: &str) -> bool {
 mod tests {
     use super::*;
 
+    /// A workspace root that exists on no platform.
+    ///
+    /// Canonicalization resolves real symlinks, so a root that happens to exist is not a
+    /// fixed point: macOS rewrites `/home` through autofs.
+    const ROOT: &str = "/shiin-test-root/project";
+
     #[test]
     fn workspace_relative_patterns_cannot_match_outside_the_workspace() {
         assert_eq!(
-            resolve_pattern("./src/**", "/home/dev/project"),
-            "/home/dev/project/src/**"
+            resolve_pattern("./src/**", ROOT),
+            "/shiin-test-root/project/src/**"
         );
-        let glob = Glob::new(&resolve_pattern("./src/**", "/home/dev/project"))
+        let glob = Glob::new(&resolve_pattern("./src/**", ROOT))
             .unwrap()
             .compile_matcher();
-        assert!(glob.is_match("/home/dev/project/src/login.rs"));
+        assert!(glob.is_match("/shiin-test-root/project/src/login.rs"));
         assert!(!glob.is_match("/home/other/src/login.rs"));
     }
 

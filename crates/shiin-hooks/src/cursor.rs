@@ -171,12 +171,18 @@ fn classify(payload: &HookPayload, workspace_root: &str) -> (String, Vec<Effect>
 mod tests {
     use super::*;
 
+    /// A workspace root that exists on no platform.
+    ///
+    /// Canonicalization resolves real symlinks, so a root that happens to exist is not a
+    /// fixed point: macOS rewrites `/home` through autofs.
+    const ROOT: &str = "/shiin-test-root/project";
+
     #[test]
     fn a_shell_event_becomes_a_command() {
         let payload = HookPayload {
             hook_event_name: "beforeShellExecution".to_owned(),
             command: "cat .env".to_owned(),
-            workspace_roots: vec!["/home/dev/project".to_owned()],
+            workspace_roots: vec![ROOT.to_owned()],
             ..HookPayload::default()
         };
         let request = to_action_request(&payload, &payload.workspace("/fallback"));
@@ -197,9 +203,9 @@ mod tests {
             file_path: ".env".to_owned(),
             ..HookPayload::default()
         };
-        let request = to_action_request(&payload, "/home/dev/project");
+        let request = to_action_request(&payload, ROOT);
         assert_eq!(request.action_type, "fs.read");
-        assert_eq!(request.effects[0].value, "/home/dev/project/.env");
+        assert_eq!(request.effects[0].value, "/shiin-test-root/project/.env");
     }
 
     #[test]
@@ -209,7 +215,7 @@ mod tests {
             tool_name: "deploy".to_owned(),
             ..HookPayload::default()
         };
-        let request = to_action_request(&payload, "/home/dev/project");
+        let request = to_action_request(&payload, ROOT);
         assert_eq!(request.action_type, "x-cursor.mcp.deploy");
         assert!(request.has_opaque_effect());
     }
@@ -217,11 +223,11 @@ mod tests {
     #[test]
     fn the_host_workspace_wins_over_the_fallback() {
         let payload = HookPayload {
-            workspace_roots: vec!["/home/dev/project".to_owned()],
+            workspace_roots: vec![ROOT.to_owned()],
             cwd: "/somewhere/else".to_owned(),
             ..HookPayload::default()
         };
-        assert_eq!(payload.workspace("/fallback"), "/home/dev/project");
+        assert_eq!(payload.workspace("/fallback"), ROOT);
     }
 
     #[test]

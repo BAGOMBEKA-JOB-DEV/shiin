@@ -9,6 +9,9 @@
 //! the workspace root, resolve symlinks on the longest existing prefix, then resolve
 //! `.` and `..` lexically so a traversal cannot step over a symlink.
 
+use std::collections::VecDeque;
+use std::ffi::{OsStr, OsString};
+use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 use shiin_schema::{Confidence, Effect};
@@ -26,59 +29,73 @@ const READERS: &[&str] = &["cat", "head", "tail", "less", "more", "bat"];
 
 /// Canonicalizes a path for policy matching.
 ///
-/// The path is walked from the root, resolving each symlink as it descends, so a
-/// `..` segment pops the already-resolved path rather than the symlink's own name.
-/// Resolving `..` before symlinks would let `/workspace/link/../escape` leave the
-/// workspace. A path that does not exist yet still canonicalizes, so `fs.create`
-/// stays classifiable.
+/// The path is walked from the root one component at a time. A symlink is replaced by
+/// its target, and the target's own components are then walked too, so a target that
+/// itself contains a symlink is resolved rather than merely tidied. macOS needs this:
+/// a temporary directory's real path runs through `/var`, which is a link to
+/// `/private/var`, so a lexical pass would leave two spellings of the same directory.
+///
+/// A `..` segment pops the already-resolved path, so a traversal cannot step over a
+/// symlink the way it could if `..` were resolved first. A path that does not exist
+/// still canonicalizes, which keeps `fs.create` classifiable.
 #[must_use]
 pub fn canonical_path(raw: &str, workspace_root: &str) -> String {
+    /// Guards against a symlink loop.
+    const MAX_HOPS: usize = 64;
+
     let joined = if Path::new(raw).is_absolute() {
         PathBuf::from(raw)
     } else {
         Path::new(workspace_root).join(raw)
     };
 
+    let mut remaining: VecDeque<OsString> = components_of(&joined);
     let mut resolved = PathBuf::from("/");
-    for component in joined.components() {
-        match component {
-            Component::Prefix(_) | Component::RootDir | Component::CurDir => {}
-            Component::ParentDir => {
-                resolved.pop();
-            }
-            Component::Normal(name) => {
-                resolved.push(name);
-                resolved = follow_symlink(resolved);
+    let mut hops = 0_usize;
+
+    while let Some(part) = remaining.pop_front() {
+        if part == OsStr::new(".") {
+            continue;
+        }
+        if part == OsStr::new("..") {
+            resolved.pop();
+            continue;
+        }
+        let candidate = resolved.join(&part);
+        match fs::read_link(&candidate) {
+            Err(_) => resolved = candidate,
+            Ok(target) => {
+                hops = hops.saturating_add(1);
+                if hops > MAX_HOPS {
+                    // A loop, or something pathological. Stop where we are rather than
+                    // spin: the caller gets a path that cannot match a rule by accident.
+                    resolved = candidate;
+                    continue;
+                }
+                // Walk the target's own components next, so a target containing another
+                // symlink is resolved too.
+                if target.is_absolute() {
+                    resolved = PathBuf::from("/");
+                }
+                for component in components_of(&target).into_iter().rev() {
+                    remaining.push_front(component);
+                }
             }
         }
     }
     display(&resolved)
 }
 
-/// Follows a symlink at `path`, up to a bounded number of hops.
-///
-/// A path that is not a symlink, or that does not exist, is returned unchanged.
-fn follow_symlink(path: PathBuf) -> PathBuf {
-    /// Guards against a symlink loop.
-    const MAX_HOPS: usize = 32;
-
-    let mut current = path;
-    for _ in 0..MAX_HOPS {
-        let Ok(target) = std::fs::read_link(&current) else {
-            return current;
-        };
-        current = if target.is_absolute() {
-            target
-        } else {
-            match current.parent() {
-                Some(parent) => parent.join(target),
-                None => target,
-            }
-        };
-        // A relative target can itself contain `..`, so collapse before the next hop.
-        current = PathBuf::from(display(&current));
-    }
-    current
+/// A path's components, without its root, as owned names.
+fn components_of(path: &Path) -> VecDeque<OsString> {
+    path.components()
+        .filter_map(|component| match component {
+            Component::Prefix(_) | Component::RootDir => None,
+            Component::CurDir => Some(OsString::from(".")),
+            Component::ParentDir => Some(OsString::from("..")),
+            Component::Normal(name) => Some(name.to_os_string()),
+        })
+        .collect()
 }
 
 /// Renders a path with forward slashes, resolving any remaining `.` and `..`.
@@ -234,6 +251,32 @@ mod tests {
             canonical_path("./src/login.rs", ROOT),
             "/shiin-test-root/project/src/login.rs"
         );
+    }
+
+    #[test]
+    // Creating a symlink is a Unix call here; Windows path rules are deferred by ADR-0019.
+    #[cfg(unix)]
+    fn a_symlink_target_is_itself_resolved() {
+        // The shape macOS has by default: the link's target is an absolute path that
+        // runs through another symlink, so resolving it needs a second pass.
+        let base = std::env::temp_dir().join(format!("shiin-classify-{}", std::process::id()));
+        let real = base.join("real");
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&real).expect("the directory is created");
+
+        let alias = base.join("alias");
+        std::os::unix::fs::symlink(&base, &alias).expect("the parent link is created");
+        let view = base.join("view");
+        std::os::unix::fs::symlink(alias.join("real"), &view).expect("the link is created");
+
+        let through_link = canonical_path(&view.to_string_lossy(), "/unused");
+        let direct = canonical_path(&real.to_string_lossy(), "/unused");
+        assert_eq!(
+            through_link, direct,
+            "both spellings name the same directory"
+        );
+
+        let _ = fs::remove_dir_all(&base);
     }
 
     #[test]

@@ -122,10 +122,16 @@ fn classify(payload: &PreToolUse, workspace_root: &str) -> (String, Vec<Effect>)
 mod tests {
     use super::*;
 
+    /// A workspace root that exists on no platform.
+    ///
+    /// Canonicalization resolves real symlinks, so a root that happens to exist is not a
+    /// fixed point: macOS rewrites `/home` through autofs.
+    const ROOT: &str = "/shiin-test-root/project";
+
     fn payload(tool: &str, input: Value) -> PreToolUse {
         PreToolUse {
             session_id: "sess-1".to_owned(),
-            cwd: "/home/dev/project".to_owned(),
+            cwd: ROOT.to_owned(),
             tool_name: tool.to_owned(),
             tool_input: input,
         }
@@ -135,17 +141,20 @@ mod tests {
     fn a_patch_with_a_path_becomes_a_write() {
         let request = to_action_request(
             &payload("apply_patch", serde_json::json!({"path": "src/login.rs"})),
-            "/home/dev/project",
+            ROOT,
         );
         assert_eq!(request.action_type, "fs.write");
-        assert_eq!(request.effects[0].value, "/home/dev/project/src/login.rs");
+        assert_eq!(
+            request.effects[0].value,
+            "/shiin-test-root/project/src/login.rs"
+        );
     }
 
     #[test]
     fn a_patch_without_a_readable_path_is_opaque() {
         let request = to_action_request(
             &payload("apply_patch", serde_json::json!({"patch": "@@ -1 +1 @@"})),
-            "/home/dev/project",
+            ROOT,
         );
         assert!(
             request.has_opaque_effect(),
@@ -159,14 +168,14 @@ mod tests {
             r#"{"sessionId":"s","name":"shell","arguments":{"cmd":"cargo test"}}"#,
         )
         .expect("the aliases parse");
-        let request = to_action_request(&parsed, "/home/dev/project");
+        let request = to_action_request(&parsed, ROOT);
         assert_eq!(request.action_type, "shell.exec");
         assert_eq!(request.host.tool.as_deref(), Some("shell"));
     }
 
     #[test]
     fn an_unknown_tool_becomes_a_vendor_extension() {
-        let request = to_action_request(&payload("web_search", Value::Null), "/home/dev/project");
+        let request = to_action_request(&payload("web_search", Value::Null), ROOT);
         assert_eq!(request.action_type, "x-codex.web_search");
     }
 }
