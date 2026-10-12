@@ -8,7 +8,7 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 
 const POLICY: &str = r#"
 version = 1
@@ -97,6 +97,193 @@ fn payload(root: &Path, tool: &str, input: &str) -> String {
         "tool_input": arguments,
     })
     .to_string()
+}
+
+/// Starts a hook with its input held open, including for timeout injection.
+fn spawn_hook(root: &Path, host: &str) -> Child {
+    Command::new(env!("CARGO_BIN_EXE_shiin"))
+        .args(["hook", host])
+        .current_dir(root)
+        .env_remove("CI")
+        .env_remove("SHIIN_UNATTENDED")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("the hook starts")
+}
+
+/// Reads one adapter response and asserts its decision.
+fn assert_response(host: &str, response: &[u8], expected: &str) {
+    let value: serde_json::Value =
+        serde_json::from_slice(response).expect("the hook returns exactly one JSON response");
+    let decision = if host == "cursor" {
+        &value["permission"]
+    } else {
+        &value["hookSpecificOutput"]["permissionDecision"]
+    };
+    assert_eq!(decision, expected, "{host}: {value}");
+}
+
+#[test]
+fn every_adapter_denies_when_input_never_closes() {
+    let root = workspace("deadline");
+    let started = std::time::Instant::now();
+    let children: Vec<_> = ["claude-code", "codex", "cursor"]
+        .into_iter()
+        .map(|host| {
+            let mut child = spawn_hook(&root, host);
+            let input = child.stdin.take().expect("stdin is piped");
+            (host, child, input)
+        })
+        .collect();
+    for (host, child, input) in children {
+        // Keep the writer alive: this simulates a host that stalls before EOF.
+        let output = child
+            .wait_with_output()
+            .expect("the deadline ends the hook");
+        assert_response(host, &output.stdout, "deny");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("deadline"));
+        drop(input);
+    }
+    assert!(started.elapsed() < std::time::Duration::from_secs(8));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+#[cfg(unix)]
+fn workspace_contention_denies_without_spending_task_budget() {
+    let root = workspace("contention");
+    let started = run(&root, &["task", "start", "Edit once", "--max-writes", "1"]);
+    assert!(started.contains("started"), "{started}");
+    let lock = fs::File::options()
+        .read(true)
+        .write(true)
+        .open(root.join(".shiin/state.lock"))
+        .expect("the lock file exists");
+    lock.try_lock()
+        .expect("the parent holds the workspace lock");
+    let action = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    let (response, errors) = run_hook_full(&root, &action);
+    assert_response("claude-code", response.as_bytes(), "deny");
+    assert!(errors.contains("state.lock"), "{errors}");
+    drop(lock);
+    assert_response("claude-code", run_hook(&root, &action).as_bytes(), "allow");
+    assert!(run(&root, &["task", "show"]).contains("writes        1 of 1"));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+#[cfg(unix)]
+fn concurrent_hooks_cannot_overspend_a_task_budget() {
+    let root = workspace("concurrent-budget");
+    let started = run(&root, &["task", "start", "Edit once", "--max-writes", "1"]);
+    assert!(started.contains("started"), "{started}");
+    let action = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    let children: Vec<_> = (0..8)
+        .map(|_| {
+            let mut child = spawn_hook(&root, "claude-code");
+            let mut input = child.stdin.take().expect("stdin is piped");
+            input
+                .write_all(action.as_bytes())
+                .expect("the payload is sent");
+            drop(input);
+            child
+        })
+        .collect();
+    let mut allowed = 0;
+    for child in children {
+        let output = child.wait_with_output().expect("the hook finishes");
+        let response: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("exactly one response is returned");
+        match response["hookSpecificOutput"]["permissionDecision"].as_str() {
+            Some("allow") => allowed += 1,
+            Some("deny") => {}
+            other => assert_eq!(other, Some("deny")),
+        }
+    }
+    assert_eq!(allowed, 1, "only one process may consume the budget");
+    assert!(run(&root, &["verify"]).contains("intact"));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+#[cfg(unix)]
+fn every_adapter_enforces_task_denials() {
+    for host in ["claude-code", "codex", "cursor"] {
+        let root = workspace(&format!("task-denial-{host}"));
+        let started = run(
+            &root,
+            &[
+                "task",
+                "start",
+                "No reads",
+                "--forbid",
+                "fs.read",
+                "--ask-for",
+                "fs.read",
+            ],
+        );
+        assert!(started.contains("started"), "{started}");
+        let action = if host == "cursor" {
+            serde_json::json!({"hook_event_name":"beforeReadFile", "file_path":"src/login.rs", "workspace_roots":[root]}).to_string()
+        } else {
+            payload(&root, "Read", r#"{"file_path":"src/login.rs"}"#)
+        };
+        let mut child = spawn_hook(&root, host);
+        child
+            .stdin
+            .as_mut()
+            .expect("stdin is piped")
+            .write_all(action.as_bytes())
+            .expect("the payload is sent");
+        let output = child.wait_with_output().expect("the hook finishes");
+        assert_response(host, &output.stdout, "deny");
+        assert!(run(&root, &["log"]).contains("deny.intent"));
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+#[cfg(unix)]
+fn operator_policy_cannot_allow_shiin_state_or_hook_configuration() {
+    let root = workspace("protected-resources");
+    fs::write(root.join(".shiin/policy.toml"), "version = 1\n[[rule]]\nid = \"allow-everything\"\neffect = \"allow\"\naction_types = [\"*\"]\n").expect("a permissive policy is written");
+    for path in [
+        ".shiin/audit.jsonl",
+        ".shiin/tasks/active.usage.json",
+        ".claude/settings.json",
+        ".claude/settings.local.json",
+        ".codex/hooks.json",
+        ".cursor/hooks.json",
+    ] {
+        let action = payload(
+            &root,
+            "Write",
+            &serde_json::json!({"file_path":path}).to_string(),
+        );
+        assert_response("claude-code", run_hook(&root, &action).as_bytes(), "deny");
+    }
+    for command in [
+        "shiin task end",
+        "shiin task start EXAMPLE-task",
+        "shiin approve EXAMPLE-ticket",
+        "/home/dev/bin/shiin task end",
+    ] {
+        let action = payload(
+            &root,
+            "Bash",
+            &serde_json::json!({"command":command}).to_string(),
+        );
+        assert_response("claude-code", run_hook(&root, &action).as_bytes(), "deny");
+    }
+    let ordinary = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    assert_response(
+        "claude-code",
+        run_hook(&root, &ordinary).as_bytes(),
+        "allow",
+    );
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
@@ -435,6 +622,54 @@ fn an_unknown_task_option_is_refused_rather_than_ignored() {
         &["task", "start", "Something", "--scpoe", "./src/**"],
     );
     assert!(output.contains("unknown option"), "{output}");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+#[cfg(unix)]
+fn damaged_task_counters_never_reset_a_spent_budget() {
+    let root = workspace("damaged-counters");
+    let started = run(&root, &["task", "start", "Edit once", "--max-writes", "1"]);
+    assert!(started.contains("started"), "{started}");
+    let action = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"allow\""));
+
+    let counters = root.join(".shiin/tasks/active.usage.json");
+    let saved = fs::read_to_string(&counters).expect("the spent budget was saved");
+    for damaged in ["not json", "{}", r#"{"files_written":0}"#, "null"] {
+        fs::write(&counters, damaged).expect("the fault is injected");
+        let (response, errors) = run_hook_full(&root, &action);
+        assert!(
+            response.contains("\"permissionDecision\":\"deny\""),
+            "{response}"
+        );
+        assert!(errors.contains("active.usage.json"), "{errors}");
+        let shown = run(&root, &["task", "show"]);
+        assert!(
+            !shown.contains("writes        0"),
+            "a failure must not look like zero usage: {shown}"
+        );
+    }
+
+    fs::remove_file(&counters).expect("the counters are removed");
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"deny\""));
+    fs::create_dir(&counters).expect("a directory makes the counter file unreadable");
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"deny\""));
+    fs::remove_dir(&counters).expect("the obstacle is removed");
+    fs::write(&counters, saved).expect("the original budget is restored");
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"deny\""));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+#[cfg(unix)]
+fn stale_counters_do_not_constrain_a_workspace_without_a_task() {
+    let root = workspace("stale-counters");
+    fs::create_dir_all(root.join(".shiin/tasks")).expect("the state directory exists");
+    fs::write(root.join(".shiin/tasks/active.usage.json"), "damaged")
+        .expect("stale state is written");
+    let action = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"allow\""));
     let _ = fs::remove_dir_all(root);
 }
 

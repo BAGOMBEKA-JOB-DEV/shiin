@@ -1,33 +1,49 @@
 # Shiin
 
 Shiin is an agent-agnostic authorization layer for AI agent actions.
-It is designed to sit between AI agents (Claude Code, Codex CLI, Cursor, MCP clients, and custom agents) and the files, commands, networks, and services they act on.
-For every action an agent proposes, Shiin decides with explicit, deterministic policy whether to `allow` it, `deny` it, or hold it as `pending` until a human approves it, and it records tamper-evident evidence of that decision.
-One policy applies to every agent, and no decision ever depends on the output of a language model.
+It evaluates proposed actions against explicit policy and structured task constraints, returning `allow`, `deny`, or `pending`.
+The current implementation runs locally without a daemon and includes hook adapters, a command-line interface, and a hash-chained audit log.
+Decisions are deterministic and never depend on the output of a language model.
 
 > [!IMPORTANT]
-> **Pre-alpha: specification phase.**
-> Shiin has no product code and no releases, so there is nothing to install or run yet.
-> This repository contains the design: documentation, specifications, architecture decision records, and a small Rust tool that checks the documentation.
-> Everything this README says about Shiin's behavior describes the intended design.
+> **Pre-alpha: available from source.**
+> The policy engine, CLI, audit log, and experimental task constraints work from a source build.
+> Shiin has no releases and is not available from a package manager.
+> Codex CLI and Cursor adapters exist and have automated tests, but have not been validated against running hosts.
+> The daemon, approval protocol, grants, signed receipts, replay, and MCP proxy are still planned.
 
 ## The problem in 30 seconds
 
 AI coding agents act with the authority of the person who runs them.
 An agent that can edit files can also delete them, an agent that can run tests can run any command, and an agent that can fetch documentation can send data to any host the machine can reach.
-Agents make mistakes, they can be manipulated by instructions hidden in the text they read, and they usually have far more access than the task needs.
-OWASP lists that last risk as [LLM06:2025 Excessive Agency](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/).
+An agent can make mistakes or follow misleading instructions in the text it reads.
+Its standing access can also be broader than the current task needs.
 
-Each agent host ships its own controls, but those controls are configured separately for every agent, do not know the task, leave little evidence, and rarely say how strong their protection is.
+Consider a task to fix a login bug within `src/auth/` and `tests/auth/`.
+Standing policy may allow edits throughout the project, while that task should exclude changes to `migrations/`.
+Shiin's task constraints narrow the actions standing policy would otherwise allow.
 
-Consider the instruction "Fix the login bug. Do not change the database schema."
-The agent is allowed to run database commands, so when it decides to add a column, every existing control sees an authorized action.
-Only a control that knows the task can see that the action contradicts the instruction.
-Shiin is designed to be that control.
+## What works today
+
+| Capability | Current implementation |
+|---|---|
+| Policy | TOML rules compiled to Cedar, with action, resource, command, and agent matching |
+| Decisions | Deterministic evaluation; explicit `deny` wins; the starter policy denies unmatched actions |
+| Classification | Path canonicalization, shell-command classification, and opaque effects for behavior the classifier cannot determine |
+| Tasks (experimental) | Path scope, forbidden action types, allowed hosts, write/delete/command budgets, required approval, and expiry |
+| Hooks | Claude Code adapter, plus Codex CLI and Cursor adapters awaiting live-host validation |
+| Audit | Requests and decisions recorded in JSON Lines with a hash chain; log inspection and chain verification |
+| CLI | Initialization, policy validation and tests, request evaluation, explanations, tasks, hooks, diagnostics, and version reporting |
+| Validation | Unit and integration tests, specification conformance vectors, and Rust documentation tooling |
+
+The five-stage engine currently accepts asserted identity, and the capability stage is a pass-through.
+The policy, intent, and risk stages perform the current authorization checks.
+Hook adapters are cooperative: actions outside the interception point are outside their coverage.
+Creating a policy with `shiin init` does not connect a host to Shiin; configure the host separately.
 
 ## How it works
 
-An adapter intercepts each action an agent proposes, the engine evaluates it against policy and the active task, and the resulting decision is enforced, sent to a human when it is `pending`, and recorded.
+An adapter normalizes a proposed action, the engine evaluates it against policy and the active task, and the hook service records the request and decision before returning a response.
 
 ```mermaid
 flowchart LR
@@ -36,20 +52,22 @@ flowchart LR
     policy["Policy and task declaration"] --> engine
     engine --> decision{"Decision"}
     decision -->|allow or deny| adapter
-    decision -->|pending| approver["Approver"]
-    approver -->|resolution| adapter
+    decision -->|pending| adapter
     decision --> audit["Audit log"]
 ```
 
 1. **Intercept.** An adapter receives the proposed action from the host, for example through a hook,
    and normalizes it into a host-independent action request.
 2. **Evaluate.** The engine runs five stages in a fixed order: identity, capability, policy, intent, and risk.
-   A `deny` from any stage wins, and when no rule matches, the decision is `deny`.
+   A `deny` from any stage wins.
+   Unmatched actions use the configured default, which can be `deny` or `pending`, never `allow`.
 3. **Enforce.** The adapter returns the decision in the host's own protocol.
-   Errors and timeouts produce `deny`.
-4. **Approve.** A `pending` action waits for a human approver, who can allow it once or create a scoped grant.
-   A grant never overrides `deny`.
-5. **Record.** Every decision is written to a hash-chained audit log, which is tamper-evident but not tamper-proof.
+   Operational failures handled by the hook service produce a denial response.
+4. **Handle pending.** The adapters translate `pending` into a host-facing response.
+   In unattended mode, `pending` becomes `deny`.
+   Persistent approval requests and grants are planned for v0.3.
+5. **Record.** The hook service records each request and decision in the audit log before returning its response.
+   The hash chain is tamper-evident, not tamper-proof; signed receipts are planned for v0.4.
 
 Shiin decides whether an action should happen.
 A sandbox limits the damage if something runs anyway, so the two are meant to be used together.
@@ -57,18 +75,193 @@ A sandbox limits the damage if something runs anyway, so the two are meant to be
 
 ## What makes Shiin different
 
-Several open-source projects already intercept agent actions, and the [landscape](docs/overview/landscape.md) credits them.
-Shiin's contribution is the combination of four things:
+Shiin combines four design choices:
 
 1. **Task-intent binding.**
    Actions are checked against the constraints of the task the developer confirmed, not only against standing policy.
 2. **An open, agent-neutral contract.**
-   The [action request](docs/spec/action-request.md), [decision](docs/spec/decision.md), and [approval protocol](docs/spec/approval-protocol.md) are versioned specifications with schemas and test vectors that other tools can implement.
+   The [action request](docs/spec/action-request.md) and [decision](docs/spec/decision.md) have versioned specifications, schemas, and conformance vectors.
+   The [approval protocol](docs/spec/approval-protocol.md) is specified for the planned v0.3 implementation.
 3. **Analyzable policy.**
-   Policies are planned to compile to [Cedar](https://github.com/cedar-policy/cedar), a formally verified authorization language, so they can be tested, explained, and reasoned about.
-   This choice is proposed and awaits a spike ([ADR-0014](docs/adr/0014-cedar-policy-engine-with-toml-front-end.md)).
+   TOML policies compile to Cedar today.
+   The policy-engine spike passed the conformance corpus, and [ADR-0014](docs/adr/0014-cedar-policy-engine-with-toml-front-end.md) is accepted.
 4. **Explicit enforcement levels.**
-   Every integration is labeled cooperative, mediated, or OS-enforced, so its protection is never overstated.
+   Current hook adapters are L1 cooperative.
+   Mediated enforcement through an MCP proxy is planned for v0.5; OS-enforced integration is future work.
+
+## Build and run from source
+
+You need Git and Rust installed through rustup.
+The repository pins its Rust toolchain in [`rust-toolchain.toml`](rust-toolchain.toml).
+Run these commands from the checkout:
+
+```console
+$ git clone https://github.com/BAGOMBEKA-JOB-DEV/shiin.git
+$ cd shiin
+$ rustup toolchain install
+$ cargo build --workspace --locked
+$ cargo run --locked -p shiin-cli -- version
+$ cargo test --workspace --locked
+$ cargo run --locked -p shiin-cli -- policy test docs/spec/test-vectors
+```
+
+`cargo run --locked -p shiin-cli -- <command>` runs any implemented CLI command from source.
+For a standalone binary, build the release profile:
+
+```console
+$ cargo build --release --locked -p shiin-cli
+$ ./target/release/shiin version
+```
+
+The binary is `target/release/shiin` on Linux and macOS, or `target\release\shiin.exe` on Windows.
+See [platform support](docs/reference/platform-support.md) for testing and support tiers.
+If you want `shiin` on your Cargo binary path, install this checkout locally:
+
+```console
+$ cargo install --locked --path crates/shiin-cli
+$ shiin version
+```
+
+This installs your source checkout, not a published release.
+The examples below use `shiin`; you can substitute the `cargo run` form above.
+
+### Initialize a workspace
+
+Run in the project you want Shiin to evaluate:
+
+```console
+$ shiin init
+$ shiin policy validate
+$ shiin doctor
+```
+
+`init` writes `.shiin/policy.toml` and refuses to overwrite an existing policy.
+Edit that file to match your project: the starter policy permits selected actions in `src/`, `tests/`, and `docs/`, and selected commands.
+You can also validate a specific policy file:
+
+```console
+$ shiin policy validate .shiin/policy.toml
+```
+
+### Evaluate an action request
+
+Save this illustrative request as `request.json`.
+The workspace root is an example path; use your project's absolute, canonical root for your own requests.
+The snapshot digest is a placeholder; the hook service fills in the loaded policy digest for host requests.
+
+```json
+{
+  "schema": "shiin.action-request/v1-draft.1",
+  "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9aa3",
+  "session": "EXAMPLE-session",
+  "agent": { "id": "EXAMPLE-agent", "assurance": "asserted" },
+  "action_type": "shell.exec",
+  "effects": [
+    { "kind": "command", "value": "cargo test --workspace --locked", "confidence": "exact" }
+  ],
+  "workspace": { "root": "/home/dev/project" },
+  "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "host": { "name": "EXAMPLE-host" }
+}
+```
+
+```console
+$ shiin check request.json
+$ shiin explain request.json
+```
+
+These commands evaluate the request without running its action, recording a hook event, or consuming task budget.
+Their exit codes are `0` for `allow`, `1` for `deny` or an error, and `2` for `pending`.
+
+### Declare a task
+
+Run `task start` yourself to confirm the constraints for the agent's work:
+
+```console
+$ shiin task start "Fix the login bug" --scope './src/auth/**' --scope './tests/auth/**' --forbid 'fs.delete' --allow-host 'docs.example.com' --ask-for 'vcs.push' --max-writes 20 --max-deletes 0 --max-commands 30 --minutes 60
+$ shiin task show
+$ shiin task end
+```
+
+The example includes every current task option.
+`--scope`, `--forbid`, `--allow-host`, and `--ask-for` can be repeated.
+Tasks restrict policy; they never grant access policy denies.
+Starting a task replaces the active task, and ending it removes its constraints.
+Natural-language descriptions are recorded but never evaluated.
+
+### Serve a host hook and inspect its audit log
+
+These commands each consume one JSON payload from standard input and return an adapter response:
+
+```console
+$ shiin hook claude-code < claude-code-payload.json
+$ shiin hook codex < codex-payload.json
+$ shiin hook cursor < cursor-payload.json
+$ shiin log
+$ shiin log 50
+$ shiin verify
+```
+
+Supply a payload for the selected adapter, and run in the workspace containing `.shiin/policy.toml`.
+For a local smoke check, save the following as `claude-code-payload.json`; it exercises Shiin's adapter without launching a host or running the proposed command:
+
+```json
+{
+  "session_id": "EXAMPLE-session",
+  "tool_name": "Bash",
+  "tool_input": { "command": "cargo test --workspace --locked" }
+}
+```
+
+For host setup and limitations, see [Claude Code](docs/guides/integrations/claude-code.md), [Codex CLI](docs/guides/integrations/codex.md), and [Cursor](docs/guides/integrations/cursor.md).
+Some documentation still describes design intent; the implementation status above and the [CLI reference](docs/reference/cli.md) identify what currently runs.
+`verify` checks the local hash chain; signed receipt verification and replay are not implemented.
+
+### Test policies and run unattended
+
+Put your own cases in `.shiin/tests/` using the [test-vector format](docs/spec/test-vectors/README.md), then run:
+
+```console
+$ shiin policy test
+$ shiin policy test .shiin/tests
+```
+
+From the Shiin checkout, run the bundled conformance corpus with:
+
+```console
+$ shiin policy test docs/spec/test-vectors
+```
+
+To deny decisions that would otherwise need approval, set `SHIIN_UNATTENDED`:
+
+```console
+$ SHIIN_UNATTENDED=1 shiin check request.json
+$ SHIIN_UNATTENDED=1 shiin hook claude-code < claude-code-payload.json
+```
+
+Setting `CI` also enables unattended mode.
+`SHIIN_WORKSPACE` supplies a fallback workspace root when the host reports none; it does not change the directory from which `.shiin/` files are read.
+
+### Run development checks and build the documentation
+
+The additional documentation tools are Rust binaries:
+
+```console
+$ cargo install cargo-binstall --locked
+$ cargo binstall --no-confirm --locked mdbook@0.5.4 mdbook-mermaid@0.17.1 lychee@0.24.2 typos-cli@1.50.1 rumdl@0.2.73
+$ cargo fmt --all --check
+$ cargo clippy --workspace --all-targets -- -D warnings
+$ cargo test --workspace --locked
+$ cargo xtask docs-check
+$ rumdl check .
+$ typos
+$ lychee --config lychee.toml './*.md' docs
+$ mdbook build docs
+$ mdbook serve docs --open
+```
+
+The book builds into `target/book/`.
+The configured link check validates local links and anchors offline.
 
 ## Documentation
 
@@ -90,24 +283,25 @@ It reads well on GitHub and also builds as a book with mdBook.
 ## Roadmap
 
 Milestones are defined by capability, not by date.
-The project is working on M0.
+The source implements substantial v0.1 and v0.2 functionality, while milestone exit criteria remain open.
+M0 still needs an independent threat-model reviewer; v0.1/v0.2 still need the remaining hardening and validation evidence.
 The [roadmap](docs/project/roadmap.md) lists the scope and exit criteria of each milestone.
 
-| Milestone | Headline |
+| Milestone | Current state |
 |---|---|
-| M0: Specification | Specifications, threat model, test vectors, and the policy-engine spike |
-| v0.1: Gate | Claude Code adapter with policy, basic risk signals, and an audit log |
-| v0.2: Tasks | Task declarations and intent binding; Codex CLI and Cursor adapters |
-| v0.3: Approve | Daemon, approval protocol, and grants |
-| v0.4: Evidence | Signed receipts, verification, and replay |
-| v0.5: MCP and SDK | MCP proxy, local API, and the Rust client library |
-| v0.6: Reach | Remote approvals, streamable-HTTP MCP, shell wrapper, and Windows |
-| v1.0: Stable | Frozen specifications, an independent security audit, and a conformance suite |
-| After 1.0 | Team policy server, more approver apps, and language bindings |
+| M0: Specification | Core specifications and Cedar decision accepted; independent threat-model review open |
+| v0.1: Gate | Engine, policy, Claude Code adapter, CLI, and audit implemented in source; release and validation work remains |
+| v0.2: Tasks | Experimental task constraints, counters, policy tests, Codex CLI and Cursor adapters implemented; live-host validation remains |
+| v0.3: Approve | Planned: daemon, approval protocol, and grants |
+| v0.4: Evidence | Planned: signed receipts, receipt verification, and replay; local hash-chain verification already exists |
+| v0.5: MCP and SDK | Planned: MCP proxy, local API, and the Rust client library |
+| v0.6: Reach | Planned: remote approvals, streamable-HTTP MCP, shell wrapper, and expanded Windows support |
+| v1.0: Stable | Planned: frozen specifications, an independent security audit, and a published conformance suite |
+| After 1.0 | Planned: team policy server, more approver apps, and language bindings |
 
 ## Contributing
 
-The specification phase is the cheapest time to change the design, so reviews of the specifications and the threat model are the most useful contributions right now.
+Useful contributions include implementation fixes, conformance cases, live-host validation, and reviews of the specifications and threat model.
 Read [CONTRIBUTING.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/CONTRIBUTING.md) before opening a pull request.
 Commits need a Developer Certificate of Origin sign-off (`git commit -s`), and all code and tooling are written in Rust.
 

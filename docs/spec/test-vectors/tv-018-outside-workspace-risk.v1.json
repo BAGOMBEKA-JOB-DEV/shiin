@@ -1,0 +1,57 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-018",
+  "name": "Outside-workspace risk denies an otherwise allowed write",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    },
+    "host": {
+      "name": "claude-code",
+      "tool": "Write"
+    },
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a10",
+    "action_type": "fs.write",
+    "effects": [
+      {
+        "kind": "path",
+        "value": "/home/dev/other/src/login.rs",
+        "confidence": "exact"
+      }
+    ],
+    "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [
+          {
+            "id": "allow-files",
+            "effect": "allow",
+            "action_types": [
+              "fs.*"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny",
+    "risk": {
+      "outside_workspace": "deny"
+    }
+  },
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.risk"
+  }
+}

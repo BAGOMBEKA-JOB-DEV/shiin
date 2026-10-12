@@ -1,0 +1,70 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-015",
+  "name": "A task forbids a read performed through a shell command",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a09",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "action_type": "shell.exec",
+    "effects": [
+      {
+        "kind": "command",
+        "value": "cat src/auth/login.rs",
+        "confidence": "exact"
+      },
+      {
+        "kind": "path",
+        "value": "/home/dev/project/src/auth/login.rs",
+        "confidence": "inferred",
+        "action_type": "fs.read"
+      }
+    ],
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    },
+    "policy_snapshot": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "host": {
+      "name": "claude-code",
+      "tool": "Bash"
+    },
+    "task": "task-015"
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+        "rules": [
+          {
+            "id": "allow-shell",
+            "effect": "allow",
+            "action_types": [
+              "shell.exec"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.intent"
+  },
+  "task": {
+    "id": "task-015",
+    "description": "EXAMPLE-task",
+    "forbid": {
+      "action_types": [
+        "fs.read"
+      ]
+    }
+  }
+}

@@ -102,7 +102,7 @@ impl AuditLog {
 
     /// Appends an event, linking it to the current head.
     ///
-    /// The event is written and flushed before this returns, so a decision that
+    /// The event is written, flushed, and synced before this returns, so a decision that
     /// depends on it being recorded can proceed afterwards
     /// ([ADR-0030](../../../docs/adr/0030-audit-durability.md)).
     ///
@@ -145,6 +145,10 @@ impl AuditLog {
             source,
         })?;
         file.flush().map_err(|source| AuditError::Io {
+            path: self.path.clone(),
+            source,
+        })?;
+        file.sync_all().map_err(|source| AuditError::Io {
             path: self.path.clone(),
             source,
         })?;
