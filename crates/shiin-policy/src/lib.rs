@@ -185,7 +185,50 @@ impl CompiledPolicy {
         let mut identifiers = BTreeSet::new();
         let mut set = PolicySet::new();
 
-        for rule in policy.rules() {
+        // These denials are always present, even if operator policy allows every
+        // action. ADR-0016 makes Shiin state and hook configuration unallowable.
+        let protected = Rule {
+            id: "shiin-protected-resources".to_owned(),
+            effect: DecisionValue::Deny,
+            action_types: vec!["*".to_owned()],
+            resources: [
+                "**/.shiin",
+                "**/.shiin/**",
+                "**/.claude/settings.json",
+                "**/.claude/settings.local.json",
+                "**/.codex/hooks.json",
+                "**/.cursor/hooks.json",
+            ]
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
+            commands: Vec::new(),
+            agents: Vec::new(),
+            reason: None,
+        };
+        let task_commands = Rule {
+            id: "shiin-protected-commands".to_owned(),
+            effect: DecisionValue::Deny,
+            action_types: vec!["shell.exec".to_owned()],
+            resources: Vec::new(),
+            commands: [
+                "shiin task*",
+                "*/shiin task*",
+                "shiin approve*",
+                "*/shiin approve*",
+                "shiin init*",
+                "*/shiin init*",
+            ]
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
+            agents: Vec::new(),
+            reason: None,
+        };
+        for rule in [&protected, &task_commands]
+            .into_iter()
+            .chain(policy.rules())
+        {
             if !identifiers.insert(rule.id.clone()) {
                 return Err(PolicyError::DuplicateRule(rule.id.clone()));
             }

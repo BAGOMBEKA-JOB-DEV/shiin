@@ -10,10 +10,12 @@
     reason = "shiin is a command-line tool that reports to the terminal"
 )]
 
-use std::fs;
+use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::mpsc::{self, RecvTimeoutError};
+use std::time::Duration;
 
 use shiin_audit::AuditLog;
 use shiin_engine::{Inputs, decide, vectors};
@@ -35,6 +37,10 @@ const TEST_PATH: &str = ".shiin/tests";
 const TASK_PATH: &str = ".shiin/tasks/active.json";
 /// Where a workspace keeps the active task's counters.
 const USAGE_PATH: &str = ".shiin/tasks/active.usage.json";
+/// Serializes task and hook state changes across processes.
+const LOCK_PATH: &str = ".shiin/state.lock";
+/// Internal deadline, including reading the host's input.
+const HOOK_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// The policy written by `shiin init`.
 const STARTER_POLICY: &str = r#"# Shiin policy. See docs/guides/writing-policies.md
@@ -73,17 +79,16 @@ privilege_escalation = "pending"
 "#;
 
 fn main() -> ExitCode {
-    // The host treats a crashed hook as an allow, so a panic must still deny.
-    std::panic::set_hook(Box::new(|info| {
-        let response = HookResponse::fail_closed("the hook stopped unexpectedly");
-        if let Ok(text) = serde_json::to_string(&response) {
-            println!("{text}");
-        }
-        eprintln!("shiin: internal error: {info}");
-    }));
-
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     let words: Vec<&str> = arguments.iter().map(String::as_str).collect();
+    let panic_host = if words.as_slice() == ["hook", "cursor"] {
+        HostKind::Cursor
+    } else if words.as_slice() == ["hook", "codex"] {
+        HostKind::Codex
+    } else {
+        HostKind::ClaudeCode
+    };
+    install_panic_hook(panic_host);
     match words.as_slice() {
         ["init"] => report(init()),
         ["policy", "validate"] => report(validate(Path::new(POLICY_PATH))),
@@ -109,6 +114,35 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// Writes the selected adapter's denial before a panic unwinds.
+fn install_panic_hook(kind: HostKind) {
+    std::panic::set_hook(Box::new(move |info| {
+        if let Ok(text) = respond(kind, Err("the hook stopped unexpectedly")) {
+            println!("{text}");
+        }
+        eprintln!("shiin: internal error: {info}");
+    }));
+}
+
+/// Holds an exclusive lock until the caller has finished updating workspace state.
+///
+/// Contention denies immediately rather than evaluating with stale counters or
+/// waiting beyond the hook deadline. The operating system releases the lock when
+/// the file closes, including when the process exits.
+fn lock_workspace() -> Result<File, String> {
+    fs::create_dir_all(".shiin").map_err(|error| format!(".shiin: {error}"))?;
+    let file = File::options()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(LOCK_PATH)
+        .map_err(|error| format!("{LOCK_PATH}: {error}"))?;
+    file.try_lock()
+        .map_err(|error| format!("{LOCK_PATH}: {error}"))?;
+    Ok(file)
 }
 
 /// What this build is, so a bug report can name it.
@@ -271,7 +305,10 @@ fn policy_test(directory: &Path) -> ExitCode {
 /// Reads the active task declaration, if there is one.
 fn load_task() -> Result<Option<TaskDeclaration>, String> {
     let path = Path::new(TASK_PATH);
-    if !path.exists() {
+    if !path
+        .try_exists()
+        .map_err(|error| format!("{TASK_PATH}: {error}"))?
+    {
         return Ok(None);
     }
     let text = fs::read_to_string(path).map_err(|error| format!("{TASK_PATH}: {error}"))?;
@@ -280,22 +317,44 @@ fn load_task() -> Result<Option<TaskDeclaration>, String> {
     Ok(Some(task))
 }
 
-/// Reads the active task's counters. A missing file means nothing has been used.
-fn load_usage() -> TaskUsage {
-    fs::read_to_string(USAGE_PATH)
-        .ok()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_default()
+/// Reads counters for an active task, refusing missing or damaged state.
+///
+/// Without a task there is no budget to load. An active task always has counters
+/// written by `task start`; losing those counters must never reset its budget
+/// ([ADR-0013](../../../docs/adr/0013-fail-closed-failure-semantics.md)).
+fn load_usage(task: Option<&TaskDeclaration>) -> Result<TaskUsage, String> {
+    if task.is_none() {
+        return Ok(TaskUsage::default());
+    }
+    let text = fs::read_to_string(USAGE_PATH).map_err(|error| format!("{USAGE_PATH}: {error}"))?;
+    let value: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|error| format!("SHIIN-GEN-0001: {USAGE_PATH}: {error}"))?;
+    for field in ["files_written", "files_deleted", "commands"] {
+        if value
+            .get(field)
+            .and_then(serde_json::Value::as_u64)
+            .is_none()
+        {
+            return Err(format!(
+                "SHIIN-GEN-0001: {USAGE_PATH}: missing or invalid {field}"
+            ));
+        }
+    }
+    serde_json::from_value(value).map_err(|error| format!("SHIIN-GEN-0001: {USAGE_PATH}: {error}"))
 }
 
 /// Records the task's counters after an action was allowed.
 fn save_usage(usage: TaskUsage) -> Result<(), String> {
     let text = serde_json::to_string(&usage).map_err(|error| format!("SHIIN-GEN-0001: {error}"))?;
-    fs::write(USAGE_PATH, text).map_err(|error| format!("{USAGE_PATH}: {error}"))
+    fs::write(USAGE_PATH, text).map_err(|error| format!("{USAGE_PATH}: {error}"))?;
+    File::open(USAGE_PATH)
+        .and_then(|file| file.sync_all())
+        .map_err(|error| format!("{USAGE_PATH}: {error}"))
 }
 
 /// Handles `shiin task`.
 fn task_command(arguments: &[&str]) -> Result<String, String> {
+    let _lock = lock_workspace()?;
     match arguments {
         ["start", description, options @ ..] => start_task(description, options),
         ["show"] => show_task(),
@@ -383,7 +442,7 @@ fn show_task() -> Result<String, String> {
     let Some(task) = load_task()? else {
         return Ok("no task is active".to_owned());
     };
-    let usage = load_usage();
+    let usage = load_usage(Some(&task))?;
     let list = |values: &[String]| {
         if values.is_empty() {
             "none".to_owned()
@@ -466,6 +525,7 @@ fn workspace_root() -> String {
 /// Decides a request read from a file, optionally explaining the outcome.
 fn decide_file(path: &str, explain: bool) -> ExitCode {
     let outcome = (|| -> Result<Decision, String> {
+        let _lock = lock_workspace()?;
         let text = fs::read_to_string(path).map_err(|error| format!("{path}: {error}"))?;
         let request: ActionRequest =
             serde_json::from_str(&text).map_err(|error| format!("{path}: {error}"))?;
@@ -476,7 +536,7 @@ fn decide_file(path: &str, explain: bool) -> ExitCode {
             policy: &compiled,
             source: &source,
             task: task.as_ref(),
-            usage: load_usage(),
+            usage: load_usage(task.as_ref())?,
             now: &clock::now_rfc3339(),
             mode: mode(),
         }))
@@ -540,12 +600,21 @@ enum HostKind {
 /// nothing allows the action. The exit code stays zero so the host reads the response as
 /// a decision rather than as a broken hook.
 fn serve(kind: HostKind) -> ExitCode {
-    let mut input = String::new();
-    let read = std::io::stdin()
-        .read_to_string(&mut input)
-        .map_err(|error| format!("cannot read the hook payload: {error}"));
-
-    let outcome = read.and_then(|_| decide_for_host(kind, &input));
+    let (sender, receiver) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut input = String::new();
+        let outcome = std::io::stdin()
+            .read_to_string(&mut input)
+            .map_err(|error| format!("cannot read the hook payload: {error}"))
+            .and_then(|_| decide_for_host(kind, &input));
+        let _ = sender.send(outcome);
+    });
+    let outcome = match receiver.recv_timeout(HOOK_TIMEOUT) {
+        Ok(outcome) => outcome,
+        Err(RecvTimeoutError::Timeout) => Err("the hook exceeded its internal deadline".to_owned()),
+        // The panic hook already wrote one denial. Do not emit a second JSON response.
+        Err(RecvTimeoutError::Disconnected) => return ExitCode::SUCCESS,
+    };
     let text = match outcome {
         Ok(decision) => respond(kind, Ok(&decision)),
         Err(detail) => {
@@ -585,6 +654,7 @@ fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, 
 
 /// Builds the action request for a host's payload, then decides it.
 fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
+    let _lock = lock_workspace()?;
     let fallback = workspace_root();
     let (mut request, root) = match kind {
         HostKind::ClaudeCode => {
@@ -624,7 +694,7 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
 
     let task = load_task()?;
     request.task = task.as_ref().map(|task| task.id.clone());
-    let usage = load_usage();
+    let usage = load_usage(task.as_ref())?;
     let decision = decide(&Inputs {
         request: &request,
         policy: &compiled,

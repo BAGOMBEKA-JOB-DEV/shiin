@@ -438,6 +438,54 @@ fn an_unknown_task_option_is_refused_rather_than_ignored() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+#[cfg(unix)]
+fn damaged_task_counters_never_reset_a_spent_budget() {
+    let root = workspace("damaged-counters");
+    let started = run(&root, &["task", "start", "Edit once", "--max-writes", "1"]);
+    assert!(started.contains("started"), "{started}");
+    let action = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"allow\""));
+
+    let counters = root.join(".shiin/tasks/active.usage.json");
+    let saved = fs::read_to_string(&counters).expect("the spent budget was saved");
+    for damaged in ["not json", "{}", r#"{"files_written":0}"#, "null"] {
+        fs::write(&counters, damaged).expect("the fault is injected");
+        let (response, errors) = run_hook_full(&root, &action);
+        assert!(
+            response.contains("\"permissionDecision\":\"deny\""),
+            "{response}"
+        );
+        assert!(errors.contains("active.usage.json"), "{errors}");
+        let shown = run(&root, &["task", "show"]);
+        assert!(
+            !shown.contains("writes        0"),
+            "a failure must not look like zero usage: {shown}"
+        );
+    }
+
+    fs::remove_file(&counters).expect("the counters are removed");
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"deny\""));
+    fs::create_dir(&counters).expect("a directory makes the counter file unreadable");
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"deny\""));
+    fs::remove_dir(&counters).expect("the obstacle is removed");
+    fs::write(&counters, saved).expect("the original budget is restored");
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"deny\""));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+#[cfg(unix)]
+fn stale_counters_do_not_constrain_a_workspace_without_a_task() {
+    let root = workspace("stale-counters");
+    fs::create_dir_all(root.join(".shiin/tasks")).expect("the state directory exists");
+    fs::write(root.join(".shiin/tasks/active.usage.json"), "damaged")
+        .expect("stale state is written");
+    let action = payload(&root, "Write", r#"{"file_path":"src/login.rs"}"#);
+    assert!(run_hook(&root, &action).contains("\"permissionDecision\":\"allow\""));
+    let _ = fs::remove_dir_all(root);
+}
+
 // Other hosts speak their own protocols, and a decision has to arrive in each one.
 
 #[test]

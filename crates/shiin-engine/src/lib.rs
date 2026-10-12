@@ -185,20 +185,23 @@ fn intent_stage(inputs: &Inputs<'_>) -> Stage {
     let request = inputs.request;
     let reference = vec![task.id.clone()];
 
+    let matches_action = |pattern: &str| {
+        std::iter::once(request.action_type.as_str())
+            .chain(
+                request
+                    .effects
+                    .iter()
+                    .filter_map(|effect| effect.action_type.as_deref()),
+            )
+            .any(|action_type| pattern_matches(pattern, action_type))
+    };
     if task
         .forbid
         .action_types
         .iter()
-        .any(|pattern| pattern_matches(pattern, &request.action_type))
+        .any(|pattern| matches_action(pattern))
     {
         return Stage::Deny(reasons::DENY_INTENT, reference);
-    }
-    if task
-        .require_pending_for
-        .iter()
-        .any(|pattern| pattern_matches(pattern, &request.action_type))
-    {
-        return Stage::Pending(reasons::PENDING_INTENT, reference);
     }
     if !task.scope.paths.is_empty() && touches_outside_scope(request, task) {
         return Stage::Deny(reasons::DENY_INTENT, reference);
@@ -208,6 +211,13 @@ fn intent_stage(inputs: &Inputs<'_>) -> Stage {
     }
     if exceeds_limits(inputs, task) {
         return Stage::Deny(reasons::DENY_INTENT, reference);
+    }
+    if task
+        .require_pending_for
+        .iter()
+        .any(|pattern| matches_action(pattern))
+    {
+        return Stage::Pending(reasons::PENDING_INTENT, reference);
     }
     Stage::Pass
 }
@@ -232,12 +242,13 @@ fn touches_outside_scope(request: &ActionRequest, task: &TaskDeclaration) -> boo
         if !changes(action_type) {
             continue;
         }
-        if !task
-            .scope
-            .paths
-            .iter()
-            .any(|pattern| glob_matches(pattern, &effect.value))
-        {
+        if !task.scope.paths.iter().any(|pattern| {
+            let resolved = pattern.strip_prefix("./").map_or_else(
+                || pattern.to_owned(),
+                |rest| format!("{}/{rest}", request.workspace.root.trim_end_matches('/')),
+            );
+            glob_matches(&resolved, &effect.value)
+        }) {
             outside = true;
         }
     }
