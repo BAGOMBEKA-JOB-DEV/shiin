@@ -13,22 +13,53 @@
     },
     "effect": {
       "type": "object",
-      "required": ["kind", "value", "confidence"],
+      "required": [
+        "kind",
+        "value",
+        "confidence"
+      ],
       "properties": {
-        "kind": { "type": "string", "minLength": 1 },
-        "value": { "type": "string" },
-        "confidence": { "type": "string", "enum": ["exact", "inferred", "opaque"] }
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "inferred",
+            "opaque"
+          ]
+        },
+        "action_type": {
+          "description": "The action type this effect represents, when it differs from the request's own.",
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "agent_identity": {
       "type": "object",
-      "required": ["id", "assurance"],
+      "required": [
+        "id",
+        "assurance"
+      ],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
         "assurance": {
           "type": "string",
-          "enum": ["asserted", "attested-local", "attested-os-user", "attested-crypto"]
+          "enum": [
+            "asserted",
+            "attested-local",
+            "attested-os-user",
+            "attested-crypto"
+          ]
         }
       },
       "additionalProperties": false

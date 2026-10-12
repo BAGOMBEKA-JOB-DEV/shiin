@@ -1,0 +1,25 @@
+[package]
+name = "shiin-cli"
+version = "0.0.0"
+description = "The shiin command-line interface"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "shiin"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { workspace = true }
+shiin-audit = { workspace = true }
+shiin-engine = { workspace = true }
+shiin-hooks = { workspace = true }
+shiin-policy = { workspace = true }
+shiin-schema = { workspace = true }
+
+[lints]
+workspace = true

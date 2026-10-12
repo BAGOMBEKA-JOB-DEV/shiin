@@ -33,6 +33,7 @@ Two optional fields carry the remaining engine inputs, so that every vector can 
 | TV-006 | A destructive VCS operation | `tv-006-destructive-vcs.v1.json` |
 | TV-007 | An unattended deny | `tv-007-unattended-deny.v1.json` |
 | TV-008 | No rule matches, so the default decision applies | `tv-008-default-deny.v1.json` |
+| TV-009 | A secret read through a shell command, denied by the same rule as a direct read | `tv-009-secret-via-shell.v1.json` |
 
 ## Running
 
@@ -40,5 +41,6 @@ Implementations run every vector and check the decision matches.
 
 ## Revision history
 
+- v1-draft.3 (2026-10-12): Added TV-009, which pins UC-02: a rule written for `fs.read` must also cover a read performed by a shell command.
 - v1-draft.2 (2026-10-12): Added TV-008 for the default decision, a workspace root to every request, and the optional `task` and `mode` fields, so TV-004 and TV-007 are decidable from their own inputs.
 - v1-draft.1 (2026-10-01): Initial draft.

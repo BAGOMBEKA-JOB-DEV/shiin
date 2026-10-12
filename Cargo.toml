@@ -1,6 +1,15 @@
 [workspace]
 resolver = "3"
-members = ["crates/shiin-engine", "crates/shiin-policy", "crates/shiin-schema", "spikes/cedar", "xtask"]
+members = [
+  "crates/shiin-audit",
+  "crates/shiin-classify",
+  "crates/shiin-cli",
+  "crates/shiin-engine",
+  "crates/shiin-hooks",
+  "crates/shiin-policy",
+  "crates/shiin-schema",
+  "xtask",
+]
 
 [workspace.package]
 edition = "2024"
@@ -11,12 +20,19 @@ authors = ["The Shiin Contributors"]
 
 [workspace.dependencies]
 cedar-policy = "4"
+getrandom = "0.3"
 globset = "0.4"
 jsonschema = { version = "0.56", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
+sha2 = "0.10"
+shiin-audit = { path = "crates/shiin-audit" }
+shiin-classify = { path = "crates/shiin-classify" }
+shiin-engine = { path = "crates/shiin-engine" }
+shiin-hooks = { path = "crates/shiin-hooks" }
 shiin-policy = { path = "crates/shiin-policy" }
 shiin-schema = { path = "crates/shiin-schema" }
 thiserror = "2"
+toml = "0.9"
 regex = "1.13"
 serde_json = "1.0.151"
 walkdir = "2.5"

@@ -5,6 +5,8 @@
 //! non-critical fields. Policy and task declarations reject them, because an
 //! unrecognized policy key must fail closed rather than be silently dropped.
 
+pub mod clock;
+
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
@@ -96,6 +98,12 @@ pub struct Effect {
     pub value: String,
     /// How certain Shiin is about this effect.
     pub confidence: Confidence,
+    /// The action type this effect represents, when it differs from the request's own.
+    ///
+    /// A shell command that reads a file carries `fs.read` here, so a rule written
+    /// for `fs.read` covers the read however the agent performed it (`AR-010`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_type: Option<String>,
 }
 
 impl Effect {

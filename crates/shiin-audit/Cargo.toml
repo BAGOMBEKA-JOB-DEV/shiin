@@ -1,7 +1,7 @@
 [package]
-name = "spike-cedar"
+name = "shiin-audit"
 version = "0.0.0"
-description = "Spike for ADR-0014: can Cedar express Shiin's decision semantics? Not product code."
+description = "Shiin's append-only, hash-chained audit log"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -10,9 +10,10 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-cedar-policy = { workspace = true }
-globset = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

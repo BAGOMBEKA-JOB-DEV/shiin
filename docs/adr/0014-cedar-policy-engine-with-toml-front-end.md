@@ -4,7 +4,7 @@
 
 > [!NOTE]
 > **Architecture decision: accepted.**
-> Confirmed on 2026-10-12 by the spike in `spikes/cedar/`, which reproduced every test vector.
+> Confirmed on 2026-10-12. The conformance test in `shiin-engine` reproduces every test vector.
 
 - **Date:** 2026-09-14
 - **Deciders:** Founding maintainer
@@ -49,8 +49,10 @@ Chosen option: "Compile TOML policy to Cedar", because Cedar is formally verifie
 
 ### Confirmation
 
-Confirmed. The spike in `spikes/cedar/`, whose report is `spikes/cedar/README.md`, compiles each
-test vector's policy into Cedar and reproduces all 8 expected decisions and reason codes.
+Confirmed. A spike compiled each test vector's policy into Cedar and reproduced every expected
+decision and reason code. The spike has since been retired, as its own disposition note required,
+because `shiin-policy` and `shiin-engine` now do the same work and the conformance test in
+`shiin-engine` runs the whole corpus on every change.
 
 It established three things that shape the implementation:
 
@@ -65,8 +67,8 @@ The spike also found four specification defects, which were fixed and the spike 
 the missing workspace root, the missing risk threshold, the missing `deny.default` reason code,
 and two test vectors that could not be decided from their own inputs.
 
-Ongoing confirmation is the conformance corpus: `shiin-policy` must reproduce every vector in
-`docs/spec/test-vectors/` before v0.1 ships.
+Ongoing confirmation is the conformance corpus: the test in `crates/shiin-engine/tests/conformance.rs`
+reproduces every vector in `docs/spec/test-vectors/`, and continuous integration runs it.
 
 ## Pros and cons of the options
 

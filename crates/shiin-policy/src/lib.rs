@@ -5,6 +5,8 @@
 //! as `context.matched_rules`, since Cedar's `like` cannot express `**`
 //! ([ADR-0014](../../../docs/adr/0014-cedar-policy-engine-with-toml-front-end.md)).
 
+pub mod toml_front_end;
+
 use std::collections::BTreeSet;
 
 use cedar_policy::{
@@ -12,7 +14,7 @@ use cedar_policy::{
     PolicySet, Request as CedarRequest, RestrictedExpression,
 };
 use globset::{Glob, GlobMatcher};
-use shiin_schema::{ActionRequest, DecisionValue, Policy, Rule};
+use shiin_schema::{ActionRequest, DecisionValue, Effect, Policy, Rule};
 use thiserror::Error;
 
 /// Why a policy could not be compiled or evaluated.
@@ -44,6 +46,12 @@ pub enum PolicyError {
     /// The request could not be expressed as a Cedar request.
     #[error("cannot build a Cedar request: {0}")]
     Request(String),
+    /// The policy file could not be read.
+    #[error("the policy is not valid: {message}")]
+    Syntax {
+        /// What the parser reported.
+        message: String,
+    },
 }
 
 /// What the policy stage concluded.
@@ -70,22 +78,41 @@ struct CompiledRule {
 
 impl CompiledRule {
     /// Whether the request satisfies every matcher this rule declares.
+    ///
+    /// A rule matches either the request's own action type, or the action type of one
+    /// of its effects together with that effect's resource (`AR-011`). That is what
+    /// makes a rule written for `fs.read` cover `cat .env`, whose request type is
+    /// `shell.exec`.
     fn matches(&self, request: &ActionRequest) -> bool {
+        if self.matches_as(request, &request.action_type, None) {
+            return true;
+        }
+        request.effects.iter().any(|effect| {
+            effect
+                .action_type
+                .as_deref()
+                .is_some_and(|action_type| self.matches_as(request, action_type, Some(effect)))
+        })
+    }
+
+    /// Whether the rule matches for one action type, optionally scoped to one effect.
+    fn matches_as(
+        &self,
+        request: &ActionRequest,
+        action_type: &str,
+        effect: Option<&Effect>,
+    ) -> bool {
         if !self
             .action_types
             .iter()
-            .any(|pattern| action_type_matches(pattern, &request.action_type))
+            .any(|pattern| action_type_matches(pattern, action_type))
         {
             return false;
         }
         if !self.agents.is_empty() && !self.agents.contains(&request.agent.id) {
             return false;
         }
-        if !self.resources.is_empty()
-            && !request
-                .values_of("path")
-                .any(|value| self.resources.iter().any(|glob| glob.is_match(value)))
-        {
+        if !self.resources.is_empty() && !self.matches_paths(request, effect) {
             return false;
         }
         if !self.commands.is_empty()
@@ -96,6 +123,24 @@ impl CompiledRule {
             return false;
         }
         true
+    }
+
+    /// Whether the rule's path globs match, scoped to one effect when given.
+    fn matches_paths(&self, request: &ActionRequest, effect: Option<&Effect>) -> bool {
+        match effect {
+            // An effect-scoped match only considers that effect's own path, so a rule
+            // cannot be satisfied by an unrelated path in the same request.
+            Some(effect) => {
+                effect.is("path")
+                    && self
+                        .resources
+                        .iter()
+                        .any(|glob| glob.is_match(&effect.value))
+            }
+            None => request
+                .values_of("path")
+                .any(|value| self.resources.iter().any(|glob| glob.is_match(value))),
+        }
     }
 }
 

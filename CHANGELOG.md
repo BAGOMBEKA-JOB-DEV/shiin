@@ -17,10 +17,12 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Rust engineering standards covering the workspace, toolchain and minimum supported Rust version, coding standards, error handling, unsafe code, concurrency, dependencies, testing, performance budgets, continuous integration, and releases.
 - `cargo xtask docs-check`, the Rust tool that enforces the documentation rules, together with the mdBook build and the link, spelling, and Markdown checks.
 - Community files: contribution guide, code of conduct, security policy, support, governance, and issue and pull request templates.
-- The ADR-0014 spike in `spikes/cedar/`, which confirmed Cedar as the policy engine by reproducing every specification test vector.
+- The first product crates: `shiin-schema`, `shiin-classify`, `shiin-policy`, `shiin-engine`, `shiin-audit`, `shiin-hooks`, and the `shiin` command-line interface, with a conformance test that runs the whole specification corpus.
 - Evaluation inputs and attended and unattended modes (EVAL-014 to EVAL-017), a required `workspace` object on the action request (AR-008, AR-009), configurable risk thresholds (RISK-007a), the `deny.unattended` and `deny.default` reason codes, and test vector TV-008.
 
 ### Changed
 
 - The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`, and ADR-0014 and ADR-0019 are decided. The only remaining M0 criterion is an outside review of the threat model.
 - `cargo xtask docs-check` now rejects a reason code or action type that is not in its registry, including in test vectors.
+- Effects may name their own action type, so a rule written for `fs.read` also covers a read performed by a shell command (AR-010, AR-011, TV-009). Found while implementing use case UC-02.
+- The ADR-0014 spike was retired once `shiin-policy` and `shiin-engine` covered the same corpus, as its disposition note required.

@@ -1,0 +1,16 @@
+[package]
+name = "shiin-classify"
+version = "0.0.0"
+description = "Deterministic classifiers that turn host payloads into normalized effects"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+shiin-schema = { workspace = true }
+
+[lints]
+workspace = true
