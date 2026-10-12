@@ -1406,6 +1406,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "shiin-engine"
+version = "0.0.0"
+dependencies = [
+ "globset",
+ "serde_json",
+ "shiin-policy",
+ "shiin-schema",
+]
+
+[[package]]
+name = "shiin-policy"
+version = "0.0.0"
+dependencies = [
+ "cedar-policy",
+ "globset",
+ "shiin-schema",
+ "thiserror",
+]
+
+[[package]]
+name = "shiin-schema"
+version = "0.0.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,0 +1,19 @@
+[package]
+name = "shiin-policy"
+version = "0.0.0"
+description = "Compiles Shiin policy to Cedar and evaluates the policy stage"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+cedar-policy = { workspace = true }
+globset = { workspace = true }
+shiin-schema = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
