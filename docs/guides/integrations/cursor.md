@@ -1,27 +1,65 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.2 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-12 -->
 
 # Cursor
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.2. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The adapter exists in a source build and has not been tested against a running Cursor.
 
-## Enforcement level
+**Enforcement level: L1 cooperative.** See
+[enforcement levels](../../security/enforcement-levels.md).
 
-L1 Cooperative.
-The host honors the decision through its hook mechanism.
+## Configure the hooks
 
-## Interception
+Cursor runs a hook per event rather than one hook for every tool, and reads back a
+`permission` of `allow`, `deny`, or `ask`
+(verified against <https://cursor.com/docs/hooks> on 2026-09-14). Put this in
+`.cursor/hooks.json`:
 
-Shiin uses Cursor's hooks, including `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile`, and `preToolUse`.
-Hooks return allow, deny, or ask responses and support a `failClosed` option.
+```json
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "shiin hook cursor", "failClosed": true }
+    ],
+    "beforeReadFile": [
+      { "command": "shiin hook cursor", "failClosed": true }
+    ],
+    "beforeMCPExecution": [
+      { "command": "shiin hook cursor", "failClosed": true }
+    ]
+  }
+}
+```
 
-## What it cannot see
+`failClosed: true` matters more here than anywhere else. Without it, Cursor **allows** the
+action when a hook fails, which is the opposite of what you installed Shiin for.
 
-- Actions that do not pass through the hook.
-- Code run by an allowed command.
+## What it maps
+
+| Cursor event | Action type | Notes |
+|---|---|---|
+| `beforeShellExecution` | `shell.exec` | Classified like any command, so a read it performs is recorded |
+| `beforeReadFile` | `fs.read` | |
+| `beforeMCPExecution` | `x-cursor.mcp.<tool>` | Opaque: a tool server describes its own behavior, and Shiin cannot verify it |
+| Anything else | `x-cursor.<event>` | Opaque, so it falls through to a person or the default decision |
+
+Shiin uses the first entry of `workspace_roots` as the workspace, falling back to `cwd`.
+
+## Known gaps
+
+- **Whether `ask` is honored** for shell and tool events is not verified. A pending
+  decision is reported as `ask` and the reason is also put in both messages, so that if
+  Cursor treats it as an allow, at least the person sees why a human was wanted. Until
+  this is confirmed, set risk signals you care about to `deny` rather than `pending` in
+  policy.
+- **Cloud agents skip the tool events**, so an action taken there never reaches Shiin.
+- **MCP calls are opaque by design.** Precise mapping of tool calls arrives with the MCP
+  proxy in v0.5, which sits in the data path instead of relying on a hook.
 
 ## Read next
 
-- [Adapter contract](../../spec/adapter-contract.md)
-- [Enforcement levels](../../security/enforcement-levels.md)
+- [Claude Code](claude-code.md)
+- [MCP proxy](mcp-proxy.md)
+- [Limitations](../../concepts/limitations.md)

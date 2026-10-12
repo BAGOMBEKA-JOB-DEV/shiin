@@ -23,11 +23,13 @@ $ shiin <command>
 | `shiin log [count]` | Prints recent audit events, most recent last | works today |
 | `shiin verify` | Checks the audit log's hash chain | works today |
 | `shiin doctor` | Reports this workspace's policy, audit log, mode, and enforcement level | works today |
-| `shiin policy test` | Runs recorded policy cases, the way the conformance corpus does | planned, v0.2 |
-| `shiin task` | Declares, lists, and ends task declarations | planned, v0.2 |
-| `shiin hook codex`, `shiin hook cursor` | The same hook service for other hosts | planned, v0.2 |
+| `shiin policy test [dir]` | Runs policy cases from `.shiin/tests`, using the same runner as the conformance corpus | works today |
+| `shiin task start \| show \| end` | Declares what the agent is working on, shows it with its usage, or ends it | works today |
+| `shiin hook codex`, `shiin hook cursor` | The same hook service for those hosts | works today, untested against a running host |
 | `shiin pending`, `shiin approve` | Lists and resolves approval requests | planned, v0.3 |
 | `shiin replay` | Re-evaluates recorded requests, including against a different policy | planned, v0.4 |
+
+`shiin policy test` exits non-zero when any case fails, so it belongs in whatever runs your checks.
 
 ## Exit codes
 

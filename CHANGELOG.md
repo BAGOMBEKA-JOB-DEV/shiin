@@ -32,4 +32,7 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Release engineering: `dist-workspace.toml` for the six supported targets with shell and PowerShell installers, the dist-generated `release.yml` with every action pinned by commit, build provenance attestations, and `sbom.yml`, which produces a CycloneDX bill of materials and attaches it to a release.
 - `deny.toml`, which enforces the documented dependency policy, and a `ci.yml` workflow running tests per platform tier, the minimum supported Rust version, `cargo deny`, and a check that no action is pinned by tag or branch.
 - `shiin version`, so a bug report can name the build.
-
+- Task declarations, the v0.2 differentiator: `shiin task start | show | end`, with scope, forbidden action types, allowed hosts, counting limits, ask-for, and expiry. A refused action never spends a task's budget, and an expired task stops constraining.
+- Codex CLI and Cursor hook adapters, each speaking its host's own protocol, with Cursor's `failClosed` requirement and Codex's unverified payload field names documented rather than hidden.
+- `shiin policy test`, which runs an operator's own cases through the same runner as the project's conformance corpus.
+- Four more conformance vectors (TV-010 to TV-013) covering task limits, expiry, ask-for, and host constraints.

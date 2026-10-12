@@ -1,27 +1,76 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.2 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-12 -->
 
-# Codex CLI
+# OpenAI Codex CLI
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.2. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The adapter exists in a source build. Its payload field names are **not verified**
+> against a running Codex, so treat the configuration below as untested and check the
+> first decision in `shiin log`.
 
-## Enforcement level
+**Enforcement level: L1 cooperative**, and weaker than Claude Code's, for reasons below.
+See [enforcement levels](../../security/enforcement-levels.md).
 
-L1 Cooperative.
-The host honors the decision through its hook mechanism.
-Codex documentation calls hooks "a useful guardrail, not a complete enforcement boundary."
+## Configure the hook
 
-## Interception
+Codex runs a `PreToolUse` hook and reads a decision back in the same shape Claude Code
+uses (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-09-14). Put this in
+`.codex/hooks.json` in the project, or in `~/.codex/hooks.json`:
 
-Shiin uses Codex CLI's `PreToolUse` hooks covering Bash, `apply_patch`, and MCP tools.
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [{ "type": "command", "command": "shiin hook codex", "timeout": 10 }]
+      }
+    ]
+  }
+}
+```
 
-## What it cannot see
+Codex requires a hook to be trusted before it runs. Run `/hooks` inside Codex and trust
+this one, or it will not be consulted at all.
 
-- Actions that do not pass through the hook.
-- Code run by an allowed command.
+## What it maps
+
+| Codex tool | Action type | Notes |
+|---|---|---|
+| `Bash`, `shell`, `local_shell` | `shell.exec` | Classified like any command, so `cat .env` records the read it performs |
+| `apply_patch` | `fs.write` | The path is used when the payload names one |
+| `Read` | `fs.read` | |
+| Anything else | `x-codex.<tool>` | No rule can match it, so it falls through to the default decision |
+
+A patch whose payload names no readable path becomes an **opaque** effect rather than a
+harmless one, because it still changes files. Expect `pending.opaque` for those until the
+field names are verified.
+
+## What this does not cover
+
+- **Hosted tools are not intercepted.** Codex's own web search does not reach a hook, so
+  Shiin never sees it.
+- **Hooks are advisory.** Codex's documentation calls them "a useful guardrail, not a
+  complete enforcement boundary" (verified 2026-09-14), and
+  `--dangerously-bypass-hook-trust` exists.
+- **Codex has its own sandbox and approval policy.** Keep them on. Shiin decides whether
+  an action should happen; a sandbox limits the damage when something is allowed and
+  misbehaves. See [using Shiin with sandboxes](../using-shiin-with-sandboxes.md).
+
+## Verifying it works
+
+```console
+$ shiin log
+$ shiin doctor
+```
+
+Ask Codex to read a `.env` file. If the log shows no `request.received` event, the hook is
+not reaching Shiin: check that it is trusted, and that `shiin` is on the path Codex uses.
+
+If a decision looks wrong, the most likely cause is a payload field this adapter does not
+recognize. Please open an integration issue with the payload, secrets removed.
 
 ## Read next
 
-- [Adapter contract](../../spec/adapter-contract.md)
+- [Claude Code](claude-code.md)
 - [Enforcement levels](../../security/enforcement-levels.md)

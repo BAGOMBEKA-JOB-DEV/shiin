@@ -16,15 +16,25 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use shiin_audit::AuditLog;
-use shiin_engine::{Inputs, decide};
-use shiin_hooks::{HookResponse, PreToolUse};
+use shiin_engine::{Inputs, decide, vectors};
+use shiin_hooks::claude_code::{self, HookResponse, PreToolUse};
+use shiin_hooks::{codex, cursor};
 use shiin_policy::{CompiledPolicy, toml_front_end};
-use shiin_schema::{ActionRequest, Decision, DecisionValue, Mode, Policy, clock};
+use shiin_schema::{
+    ActionRequest, Decision, DecisionValue, Limits, Mode, Policy, Scope, TaskDeclaration,
+    TaskUsage, clock,
+};
 
 /// Where a workspace keeps its policy.
 const POLICY_PATH: &str = ".shiin/policy.toml";
 /// Where a workspace keeps its audit log.
 const AUDIT_PATH: &str = ".shiin/audit.jsonl";
+/// Where a workspace keeps its policy cases.
+const TEST_PATH: &str = ".shiin/tests";
+/// Where a workspace keeps the active task declaration.
+const TASK_PATH: &str = ".shiin/tasks/active.json";
+/// Where a workspace keeps the active task's counters.
+const USAGE_PATH: &str = ".shiin/tasks/active.usage.json";
 
 /// The policy written by `shiin init`.
 const STARTER_POLICY: &str = r#"# Shiin policy. See docs/guides/writing-policies.md
@@ -78,9 +88,13 @@ fn main() -> ExitCode {
         ["init"] => report(init()),
         ["policy", "validate"] => report(validate(Path::new(POLICY_PATH))),
         ["policy", "validate", path] => report(validate(Path::new(path))),
+        ["policy", "test"] => policy_test(Path::new(TEST_PATH)),
+        ["policy", "test", path] => policy_test(Path::new(path)),
         ["check", path] => decide_file(path, false),
         ["explain", path] => decide_file(path, true),
-        ["hook", "claude-code"] => hook_claude_code(),
+        ["hook", "claude-code"] => serve(HostKind::ClaudeCode),
+        ["hook", "codex"] => serve(HostKind::Codex),
+        ["hook", "cursor"] => serve(HostKind::Cursor),
         ["log"] => report(show_log(20)),
         ["log", count] => {
             let count = count.parse().unwrap_or(20);
@@ -89,6 +103,7 @@ fn main() -> ExitCode {
         ["verify"] => report(verify()),
         ["doctor"] => report(Ok(doctor())),
         ["version" | "--version" | "-V"] => report(Ok(version())),
+        ["task", rest @ ..] => report(task_command(rest)),
         _ => {
             usage();
             ExitCode::FAILURE
@@ -112,13 +127,30 @@ fn usage() {
     eprintln!();
     eprintln!("  init                      write a starter policy to {POLICY_PATH}");
     eprintln!("  policy validate [path]    parse and compile a policy");
+    eprintln!("  policy test [dir]         run policy cases from .shiin/tests");
     eprintln!("  check <request.json>      decide one action request");
     eprintln!("  explain <request.json>    decide, and show which stage decided");
     eprintln!("  hook claude-code          serve a Claude Code PreToolUse hook on stdin");
+    eprintln!("  hook codex                serve an OpenAI Codex CLI hook on stdin");
+    eprintln!("  hook cursor               serve a Cursor hook on stdin");
     eprintln!("  log [count]               show recent audit events");
     eprintln!("  verify                    check the audit log's hash chain");
     eprintln!("  doctor                    check this workspace's setup");
     eprintln!("  version                   print the version of this build");
+    eprintln!();
+    eprintln!("  task start <description> [options]   declare what the agent is working on");
+    eprintln!("  task show                            show the active task and its usage");
+    eprintln!("  task end                             end the active task");
+    eprintln!();
+    eprintln!("  task start options:");
+    eprintln!("    --scope <glob>         limit changes to these paths, repeatable");
+    eprintln!("    --forbid <action>      refuse these action types, repeatable");
+    eprintln!("    --allow-host <host>    limit network effects to these hosts, repeatable");
+    eprintln!("    --ask-for <action>     always ask a person for these action types, repeatable");
+    eprintln!("    --max-writes <n>       most files the task may write or create");
+    eprintln!("    --max-deletes <n>      most files the task may delete");
+    eprintln!("    --max-commands <n>     most commands the task may run");
+    eprintln!("    --minutes <n>          end the task after this many minutes");
 }
 
 /// Prints an outcome and turns it into an exit code.
@@ -149,6 +181,244 @@ fn init() -> Result<String, String> {
     Ok(format!(
         "wrote {POLICY_PATH}\nNothing enforces it yet: configure your host's hook to run `shiin hook claude-code`."
     ))
+}
+
+/// Runs the policy cases in a directory.
+///
+/// A case has the same shape as the specification's test vectors, so the cases an
+/// operator writes are checked by the same runner as the project's own corpus. A case
+/// that carries no policy is evaluated against this workspace's policy, which is what
+/// makes it a regression test for a policy change.
+fn policy_test(directory: &Path) -> ExitCode {
+    let outcome = (|| -> Result<Vec<String>, String> {
+        if !directory.is_dir() {
+            return Err(format!(
+                "{} does not exist; put policy cases there, in the test-vector format",
+                directory.display()
+            ));
+        }
+        let root = workspace_root();
+        let fallback = load_policy(Path::new(POLICY_PATH), &root)
+            .ok()
+            .map(|(policy, _)| policy);
+
+        let mut paths = Vec::new();
+        for entry in
+            fs::read_dir(directory).map_err(|error| format!("{}: {error}", directory.display()))?
+        {
+            let path = entry.map_err(|error| error.to_string())?.path();
+            if path
+                .extension()
+                .is_some_and(|extension| extension == "json")
+            {
+                paths.push(path);
+            }
+        }
+        paths.sort();
+        if paths.is_empty() {
+            return Err(format!("{} holds no cases", directory.display()));
+        }
+
+        let mut lines = Vec::new();
+        let mut failed = 0_usize;
+        for path in &paths {
+            let text =
+                fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
+            let case: serde_json::Value = serde_json::from_str(&text)
+                .map_err(|error| format!("{}: {error}", path.display()))?;
+            match vectors::run(&case, fallback.as_ref()) {
+                Ok(result) if result.passed() => {
+                    lines.push(format!("ok      {}  {}", result.id, result.actual.1));
+                }
+                Ok(result) => {
+                    failed = failed.saturating_add(1);
+                    lines.push(format!(
+                        "FAILED  {}  expected {}/{}, got {}/{}",
+                        result.id,
+                        result.expected.0,
+                        result.expected.1,
+                        result.actual.0,
+                        result.actual.1
+                    ));
+                }
+                Err(error) => {
+                    failed = failed.saturating_add(1);
+                    lines.push(format!("ERROR   {}: {error}", path.display()));
+                }
+            }
+        }
+        lines.push(String::new());
+        lines.push(format!("{} case(s), {failed} failed", paths.len()));
+        if failed == 0 {
+            Ok(lines)
+        } else {
+            Err(lines.join("\n"))
+        }
+    })();
+
+    match outcome {
+        Ok(lines) => {
+            println!("{}", lines.join("\n"));
+            ExitCode::SUCCESS
+        }
+        Err(message) => {
+            eprintln!("{message}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Reads the active task declaration, if there is one.
+fn load_task() -> Result<Option<TaskDeclaration>, String> {
+    let path = Path::new(TASK_PATH);
+    if !path.exists() {
+        return Ok(None);
+    }
+    let text = fs::read_to_string(path).map_err(|error| format!("{TASK_PATH}: {error}"))?;
+    let task: TaskDeclaration = serde_json::from_str(&text)
+        .map_err(|error| format!("SHIIN-GEN-0001: {TASK_PATH}: {error}"))?;
+    Ok(Some(task))
+}
+
+/// Reads the active task's counters. A missing file means nothing has been used.
+fn load_usage() -> TaskUsage {
+    fs::read_to_string(USAGE_PATH)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
+/// Records the task's counters after an action was allowed.
+fn save_usage(usage: TaskUsage) -> Result<(), String> {
+    let text = serde_json::to_string(&usage).map_err(|error| format!("SHIIN-GEN-0001: {error}"))?;
+    fs::write(USAGE_PATH, text).map_err(|error| format!("{USAGE_PATH}: {error}"))
+}
+
+/// Handles `shiin task`.
+fn task_command(arguments: &[&str]) -> Result<String, String> {
+    match arguments {
+        ["start", description, options @ ..] => start_task(description, options),
+        ["show"] => show_task(),
+        ["end"] => end_task(),
+        _ => Err("usage: shiin task start <description> [options] | show | end".to_owned()),
+    }
+}
+
+/// Declares a task, replacing any task already active.
+///
+/// A task is confirmed by the person who runs this command. An agent cannot declare one
+/// for itself, which is the whole point of binding actions to intent
+/// ([ADR-0020](../../../docs/adr/0020-structured-intent-binding.md)).
+fn start_task(description: &str, options: &[&str]) -> Result<String, String> {
+    let mut scope = Vec::new();
+    let mut forbid = Vec::new();
+    let mut hosts = Vec::new();
+    let mut ask_for = Vec::new();
+    let mut limits = Limits::default();
+    let mut minutes: Option<u64> = None;
+
+    let mut rest = options;
+    while let [flag, value, tail @ ..] = rest {
+        let number = || {
+            value
+                .parse::<u64>()
+                .map_err(|_| format!("{flag} needs a whole number, not `{value}`"))
+        };
+        match *flag {
+            "--scope" => scope.push((*value).to_owned()),
+            "--forbid" => forbid.push((*value).to_owned()),
+            "--allow-host" => hosts.push((*value).to_owned()),
+            "--ask-for" => ask_for.push((*value).to_owned()),
+            "--max-writes" => limits.files_written = Some(number()?),
+            "--max-deletes" => limits.files_deleted = Some(number()?),
+            "--max-commands" => limits.commands = Some(number()?),
+            "--minutes" => minutes = Some(number()?),
+            other => return Err(format!("unknown option `{other}`")),
+        }
+        rest = tail;
+    }
+    if let [leftover] = rest {
+        return Err(format!("`{leftover}` has no value"));
+    }
+
+    let expires_at = minutes.map(|minutes| {
+        clock::rfc3339_from_unix_seconds(
+            clock::now_unix_seconds().saturating_add(minutes.saturating_mul(60)),
+        )
+    });
+    let task = TaskDeclaration {
+        id: clock::new_id(),
+        description: Some(description.to_owned()),
+        scope: Scope { paths: scope },
+        forbid: shiin_schema::Forbid {
+            action_types: forbid,
+        },
+        allow: shiin_schema::AllowHosts { hosts },
+        limits,
+        require_pending_for: ask_for,
+        expires_at,
+    };
+
+    if let Some(parent) = Path::new(TASK_PATH).parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("{}: {error}", parent.display()))?;
+    }
+    let text =
+        serde_json::to_string_pretty(&task).map_err(|error| format!("SHIIN-GEN-0001: {error}"))?;
+    fs::write(TASK_PATH, text).map_err(|error| format!("{TASK_PATH}: {error}"))?;
+    save_usage(TaskUsage::default())?;
+
+    let mut lines = vec![format!("task {} started: {description}", task.id)];
+    if task.scope.paths.is_empty() {
+        lines.push(
+            "No scope was given, so changes are limited only by policy. Consider --scope."
+                .to_owned(),
+        );
+    }
+    lines.push("Only this task's constraints apply; policy still applies on top.".to_owned());
+    Ok(lines.join("\n"))
+}
+
+/// Shows the active task, its constraints, and what it has used.
+fn show_task() -> Result<String, String> {
+    let Some(task) = load_task()? else {
+        return Ok("no task is active".to_owned());
+    };
+    let usage = load_usage();
+    let list = |values: &[String]| {
+        if values.is_empty() {
+            "none".to_owned()
+        } else {
+            values.join(", ")
+        }
+    };
+    let limit = |value: Option<u64>| value.map_or_else(|| "none".to_owned(), |n| n.to_string());
+
+    Ok(format!(
+        "id            {}\ndescription   {}\nscope         {}\nforbidden     {}\nhosts         {}\nask for       {}\nexpires       {}\nwrites        {} of {}\ndeletes       {} of {}\ncommands      {} of {}",
+        task.id,
+        task.description.as_deref().unwrap_or(""),
+        list(&task.scope.paths),
+        list(&task.forbid.action_types),
+        list(&task.allow.hosts),
+        list(&task.require_pending_for),
+        task.expires_at.as_deref().unwrap_or("never"),
+        usage.files_written,
+        limit(task.limits.files_written),
+        usage.files_deleted,
+        limit(task.limits.files_deleted),
+        usage.commands,
+        limit(task.limits.commands),
+    ))
+}
+
+/// Ends the active task, so its constraints stop applying.
+fn end_task() -> Result<String, String> {
+    if !Path::new(TASK_PATH).exists() {
+        return Ok("no task is active".to_owned());
+    }
+    fs::remove_file(TASK_PATH).map_err(|error| format!("{TASK_PATH}: {error}"))?;
+    let _ = fs::remove_file(USAGE_PATH);
+    Ok("task ended".to_owned())
 }
 
 /// Reads and compiles the policy for this workspace.
@@ -195,11 +465,14 @@ fn decide_file(path: &str, explain: bool) -> ExitCode {
         let request: ActionRequest =
             serde_json::from_str(&text).map_err(|error| format!("{path}: {error}"))?;
         let (source, compiled) = load_policy(Path::new(POLICY_PATH), &request.workspace.root)?;
+        let task = load_task()?;
         Ok(decide(&Inputs {
             request: &request,
             policy: &compiled,
             source: &source,
-            task: None,
+            task: task.as_ref(),
+            usage: load_usage(),
+            now: &clock::now_rfc3339(),
             mode: mode(),
         }))
     })();
@@ -245,20 +518,37 @@ fn mode() -> Mode {
     }
 }
 
-/// Serves one Claude Code `PreToolUse` hook call.
+/// Which host's protocol to speak.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum HostKind {
+    /// Claude Code, through a `PreToolUse` hook.
+    ClaudeCode,
+    /// `OpenAI` Codex CLI, through a `PreToolUse` hook.
+    Codex,
+    /// Cursor, through one of its per-event hooks.
+    Cursor,
+}
+
+/// Serves one hook call for a host.
 ///
-/// Every failure prints a deny response, because the host would otherwise allow the
-/// action. The exit code stays zero so the host reads the response as a decision
-/// rather than as a hook error.
-fn hook_claude_code() -> ExitCode {
-    let response = match serve_hook() {
-        Ok(response) => response,
+/// Every failure prints a denial in that host's own protocol, because a host that hears
+/// nothing allows the action. The exit code stays zero so the host reads the response as
+/// a decision rather than as a broken hook.
+fn serve(kind: HostKind) -> ExitCode {
+    let mut input = String::new();
+    let read = std::io::stdin()
+        .read_to_string(&mut input)
+        .map_err(|error| format!("cannot read the hook payload: {error}"));
+
+    let outcome = read.and_then(|_| decide_for_host(kind, &input));
+    let text = match outcome {
+        Ok(decision) => respond(kind, Ok(&decision)),
         Err(detail) => {
             eprintln!("shiin: {detail}");
-            HookResponse::fail_closed(&detail)
+            respond(kind, Err(detail.as_str()))
         }
     };
-    match serde_json::to_string(&response) {
+    match text {
         Ok(text) => {
             println!("{text}");
             ExitCode::SUCCESS
@@ -268,20 +558,58 @@ fn hook_claude_code() -> ExitCode {
     }
 }
 
-fn serve_hook() -> Result<HookResponse, String> {
-    let mut input = String::new();
-    std::io::stdin()
-        .read_to_string(&mut input)
-        .map_err(|error| format!("cannot read the hook payload: {error}"))?;
-    let payload: PreToolUse = serde_json::from_str(&input)
-        .map_err(|error| format!("the hook payload is not valid: {error}"))?;
+/// Renders a decision, or a failure, in a host's own protocol.
+fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, serde_json::Error> {
+    match kind {
+        HostKind::ClaudeCode | HostKind::Codex => {
+            let response = match decision {
+                Ok(decision) => HookResponse::from_decision(decision),
+                Err(detail) => HookResponse::fail_closed(detail),
+            };
+            serde_json::to_string(&response)
+        }
+        HostKind::Cursor => {
+            let response = match decision {
+                Ok(decision) => cursor::HookResponse::from_decision(decision),
+                Err(detail) => cursor::HookResponse::fail_closed(detail),
+            };
+            serde_json::to_string(&response)
+        }
+    }
+}
 
-    let root = if payload.cwd.is_empty() {
-        workspace_root()
-    } else {
-        payload.cwd.clone()
+/// Builds the action request for a host's payload, then decides it.
+fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
+    let fallback = workspace_root();
+    let (mut request, root) = match kind {
+        HostKind::ClaudeCode => {
+            let payload: PreToolUse = serde_json::from_str(input)
+                .map_err(|error| format!("the hook payload is not valid: {error}"))?;
+            let root = if payload.cwd.is_empty() {
+                fallback
+            } else {
+                payload.cwd.clone()
+            };
+            (claude_code::to_action_request(&payload, &root), root)
+        }
+        HostKind::Codex => {
+            let payload: codex::PreToolUse = serde_json::from_str(input)
+                .map_err(|error| format!("the hook payload is not valid: {error}"))?;
+            let root = if payload.cwd.is_empty() {
+                fallback
+            } else {
+                payload.cwd.clone()
+            };
+            (codex::to_action_request(&payload, &root), root)
+        }
+        HostKind::Cursor => {
+            let payload: cursor::HookPayload = serde_json::from_str(input)
+                .map_err(|error| format!("the hook payload is not valid: {error}"))?;
+            let root = payload.workspace(&fallback);
+            (cursor::to_action_request(&payload, &root), root)
+        }
     };
-    let mut request = shiin_hooks::to_action_request(&payload, &root);
+
     let (source, compiled) = load_policy(Path::new(POLICY_PATH), &root)?;
     request.policy_snapshot = source
         .layers
@@ -289,17 +617,26 @@ fn serve_hook() -> Result<HookResponse, String> {
         .map(|layer| layer.digest.clone())
         .unwrap_or_default();
 
+    let task = load_task()?;
+    request.task = task.as_ref().map(|task| task.id.clone());
+    let usage = load_usage();
     let decision = decide(&Inputs {
         request: &request,
         policy: &compiled,
         source: &source,
-        task: None,
+        task: task.as_ref(),
+        usage,
+        now: &clock::now_rfc3339(),
         mode: mode(),
     });
 
     // The decision is recorded before the action is allowed to proceed.
     record(&request, &decision)?;
-    Ok(HookResponse::from_decision(&decision))
+    // A refused action never consumes the task's budget.
+    if task.is_some() && decision.decision == DecisionValue::Allow {
+        save_usage(usage.plus(shiin_engine::usage_of(&request)))?;
+    }
+    Ok(decision)
 }
 
 /// Appends the request and its decision to the audit log.
@@ -403,6 +740,14 @@ fn doctor() -> String {
         Err(error) => lines.push(format!("audit log     PROBLEM: {error}")),
     }
 
+    match load_task() {
+        Ok(Some(task)) => lines.push(format!(
+            "task          active: {}",
+            task.description.as_deref().unwrap_or(&task.id)
+        )),
+        Ok(None) => lines.push("task          none active, so only policy applies".to_owned()),
+        Err(error) => lines.push(format!("task          PROBLEM: {error}")),
+    }
     lines.push(format!("mode          {:?}", mode()));
     lines.push(
         "enforcement   L1 cooperative: the host honors decisions, and its hooks can be turned off"

@@ -1,0 +1,73 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-010",
+  "name": "A task's write limit is reached",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    },
+    "host": {
+      "name": "claude-code",
+      "tool": "Write"
+    },
+    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a10",
+    "action_type": "fs.write",
+    "effects": [
+      {
+        "kind": "path",
+        "value": "/home/dev/project/src/auth/login.rs",
+        "confidence": "exact"
+      }
+    ],
+    "task": "task-010",
+    "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "policy": {
+    "schema": "shiin.policy/v1-draft.1",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [
+          {
+            "id": "allow-workspace-writes",
+            "effect": "allow",
+            "action_types": [
+              "fs.write"
+            ],
+            "resources": [
+              "./**"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "task": {
+    "id": "task-010",
+    "description": "Fix the login bug",
+    "scope": {
+      "paths": [
+        "./src/**"
+      ]
+    },
+    "limits": {
+      "files_written": 3
+    }
+  },
+  "usage": {
+    "files_written": 3
+  },
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.intent"
+  }
+}

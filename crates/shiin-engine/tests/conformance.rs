@@ -1,54 +1,16 @@
 //! Runs the specification's test vectors against the engine.
 //!
-//! This is the conformance bar from `docs/spec/test-vectors/README.md`: every vector
-//! must reproduce its expected decision and reason code. It replaces the ADR-0014
-//! spike, which proved the approach before these crates existed.
+//! This is the conformance bar from `docs/spec/test-vectors/README.md`: every vector must
+//! reproduce its expected decision and reason code. It uses the same runner as
+//! `shiin policy test`, so an operator's cases are checked the way these are.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
-use shiin_engine::{Inputs, decide};
-use shiin_policy::CompiledPolicy;
-use shiin_schema::{ActionRequest, Mode, Policy, TaskDeclaration};
+use shiin_engine::vectors;
 
-/// Evaluates one vector, returning the decision and reason it produced.
-fn run(vector: &Value) -> Result<(String, String), String> {
-    let request: ActionRequest = serde_json::from_value(vector["action_request"].clone())
-        .map_err(|error| format!("the action request does not parse: {error}"))?;
-    let source: Policy = serde_json::from_value(vector["policy"].clone())
-        .map_err(|error| format!("the policy does not parse: {error}"))?;
-    let task: Option<TaskDeclaration> = match vector.get("task") {
-        Some(value) if value.is_object() => Some(
-            serde_json::from_value(value.clone())
-                .map_err(|error| format!("the task does not parse: {error}"))?,
-        ),
-        _ => None,
-    };
-    let mode = if vector["mode"].as_str() == Some("unattended") {
-        Mode::Unattended
-    } else {
-        Mode::Attended
-    };
-
-    let compiled = CompiledPolicy::compile(&source, &request.workspace.root)
-        .map_err(|error| format!("the policy does not compile: {error}"))?;
-    let decision = decide(&Inputs {
-        request: &request,
-        policy: &compiled,
-        source: &source,
-        task: task.as_ref(),
-        mode,
-    });
-    let value = serde_json::to_value(decision.decision)
-        .map_err(|error| format!("the decision does not serialize: {error}"))?;
-    let name = value
-        .as_str()
-        .ok_or_else(|| "a decision value is a string".to_owned())?;
-    Ok((name.to_owned(), decision.reason))
-}
-
-/// Reads every vector file, newest specification format only.
+/// Reads every vector file in the corpus.
 fn vectors() -> Result<Vec<(PathBuf, Value)>, String> {
     let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/spec/test-vectors");
     let entries =
@@ -82,22 +44,18 @@ fn every_test_vector_reproduces_its_expected_decision() -> Result<(), String> {
     assert!(!loaded.is_empty(), "the conformance corpus is not empty");
 
     let mut failures = Vec::new();
-    for (path, vector) in &loaded {
-        let id = vector["id"].as_str().unwrap_or("?");
-        let expected = (
-            vector["expected"]["decision"].as_str().unwrap_or("?"),
-            vector["expected"]["reason"].as_str().unwrap_or("?"),
-        );
-        match run(vector) {
-            Ok((decision, reason)) => {
-                if decision != expected.0 || reason != expected.1 {
-                    failures.push(format!(
-                        "{id}: expected {}/{}, got {decision}/{reason}",
-                        expected.0, expected.1
-                    ));
-                }
-            }
-            Err(error) => failures.push(format!("{id} ({}): {error}", path.display())),
+    for (path, case) in &loaded {
+        match vectors::run(case, None) {
+            Ok(outcome) if outcome.passed() => {}
+            Ok(outcome) => failures.push(format!(
+                "{}: expected {}/{}, got {}/{}",
+                outcome.id,
+                outcome.expected.0,
+                outcome.expected.1,
+                outcome.actual.0,
+                outcome.actual.1
+            )),
+            Err(error) => failures.push(format!("{}: {error}", path.display())),
         }
     }
     if failures.is_empty() {

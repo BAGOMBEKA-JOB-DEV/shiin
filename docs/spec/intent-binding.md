@@ -85,4 +85,5 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RE
 
 ## Revision history
 
+- v1-draft.2 (2026-10-12): The schema now carries every constraint kind the closed set names. `allow.hosts`, `limits`, and `require_pending_for` were described in the text but missing from the schema, so a task that used them failed validation.
 - v1-draft.1 (2026-10-01): Initial draft.

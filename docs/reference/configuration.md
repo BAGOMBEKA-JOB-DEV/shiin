@@ -12,8 +12,9 @@
 |---|---|---|
 | `.shiin/policy.toml` | The policy for this workspace | works today |
 | `.shiin/audit.jsonl` | The append-only audit log | works today |
-| `.shiin/config.toml` | Settings that are not policy, such as the audit log's location | planned, v0.2 |
-| `.shiin/tasks/` | Task declarations | planned, v0.2 |
+| `.shiin/tests/` | Policy cases run by `shiin policy test` | works today |
+| `.shiin/config.toml` | Settings that are not policy, such as the audit log's location | planned, v0.3 |
+| `.shiin/tasks/` | The active task declaration and its counters | works today |
 
 Paths are relative to the workspace, which is the directory the host reports as its
 working directory. Under [ADR-0016](../adr/0016-built-in-protected-resources.md) everything

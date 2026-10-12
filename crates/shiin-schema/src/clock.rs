@@ -16,6 +16,14 @@ pub fn now_rfc3339() -> String {
     rfc3339_from_unix_seconds(seconds)
 }
 
+/// Seconds since the Unix epoch.
+#[must_use]
+pub fn now_unix_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
+}
+
 /// Formats Unix seconds as an RFC 3339 timestamp in UTC.
 #[must_use]
 pub fn rfc3339_from_unix_seconds(seconds: u64) -> String {

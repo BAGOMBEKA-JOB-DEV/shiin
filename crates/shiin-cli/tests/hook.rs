@@ -310,3 +310,212 @@ fn a_decision_arrives_well_inside_a_host_timeout() {
     }
     let _ = fs::remove_dir_all(root);
 }
+
+// Task declarations: the constraint that applies only to the work the person asked for.
+
+#[test]
+fn a_task_scopes_and_budgets_an_agent_then_releases_it() {
+    let root = workspace("task");
+    // The policy allows writes anywhere in the workspace, so only the task narrows it.
+    fs::write(
+        root.join(".shiin/policy.toml"),
+        "version = 1\n[defaults]\ndecision = \"deny\"\n\n[[rule]]\nid = \"writes\"\neffect = \"allow\"\naction_types = [\"fs.write\"]\nresources = [\"./**\"]\n",
+    )
+    .expect("the policy is written");
+
+    let started = run(
+        &root,
+        &[
+            "task",
+            "start",
+            "Fix the login bug",
+            "--scope",
+            "./src/auth/**",
+            "--max-writes",
+            "1",
+        ],
+    );
+    assert!(started.contains("started"), "{started}");
+
+    // Inside the scope and within budget.
+    let first = run_hook(
+        &root,
+        &payload(&root, "Write", r#"{"file_path":"src/auth/login.rs"}"#),
+    );
+    assert!(
+        first.contains("\"permissionDecision\":\"allow\""),
+        "the first write is inside the task: {first}"
+    );
+
+    // The budget is now spent, even though policy still allows the write.
+    let second = run_hook(
+        &root,
+        &payload(&root, "Write", r#"{"file_path":"src/auth/session.rs"}"#),
+    );
+    assert!(
+        second.contains("\"permissionDecision\":\"deny\""),
+        "the write limit is reached: {second}"
+    );
+
+    let shown = run(&root, &["task", "show"]);
+    assert!(shown.contains("writes        1 of 1"), "{shown}");
+
+    // Ending the task releases the constraint, and policy alone decides again.
+    let ended = run(&root, &["task", "end"]);
+    assert!(ended.contains("task ended"), "{ended}");
+    let after = run_hook(
+        &root,
+        &payload(&root, "Write", r#"{"file_path":"docs/notes.md"}"#),
+    );
+    assert!(
+        after.contains("\"permissionDecision\":\"allow\""),
+        "with no task, policy decides: {after}"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn a_task_refuses_work_outside_its_scope() {
+    let root = workspace("taskscope");
+    fs::write(
+        root.join(".shiin/policy.toml"),
+        "version = 1\n[defaults]\ndecision = \"deny\"\n\n[[rule]]\nid = \"writes\"\neffect = \"allow\"\naction_types = [\"fs.write\"]\nresources = [\"./**\"]\n",
+    )
+    .expect("the policy is written");
+    run(
+        &root,
+        &[
+            "task",
+            "start",
+            "Fix the login bug",
+            "--scope",
+            "./src/auth/**",
+        ],
+    );
+
+    let response = run_hook(
+        &root,
+        &payload(&root, "Write", r#"{"file_path":"migrations/0042.sql"}"#),
+    );
+    assert!(
+        response.contains("\"permissionDecision\":\"deny\""),
+        "a migration is not part of fixing the login bug: {response}"
+    );
+    // A refused action must not consume the task's budget.
+    let shown = run(&root, &["task", "show"]);
+    assert!(shown.contains("writes        0 of none"), "{shown}");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn an_unknown_task_option_is_refused_rather_than_ignored() {
+    let root = workspace("taskopt");
+    let output = run(
+        &root,
+        &["task", "start", "Something", "--scpoe", "./src/**"],
+    );
+    assert!(output.contains("unknown option"), "{output}");
+    let _ = fs::remove_dir_all(root);
+}
+
+// Other hosts speak their own protocols, and a decision has to arrive in each one.
+
+#[test]
+fn codex_hears_a_decision_in_its_own_protocol() {
+    let root = workspace("codex");
+    let payload = format!(
+        r#"{{"session_id":"s","cwd":"{}","tool_name":"apply_patch","tool_input":{{"path":"src/login.rs"}}}}"#,
+        root.display()
+    );
+    let output = Command::new(env!("CARGO_BIN_EXE_shiin"))
+        .args(["hook", "codex"])
+        .current_dir(&root)
+        .env_remove("CI")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            child
+                .stdin
+                .as_mut()
+                .expect("standard input is piped")
+                .write_all(payload.as_bytes())?;
+            child.wait_with_output()
+        })
+        .expect("the binary runs");
+    let response = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        response.contains("\"permissionDecision\":\"allow\""),
+        "a patch inside src is allowed: {response}"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn cursor_hears_a_denial_for_a_secret_read_through_a_command() {
+    let root = workspace("cursor");
+    let payload = format!(
+        r#"{{"hook_event_name":"beforeShellExecution","conversation_id":"c","workspace_roots":["{}"],"command":"cat .env"}}"#,
+        root.display()
+    );
+    let mut child = Command::new(env!("CARGO_BIN_EXE_shiin"))
+        .args(["hook", "cursor"])
+        .current_dir(&root)
+        .env_remove("CI")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("the binary runs");
+    child
+        .stdin
+        .as_mut()
+        .expect("standard input is piped")
+        .write_all(payload.as_bytes())
+        .expect("the payload is written");
+    let output = child.wait_with_output().expect("the binary finishes");
+    let response = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        response.contains("\"permission\":\"deny\""),
+        "Cursor hears a denial in its own shape: {response}"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn policy_cases_pass_and_a_wrong_expectation_fails() {
+    let root = workspace("policytest");
+    fs::create_dir_all(root.join(".shiin/tests")).expect("the case directory is created");
+    let case = |id: &str, decision: &str, reason: &str| {
+        format!(
+            r#"{{"schema":"shiin.test-vector/v1-draft.1","id":"{id}","name":"{id}",
+                "action_request":{{"schema":"shiin.action-request/v1-draft.1",
+                "id":"0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9aa3","session":"m",
+                "agent":{{"id":"claude-code","assurance":"asserted"}},
+                "action_type":"fs.read",
+                "effects":[{{"kind":"path","value":"{}/.env","confidence":"exact"}}],
+                "workspace":{{"root":"{}"}},
+                "policy_snapshot":"sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "host":{{"name":"claude-code","tool":"Read"}}}},
+                "expected":{{"decision":"{decision}","reason":"{reason}"}}}}"#,
+            root.display(),
+            root.display()
+        )
+    };
+    fs::write(
+        root.join(".shiin/tests/right.json"),
+        case("right", "deny", "deny.policy"),
+    )
+    .expect("the passing case is written");
+    let passing = run(&root, &["policy", "test"]);
+    assert!(passing.contains("ok      right"), "{passing}");
+    assert!(passing.contains("0 failed"), "{passing}");
+
+    fs::write(
+        root.join(".shiin/tests/wrong.json"),
+        case("wrong", "allow", "allow.policy"),
+    )
+    .expect("the failing case is written");
+    let failing = run(&root, &["policy", "test"]);
+    assert!(failing.contains("FAILED  wrong"), "{failing}");
+    let _ = fs::remove_dir_all(root);
+}

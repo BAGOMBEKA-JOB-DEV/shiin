@@ -74,11 +74,11 @@
 
 **Scope.**
 
-- Task declarations with the closed constraint set, marked experimental.
-- Counters for task limits.
-- Codex CLI and Cursor hook adapters.
-- `shiin task` and `shiin policy test`.
-- Unattended mode for CI.
+- Task declarations with the closed constraint set, marked experimental. Done: scope, forbidden action types, allowed hosts, counting limits, ask-for, and expiry.
+- Counters for task limits. Done.
+- Codex CLI and Cursor hook adapters. Done in source; neither has been tested against a running host, which is the remaining v0.2 work.
+- `shiin task` and `shiin policy test`. Done.
+- Unattended mode for CI. Done in v0.1.
 
 **Out of scope.** Approval protocol, SQL classification.
 

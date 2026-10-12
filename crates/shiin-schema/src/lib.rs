@@ -282,6 +282,57 @@ pub struct Forbid {
     pub action_types: Vec<String>,
 }
 
+/// Hosts a task may reach.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct AllowHosts {
+    /// Hosts the agent may contact. Empty means the constraint is not set.
+    #[serde(default)]
+    pub hosts: Vec<String>,
+}
+
+/// Counting limits a task may not exceed.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Limits {
+    /// Most files the task may write or create.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files_written: Option<u64>,
+    /// Most files the task may delete.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files_deleted: Option<u64>,
+    /// Most commands the task may run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commands: Option<u64>,
+}
+
+/// What a task has used so far.
+///
+/// Counters are an input to evaluation rather than state inside the engine, so that
+/// replaying a recorded request reproduces its decision exactly.
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct TaskUsage {
+    /// Files written or created so far.
+    pub files_written: u64,
+    /// Files deleted so far.
+    pub files_deleted: u64,
+    /// Commands run so far.
+    pub commands: u64,
+}
+
+impl TaskUsage {
+    /// Adds another action's usage to this one.
+    #[must_use]
+    pub fn plus(self, other: Self) -> Self {
+        Self {
+            files_written: self.files_written.saturating_add(other.files_written),
+            files_deleted: self.files_deleted.saturating_add(other.files_deleted),
+            commands: self.commands.saturating_add(other.commands),
+        }
+    }
+}
+
 /// A human-confirmed statement of what an agent is working on.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TaskDeclaration {
@@ -296,6 +347,12 @@ pub struct TaskDeclaration {
     /// Action types the task forbids.
     #[serde(default)]
     pub forbid: Forbid,
+    /// Hosts the task may reach.
+    #[serde(default)]
+    pub allow: AllowHosts,
+    /// Counting limits the task may not exceed.
+    #[serde(default)]
+    pub limits: Limits,
     /// Action types that always need approval within this task.
     #[serde(default)]
     pub require_pending_for: Vec<String>,

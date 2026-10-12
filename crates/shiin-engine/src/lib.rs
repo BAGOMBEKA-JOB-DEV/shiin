@@ -8,9 +8,12 @@
 //! identity, capability, policy, intent, and risk. Identity, capability, intent, and
 //! risk are gates: they may deny or hold an action, never allow it.
 
+pub mod vectors;
+
 use shiin_policy::{CompiledPolicy, PolicyOutcome};
 use shiin_schema::{
-    ActionRequest, Decision, DecisionValue, Mode, Policy, TaskDeclaration, reasons, versions,
+    ActionRequest, Decision, DecisionValue, Mode, Policy, TaskDeclaration, TaskUsage, reasons,
+    versions,
 };
 
 /// Version reported in decisions.
@@ -42,6 +45,10 @@ pub struct Inputs<'a> {
     pub source: &'a Policy,
     /// The active task declaration, if any.
     pub task: Option<&'a TaskDeclaration>,
+    /// What the active task has used so far.
+    pub usage: TaskUsage,
+    /// The current time, as an RFC 3339 timestamp. The engine never reads a clock.
+    pub now: &'a str,
     /// Whether an approver can be reached.
     pub mode: Mode,
 }
@@ -59,7 +66,7 @@ pub fn decide(inputs: &Inputs<'_>) -> Decision {
         // Fail closed: an engine error is never an allow.
         Err(_) => Stage::Deny(reasons::DENY_FAILURE, Vec::new()),
     };
-    let intent = intent_stage(inputs.request, inputs.task);
+    let intent = intent_stage(inputs);
     let risk = risk_stage(inputs.request, inputs.source);
 
     let stages = [&identity, &capability, &policy, &intent, &risk];
@@ -160,40 +167,154 @@ fn policy_stage(outcome: &PolicyOutcome) -> Stage {
 }
 
 /// Intent gate: checks the action against the active task's constraints.
-fn intent_stage(request: &ActionRequest, task: Option<&TaskDeclaration>) -> Stage {
-    let Some(task) = task else {
+///
+/// Every constraint can only refuse or hold an action. A task never permits something
+/// policy refuses ([ADR-0020](../../../docs/adr/0020-structured-intent-binding.md)).
+fn intent_stage(inputs: &Inputs<'_>) -> Stage {
+    let Some(task) = inputs.task else {
         return Stage::Pass;
     };
+    // An expired task has ended, so its constraints no longer apply. Policy still does.
+    if task
+        .expires_at
+        .as_deref()
+        .is_some_and(|expiry| inputs.now > expiry)
+    {
+        return Stage::Pass;
+    }
+    let request = inputs.request;
+    let reference = vec![task.id.clone()];
+
     if task
         .forbid
         .action_types
         .iter()
         .any(|pattern| pattern_matches(pattern, &request.action_type))
     {
-        return Stage::Deny(reasons::DENY_INTENT, vec![task.id.clone()]);
+        return Stage::Deny(reasons::DENY_INTENT, reference);
     }
     if task
         .require_pending_for
         .iter()
         .any(|pattern| pattern_matches(pattern, &request.action_type))
     {
-        return Stage::Pending(reasons::PENDING_INTENT, vec![task.id.clone()]);
+        return Stage::Pending(reasons::PENDING_INTENT, reference);
     }
-    if !task.scope.paths.is_empty() {
-        let mut touched = request.values_of("path").peekable();
-        if touched.peek().is_some()
-            && touched.any(|path| {
-                !task
-                    .scope
-                    .paths
-                    .iter()
-                    .any(|pattern| glob_matches(pattern, path))
-            })
-        {
-            return Stage::Deny(reasons::DENY_INTENT, vec![task.id.clone()]);
-        }
+    if !task.scope.paths.is_empty() && touches_outside_scope(request, task) {
+        return Stage::Deny(reasons::DENY_INTENT, reference);
+    }
+    if !task.allow.hosts.is_empty() && reaches_other_host(request, task) {
+        return Stage::Deny(reasons::DENY_INTENT, reference);
+    }
+    if exceeds_limits(inputs, task) {
+        return Stage::Deny(reasons::DENY_INTENT, reference);
     }
     Stage::Pass
+}
+
+/// Whether the action writes, creates, deletes, or moves a path outside the task's scope.
+///
+/// Reads are not scope-limited: a task that forbade reading its own repository would
+/// stop an agent from working at all, and policy already governs what may be read.
+fn touches_outside_scope(request: &ActionRequest, task: &TaskDeclaration) -> bool {
+    const CHANGING: [&str; 4] = ["fs.write", "fs.create", "fs.delete", "fs.move"];
+
+    let changes = |action_type: &str| CHANGING.contains(&action_type);
+    let mut outside = false;
+    for effect in &request.effects {
+        if !effect.is("path") {
+            continue;
+        }
+        let action_type = effect
+            .action_type
+            .as_deref()
+            .unwrap_or(&request.action_type);
+        if !changes(action_type) {
+            continue;
+        }
+        if !task
+            .scope
+            .paths
+            .iter()
+            .any(|pattern| glob_matches(pattern, &effect.value))
+        {
+            outside = true;
+        }
+    }
+    outside
+}
+
+/// Whether the action reaches a host the task did not allow.
+fn reaches_other_host(request: &ActionRequest, task: &TaskDeclaration) -> bool {
+    request.values_of("url").any(|value| {
+        let host = host_of(value);
+        !task
+            .allow
+            .hosts
+            .iter()
+            .any(|allowed| host_matches(allowed, &host))
+    })
+}
+
+/// The host part of a URL, or the value itself when it is not a URL.
+fn host_of(value: &str) -> String {
+    let without_scheme = value.split_once("://").map_or(value, |(_, rest)| rest);
+    without_scheme
+        .split(['/', ':', '?'])
+        .next()
+        .unwrap_or(without_scheme)
+        .to_lowercase()
+}
+
+/// Whether a host pattern matches a host, where a leading `*.` is a label wildcard.
+fn host_matches(pattern: &str, host: &str) -> bool {
+    pattern.strip_prefix("*.").map_or_else(
+        || pattern.eq_ignore_ascii_case(host),
+        |suffix| host == suffix || host.ends_with(&format!(".{suffix}")),
+    )
+}
+
+/// Whether performing this action would take the task past one of its limits.
+fn exceeds_limits(inputs: &Inputs<'_>, task: &TaskDeclaration) -> bool {
+    let after = inputs.usage.plus(usage_of(inputs.request));
+    let past = |limit: Option<u64>, used: u64| limit.is_some_and(|limit| used > limit);
+
+    past(task.limits.files_written, after.files_written)
+        || past(task.limits.files_deleted, after.files_deleted)
+        || past(task.limits.commands, after.commands)
+}
+
+/// What one action adds to a task's counters.
+///
+/// A caller applies this only after a decision of `allow`, so a refused action never
+/// consumes a task's budget.
+#[must_use]
+pub fn usage_of(request: &ActionRequest) -> TaskUsage {
+    let mut usage = TaskUsage::default();
+    let kinds = std::iter::once(request.action_type.as_str()).chain(
+        request
+            .effects
+            .iter()
+            .filter_map(|effect| effect.action_type.as_deref()),
+    );
+    for action_type in kinds {
+        match action_type {
+            "fs.write" | "fs.create" => usage.files_written = usage.files_written.saturating_add(1),
+            "fs.delete" => {
+                // A deletion may report how many files it covers.
+                let counted = request
+                    .effects
+                    .iter()
+                    .filter_map(shiin_schema::Effect::count)
+                    .max()
+                    .unwrap_or(1);
+                usage.files_deleted = usage.files_deleted.saturating_add(counted);
+            }
+            "shell.exec" => usage.commands = usage.commands.saturating_add(1),
+            _ => {}
+        }
+    }
+    usage
 }
 
 /// Risk gate: raises the signals the policy configures, and escalates accordingly.
@@ -278,4 +399,91 @@ fn glob_matches(pattern: &str, value: &str) -> bool {
         .strip_prefix("./")
         .map_or_else(|| pattern.to_owned(), |rest| format!("**/{rest}"));
     globset::Glob::new(&rewritten).is_ok_and(|glob| glob.compile_matcher().is_match(value))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{host_matches, host_of, usage_of};
+    use shiin_schema::{ActionRequest, Agent, Assurance, Confidence, Effect, Host, Workspace};
+
+    fn request(action_type: &str, effects: Vec<Effect>) -> ActionRequest {
+        ActionRequest {
+            schema: shiin_schema::versions::ACTION_REQUEST.to_owned(),
+            id: "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b".to_owned(),
+            session: "s".to_owned(),
+            agent: Agent {
+                id: "claude-code".to_owned(),
+                assurance: Assurance::Asserted,
+            },
+            action_type: action_type.to_owned(),
+            effects,
+            task: None,
+            workspace: Workspace {
+                root: "/home/dev/project".to_owned(),
+                vcs: None,
+            },
+            policy_snapshot: "sha256:0".to_owned(),
+            host: Host {
+                name: "claude-code".to_owned(),
+                tool: None,
+            },
+        }
+    }
+
+    fn effect(kind: &str, value: &str, action_type: Option<&str>) -> Effect {
+        Effect {
+            kind: kind.to_owned(),
+            value: value.to_owned(),
+            confidence: Confidence::Exact,
+            action_type: action_type.map(ToOwned::to_owned),
+        }
+    }
+
+    #[test]
+    fn a_host_wildcard_matches_only_subdomains() {
+        assert!(host_matches("docs.example.com", "docs.example.com"));
+        assert!(host_matches("*.example.org", "api.example.org"));
+        assert!(host_matches("*.example.org", "example.org"));
+        assert!(!host_matches("*.example.org", "example.org.attacker.test"));
+        assert!(!host_matches("docs.example.com", "paste.example.net"));
+    }
+
+    #[test]
+    fn a_url_reduces_to_its_host() {
+        assert_eq!(
+            host_of("https://docs.example.com/guide?x=1"),
+            "docs.example.com"
+        );
+        assert_eq!(
+            host_of("http://paste.example.net:8080/a"),
+            "paste.example.net"
+        );
+        assert_eq!(host_of("docs.example.com"), "docs.example.com");
+    }
+
+    #[test]
+    fn a_shell_command_that_writes_counts_against_both_budgets() {
+        let usage = usage_of(&request(
+            "shell.exec",
+            vec![
+                effect("command", "cp a b", None),
+                effect("path", "/home/dev/project/b", Some("fs.write")),
+            ],
+        ));
+        assert_eq!(usage.commands, 1);
+        assert_eq!(usage.files_written, 1);
+    }
+
+    #[test]
+    fn a_recursive_delete_counts_every_file_it_reports() {
+        let mut deletion = request(
+            "fs.delete",
+            vec![
+                effect("path", "/home/dev/project/build", None),
+                effect("count", "50", None),
+            ],
+        );
+        deletion.effects[1].confidence = Confidence::Inferred;
+        assert_eq!(usage_of(&deletion).files_deleted, 50);
+    }
 }
