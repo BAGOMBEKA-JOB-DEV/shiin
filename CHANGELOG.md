@@ -19,3 +19,8 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Community files: contribution guide, code of conduct, security policy, support, governance, and issue and pull request templates.
 - The ADR-0014 spike in `spikes/cedar/`, which confirmed Cedar as the policy engine by reproducing every specification test vector.
 - Evaluation inputs and attended and unattended modes (EVAL-014 to EVAL-017), a required `workspace` object on the action request (AR-008, AR-009), configurable risk thresholds (RISK-007a), the `deny.unattended` and `deny.default` reason codes, and test vector TV-008.
+
+### Changed
+
+- The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`, and ADR-0014 and ADR-0019 are decided. The only remaining M0 criterion is an outside review of the threat model.
+- `cargo xtask docs-check` now rejects a reason code or action type that is not in its registry, including in test vectors.

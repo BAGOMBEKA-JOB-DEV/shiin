@@ -74,7 +74,7 @@ go through the [RFC process](../rfcs/README.md), and the RFC produces the ADR.
 | 0016 | [Built-in protected resources](0016-built-in-protected-resources.md) | accepted |
 | 0017 | [JSON wire format and schemas](0017-json-wire-format-and-schemas.md) | accepted |
 | 0018 | [Conservative action classification](0018-conservative-action-classification.md) | accepted |
-| 0019 | [Path canonicalization](0019-path-canonicalization.md) | proposed |
+| 0019 | [Path canonicalization](0019-path-canonicalization.md) | accepted |
 | 0020 | [Structured intent binding](0020-structured-intent-binding.md) | accepted |
 | 0021 | [Discrete risk signals](0021-discrete-risk-signals.md) | accepted |
 

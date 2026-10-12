@@ -19,7 +19,7 @@ The [roadmap](../project/roadmap.md) lists the milestone that delivers each spec
 |---|---|
 | `draft` | The specification is under active revision. Field names, IDs, and schemas may change. |
 | `proposed` | The specification has stabilized enough to send to implementers for review. |
-| `accepted` | The specification is frozen; changes require a superseding version. |
+| `accepted` | The content is settled and may be implemented against. Before 1.0 a correction may still raise the draft minor version, recorded in the revision history; after 1.0 a change requires a superseding version. |
 | `superseded` | A newer version replaces this one. Links to the replacement. |
 
 The `status` field in each page's metadata reflects where the specification is in this lifecycle, not whether code exists.

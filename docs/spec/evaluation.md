@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Evaluation
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.evaluation/v1-draft.1`.
@@ -80,5 +80,6 @@ The engine performs no I/O and is deterministic: the same inputs always produce 
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: the ADR-0014 spike implements this pipeline and reproduces all 8 test vectors.
 - v1-draft.2 (2026-10-12): Stated the engine's inputs, and defined attended and unattended evaluation modes (EVAL-014 to EVAL-017).
 - v1-draft.1 (2026-10-01): Initial draft.

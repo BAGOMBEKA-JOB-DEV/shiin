@@ -41,9 +41,9 @@
 
 **Exit criteria.**
 
-- The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`.
-- The threat model has been reviewed by at least one person outside the project.
-- Every golden use case has test vectors.
+- The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`. Done on 2026-10-12.
+- The threat model has been reviewed by at least one person outside the project. **Open: this is the last M0 criterion, and it needs a reviewer who is not the author.**
+- Every golden use case has test vectors. Done: 8 vectors, each decidable from its own inputs and checked in continuous integration.
 - ADR-0014 is `accepted`. Done on 2026-10-12.
 
 ## v0.1: Gate

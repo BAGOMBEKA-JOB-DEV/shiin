@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Action request
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.action-request/v1-draft.1`.
@@ -126,5 +126,6 @@ An [adapter](../glossary.md#adapter) builds it and the [engine](../glossary.md#e
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: schemas and every example validate, and the ADR-0014 spike evaluated requests in this shape against the whole corpus.
 - v1-draft.2 (2026-10-12): Added the required `workspace` object, so workspace-relative policy globs can be resolved (AR-008, AR-009). Renumbered the host requirement to AR-010.
 - v1-draft.1 (2026-10-01): Initial draft.

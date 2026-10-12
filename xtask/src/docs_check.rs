@@ -12,6 +12,7 @@
 mod adrs;
 mod ids;
 mod metadata;
+mod registries;
 mod schemas;
 mod summary;
 mod terms;
@@ -139,6 +140,7 @@ pub(crate) fn run() -> ExitCode {
     terms::check(&pages, &patterns, &mut report);
     ids::check(&pages, &patterns, &mut report);
     adrs::check(&pages, &patterns, &mut report);
+    registries::check(&pages, &mut report);
     schemas::check(&docs, &pages, &patterns, &mut report);
 
     if report.errors.is_empty() {

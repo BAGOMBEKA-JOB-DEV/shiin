@@ -19,7 +19,7 @@ pub(crate) fn check(docs: &Path, pages: &[Page], patterns: &Patterns, report: &m
     let schemas = load_schemas(docs, patterns, report);
     let validators = compile_validators(&schemas, report);
     check_examples(pages, patterns, &validators, report);
-    check_test_vectors(docs, &validators, report);
+    check_test_vectors(docs, pages, &validators, report);
 }
 
 /// Reads every schema file, keyed by its path relative to `docs/`.
@@ -176,7 +176,12 @@ fn check_examples(
 }
 
 /// Validates every test vector against the test-vector schema.
-fn check_test_vectors(docs: &Path, validators: &BTreeMap<String, Validator>, report: &mut Report) {
+fn check_test_vectors(
+    docs: &Path,
+    pages: &[Page],
+    validators: &BTreeMap<String, Validator>,
+    report: &mut Report,
+) {
     let vectors = read_json_files(docs, TEST_VECTOR_DIRECTORY, report);
     if vectors.is_empty() {
         return;
@@ -194,6 +199,9 @@ fn check_test_vectors(docs: &Path, validators: &BTreeMap<String, Validator>, rep
                 &rel,
                 format!("test vector does not match the schema: {violation}"),
             );
+        }
+        if let Some(action_type) = vector["action_request"]["action_type"].as_str() {
+            super::registries::check_vector_action_type(&rel, action_type, pages, report);
         }
     }
 }

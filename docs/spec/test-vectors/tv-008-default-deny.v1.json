@@ -10,7 +10,7 @@
       "id": "agent-001",
       "assurance": "asserted"
     },
-    "action_type": "net.http",
+    "action_type": "net.fetch",
     "effects": [
       {
         "kind": "url",

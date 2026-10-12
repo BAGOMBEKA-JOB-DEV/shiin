@@ -1,9 +1,9 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
 
 # Decision
 
 > [!NOTE]
-> **Specification: draft.**
+> **Specification: accepted.**
 > Normative design. No implementation exists yet.
 >
 > Version: `shiin.decision/v1-draft.1`.
@@ -100,4 +100,5 @@ A [decision](../glossary.md#decision) is the [engine](../glossary.md#engine)'s a
 
 ## Revision history
 
+- Accepted on 2026-10-12. Accepted: the reason-code registry is now enforced by `cargo xtask docs-check`, and the spike produced every code the corpus expects.
 - v1-draft.1 (2026-10-01): Initial draft.
