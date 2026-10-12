@@ -35,7 +35,11 @@ pub(crate) struct Meta {
 /// Parses the metadata comment on the first line, if it has the expected shape.
 pub(crate) fn parse(text: &str, patterns: &Patterns) -> Option<Meta> {
     let captures = patterns.metadata.captures(text.lines().next()?)?;
-    let field = |index| captures.get(index).map_or_else(String::new, |m| m.as_str().to_owned());
+    let field = |index| {
+        captures
+            .get(index)
+            .map_or_else(String::new, |m| m.as_str().to_owned())
+    };
     Some(Meta {
         kind: field(1),
         status: field(2),
@@ -69,23 +73,36 @@ fn check_fields(page: &Page, meta: &Meta, patterns: &Patterns, report: &mut Repo
         report.error(&location, format!("unknown status `{}`", meta.status));
     }
     if !IMPLEMENTATIONS.contains(&meta.implementation.as_str()) {
-        report.error(&location, format!("unknown implementation `{}`", meta.implementation));
+        report.error(
+            &location,
+            format!("unknown implementation `{}`", meta.implementation),
+        );
     }
     if !patterns.milestone.is_match(&meta.milestone) {
         report.error(&location, format!("unknown milestone `{}`", meta.milestone));
     }
     if !patterns.date.is_match(&meta.reviewed) {
-        report.error(&location, format!("`reviewed` must be YYYY-MM-DD, found `{}`", meta.reviewed));
+        report.error(
+            &location,
+            format!("`reviewed` must be YYYY-MM-DD, found `{}`", meta.reviewed),
+        );
     }
-    if meta.implementation == "n/a" && matches!(meta.kind.as_str(), "spec" | "tutorial" | "how-to") {
-        report.error(&location, format!("kind `{}` must not use implementation=n/a", meta.kind));
+    if meta.implementation == "n/a" && matches!(meta.kind.as_str(), "spec" | "tutorial" | "how-to")
+    {
+        report.error(
+            &location,
+            format!("kind `{}` must not use implementation=n/a", meta.kind),
+        );
     }
 }
 
 fn check_location(page: &Page, meta: &Meta, patterns: &Patterns, report: &mut Report) {
     let is_record = patterns.adr_file.is_match(&page.rel) || page.rel == "adr/template.md";
     if is_record && meta.kind != "adr" {
-        report.error(format!("{}:1", page.rel), "architecture decision records must use kind=adr");
+        report.error(
+            format!("{}:1", page.rel),
+            "architecture decision records must use kind=adr",
+        );
     }
     if meta.kind == "adr" && !is_record {
         report.error(
@@ -103,7 +120,10 @@ fn check_title_and_banner(page: &Page, meta: &Meta, report: &mut Report) {
         report.error(format!("{}:2", page.rel), "line 2 must be blank");
     }
     if !line(3).starts_with("# ") {
-        report.error(format!("{}:3", page.rel), "line 3 must be the level-1 title (`# Title`)");
+        report.error(
+            format!("{}:3", page.rel),
+            "line 3 must be the level-1 title (`# Title`)",
+        );
     }
     if !line(4).is_empty() {
         report.error(format!("{}:4", page.rel), "line 4 must be blank");
@@ -112,11 +132,17 @@ fn check_title_and_banner(page: &Page, meta: &Meta, report: &mut Report) {
     let (admonition, label) = expected_banner(meta);
     let marker = format!("> [!{admonition}]");
     if line(5) != marker {
-        report.error(format!("{}:5", page.rel), format!("banner must start with `{marker}`"));
+        report.error(
+            format!("{}:5", page.rel),
+            format!("banner must start with `{marker}`"),
+        );
     }
     let label_line = format!("> **{label}.**");
     if !line(6).starts_with(&label_line) {
-        report.error(format!("{}:6", page.rel), format!("banner label must be `{label_line}`"));
+        report.error(
+            format!("{}:6", page.rel),
+            format!("banner label must be `{label_line}`"),
+        );
     }
 }
 

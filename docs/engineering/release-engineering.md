@@ -29,5 +29,6 @@ Binaries are self-contained and fully static on musl targets.
 Signed release binaries with a software bill of materials are produced for every release.
 
 ## Read next
+
 - [Versioning and stability](../project/versioning-and-stability.md)
 - [Verifying releases](../security/verifying-releases.md)

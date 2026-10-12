@@ -22,5 +22,5 @@ The API is JSON-RPC 2.0.
 
 ## Read next
 
-- [Local API](../spec/local-api.md)
-- [Agent-agnostic contract](../spec/README.md)
+- [Local API](../../spec/local-api.md)
+- [Agent-agnostic contract](../../spec/README.md)

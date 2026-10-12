@@ -9,7 +9,7 @@
 - **Deciders:** Founding maintainer
 - **Supersedes:** none
 - **Superseded by:** none
-- **Related:** [ADR index](README.md), [Classifier](docs/../glossary.md#classifier), [Action request](../spec/action-request.md), [Risk signals](../spec/risk-signals.md), [Use cases](../overview/use-cases.md)
+- **Related:** [ADR index](README.md), [Classifier](../glossary.md#classifier), [Action request](../spec/action-request.md), [Risk signals](../spec/risk-signals.md), [Use cases](../overview/use-cases.md)
 
 ## Context and problem statement
 

@@ -30,14 +30,24 @@ fn load_schemas(docs: &Path, patterns: &Patterns, report: &mut Report) -> BTreeM
             report.error(&rel, format!("`$schema` must be `{DRAFT_2020_12}`"));
         }
         let file_name = rel.rsplit('/').next().unwrap_or(&rel);
-        match value.get("$id").and_then(Value::as_str).and_then(|id| patterns.schema_id.captures(id)) {
-            None => report.error(&rel, "`$id` must look like `urn:shiin:schema:<name>:v<major>`"),
+        match value
+            .get("$id")
+            .and_then(Value::as_str)
+            .and_then(|id| patterns.schema_id.captures(id))
+        {
+            None => report.error(
+                &rel,
+                "`$id` must look like `urn:shiin:schema:<name>:v<major>`",
+            ),
             Some(captures) => {
                 let name = captures.get(1).map_or("", |m| m.as_str());
                 let major = captures.get(2).map_or("", |m| m.as_str());
                 let expected_file = format!("{name}.v{major}.schema.json");
                 if file_name != expected_file {
-                    report.error(&rel, format!("file name must be `{expected_file}` to match `$id`"));
+                    report.error(
+                        &rel,
+                        format!("file name must be `{expected_file}` to match `$id`"),
+                    );
                 }
             }
         }
@@ -50,7 +60,10 @@ fn load_schemas(docs: &Path, patterns: &Patterns, report: &mut Report) -> BTreeM
 }
 
 /// Builds a validator for each schema, with every schema registered so `$ref` by `$id` resolves.
-fn compile_validators(schemas: &BTreeMap<String, Value>, report: &mut Report) -> BTreeMap<String, Validator> {
+fn compile_validators(
+    schemas: &BTreeMap<String, Value>,
+    report: &mut Report,
+) -> BTreeMap<String, Validator> {
     let mut validators = BTreeMap::new();
     let mut builder = Registry::new();
     for (rel, schema) in schemas {
@@ -68,7 +81,10 @@ fn compile_validators(schemas: &BTreeMap<String, Value>, report: &mut Report) ->
     let registry = match builder.prepare() {
         Ok(registry) => registry,
         Err(error) => {
-            report.error(SCHEMA_DIRECTORY, format!("cannot resolve schema references: {error}"));
+            report.error(
+                SCHEMA_DIRECTORY,
+                format!("cannot resolve schema references: {error}"),
+            );
             return validators;
         }
     };
@@ -96,7 +112,9 @@ fn check_examples(
     for page in pages {
         let lines: Vec<&str> = page.text.lines().collect();
         // Markers inside fenced code blocks document the syntax itself, so they are not examples.
-        let prose: BTreeSet<usize> = super::prose_lines(&page.text).map(|(number, _)| number).collect();
+        let prose: BTreeSet<usize> = super::prose_lines(&page.text)
+            .map(|(number, _)| number)
+            .collect();
         for (index, line) in lines.iter().enumerate() {
             let Some(captures) = patterns.validate_marker.captures(line) else {
                 continue;
@@ -108,8 +126,14 @@ fn check_examples(
             let should_pass = captures.get(1).is_some_and(|m| m.as_str() == "validate");
             let schema_path = captures.get(2).map_or("", |m| m.as_str());
 
-            if !lines.get(index + 1).is_some_and(|next| next.trim_start().starts_with("```json")) {
-                report.error(&location, "a validation marker must be followed directly by a ```json code block");
+            if !lines
+                .get(index + 1)
+                .is_some_and(|next| next.trim_start().starts_with("```json"))
+            {
+                report.error(
+                    &location,
+                    "a validation marker must be followed directly by a ```json code block",
+                );
                 continue;
             }
             let body: Vec<&str> = lines
@@ -126,15 +150,24 @@ fn check_examples(
                 }
             };
             let Some(validator) = validators.get(schema_path) else {
-                report.error(&location, format!("schema `{schema_path}` does not exist or failed to compile"));
+                report.error(
+                    &location,
+                    format!("schema `{schema_path}` does not exist or failed to compile"),
+                );
                 continue;
             };
             match (should_pass, first_violation(validator, &instance)) {
                 (true, Some(violation)) => {
-                    report.error(&location, format!("example does not match {schema_path}: {violation}"));
+                    report.error(
+                        &location,
+                        format!("example does not match {schema_path}: {violation}"),
+                    );
                 }
                 (false, None) => {
-                    report.error(&location, format!("example marked validate-fail matches {schema_path}"));
+                    report.error(
+                        &location,
+                        format!("example marked validate-fail matches {schema_path}"),
+                    );
                 }
                 _ => {}
             }
@@ -149,12 +182,18 @@ fn check_test_vectors(docs: &Path, validators: &BTreeMap<String, Validator>, rep
         return;
     }
     let Some(validator) = validators.get(TEST_VECTOR_SCHEMA) else {
-        report.error(TEST_VECTOR_DIRECTORY, format!("test vectors exist but `{TEST_VECTOR_SCHEMA}` is missing"));
+        report.error(
+            TEST_VECTOR_DIRECTORY,
+            format!("test vectors exist but `{TEST_VECTOR_SCHEMA}` is missing"),
+        );
         return;
     };
     for (rel, vector) in vectors {
         if let Some(violation) = first_violation(validator, &vector) {
-            report.error(&rel, format!("test vector does not match the schema: {violation}"));
+            report.error(
+                &rel,
+                format!("test vector does not match the schema: {violation}"),
+            );
         }
     }
 }
@@ -186,9 +225,11 @@ fn read_json_files(docs: &Path, directory: &str, report: &mut Report) -> Vec<(St
             continue;
         }
         let rel = relative(docs, path);
-        match fs::read_to_string(path).map_err(|error| error.to_string()).and_then(|text| {
-            serde_json::from_str::<Value>(&text).map_err(|error| error.to_string())
-        }) {
+        match fs::read_to_string(path)
+            .map_err(|error| error.to_string())
+            .and_then(|text| {
+                serde_json::from_str::<Value>(&text).map_err(|error| error.to_string())
+            }) {
             Ok(value) => files.push((rel, value)),
             Err(error) => report.error(&rel, format!("cannot read JSON: {error}")),
         }
@@ -228,7 +269,11 @@ mod tests {
 
         let mut report = Report::default();
         let validators = compile_validators(&schemas, &mut report);
-        assert!(report.errors.is_empty(), "unexpected errors: {:?}", report.errors);
+        assert!(
+            report.errors.is_empty(),
+            "unexpected errors: {:?}",
+            report.errors
+        );
 
         let validator = validators
             .get("spec/schemas/example.v1.schema.json")

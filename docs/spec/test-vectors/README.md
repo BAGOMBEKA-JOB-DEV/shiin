@@ -6,7 +6,7 @@
 > **Specification: draft.**
 > Normative design. No implementation exists yet.
 
-Test vectors encode the [golden use cases](../overview/use-cases.md) and are the conformance corpus that implementations are checked against.
+Test vectors encode the [golden use cases](../../overview/use-cases.md) and are the conformance corpus that implementations are checked against.
 
 ## Format
 

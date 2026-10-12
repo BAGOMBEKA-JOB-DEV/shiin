@@ -2,14 +2,14 @@
 
 [Introduction](README.md)
 
-# Overview
+## Overview
 
 - [Vision](overview/vision.md)
 - [Use cases](overview/use-cases.md)
 - [Landscape](overview/landscape.md)
 - [FAQ](overview/faq.md)
 
-# Concepts
+## Concepts
 
 - [How Shiin works](concepts/how-shiin-works.md)
 - [Action requests](concepts/action-requests.md)
@@ -24,13 +24,13 @@
 - [Audit and evidence](concepts/audit-and-evidence.md)
 - [Limitations](concepts/limitations.md)
 
-# Getting started (design intent)
+## Getting started (design intent)
 
 - [Installation](getting-started/installation.md)
 - [Quickstart: Claude Code](getting-started/quickstart-claude-code.md)
 - [Your first policy](getting-started/first-policy.md)
 
-# Guides (design intent)
+## Guides (design intent)
 
 - [Writing policies](guides/writing-policies.md)
 - [Using Shiin with sandboxes](guides/using-shiin-with-sandboxes.md)
@@ -38,7 +38,7 @@
 - [Testing policies](guides/testing-policies.md)
 - [Handling approvals](guides/handling-approvals.md)
 - [Audit, replay, and receipts](guides/audit-replay-and-receipts.md)
-- [Integrations]()
+- [Integrations](guides/integrations/index.md)
   - [Claude Code](guides/integrations/claude-code.md)
   - [Codex CLI](guides/integrations/codex.md)
   - [Cursor](guides/integrations/cursor.md)
@@ -46,14 +46,14 @@
   - [Custom agents](guides/integrations/custom-agents.md)
   - [Aider in a sandbox](guides/integrations/aider-sandboxed.md)
 
-# Reference
+## Reference
 
 - [CLI](reference/cli.md)
 - [Configuration](reference/configuration.md)
 - [Error codes](reference/error-codes.md)
 - [Platform support](reference/platform-support.md)
 
-# Specifications
+## Specifications
 
 - [About the specifications](spec/README.md)
 - [Action types](spec/action-types.md)
@@ -72,7 +72,7 @@
 - [Local API](spec/local-api.md)
 - [Test vectors](spec/test-vectors/README.md)
 
-# Security
+## Security
 
 - [Threat model](security/threat-model.md)
 - [Security model](security/security-model.md)
@@ -82,14 +82,14 @@
 - [Hardening](security/hardening.md)
 - [Verifying releases](security/verifying-releases.md)
 
-# Architecture
+## Architecture
 
 - [Overview](architecture/overview.md)
 - [Decision pipeline](architecture/decision-pipeline.md)
 - [Deployment models](architecture/deployment-models.md)
 - [State and storage](architecture/state-and-storage.md)
 
-# Engineering
+## Engineering
 
 - [Workspace and crates](engineering/workspace-and-crates.md)
 - [Toolchain and MSRV](engineering/toolchain-and-msrv.md)
@@ -104,7 +104,7 @@
 - [Release engineering](engineering/release-engineering.md)
 - [Security-sensitive changes](engineering/security-sensitive-changes.md)
 
-# Decisions
+## Decisions
 
 - [Architecture decision records](adr/README.md)
   - [0001 Record architecture decisions](adr/0001-record-architecture-decisions.md)
@@ -153,7 +153,7 @@
 - [RFC process](rfcs/README.md)
   - [RFC template](rfcs/0000-template.md)
 
-# Project
+## Project
 
 - [Roadmap](project/roadmap.md)
 - [Versioning and stability](project/versioning-and-stability.md)

@@ -29,5 +29,5 @@ The hook receives the tool payload and returns allow, deny, or ask.
 
 ## Read next
 
-- [Adapter contract](../spec/adapter-contract.md)
-- [Enforcement levels](../security/enforcement-levels.md)
+- [Adapter contract](../../spec/adapter-contract.md)
+- [Enforcement levels](../../security/enforcement-levels.md)

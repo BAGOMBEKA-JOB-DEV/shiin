@@ -9,7 +9,7 @@
 - **Deciders:** Founding maintainer
 - **Supersedes:** none
 - **Superseded by:** none
-- **Related:** [ADR index](README.md), [Documentation style guide](../project/docs-style-guide.md), [Overview](overview/vision.md)
+- **Related:** [ADR index](README.md), [Documentation style guide](../project/docs-style-guide.md), [Overview](../overview/vision.md)
 
 ## Context and problem statement
 

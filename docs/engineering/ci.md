@@ -26,5 +26,6 @@ Third-party actions are pinned by commit SHA, with the release tag in a comment.
 Nightly jobs use a dated nightly named in the workflow, updated by pull request.
 
 ## Read next
+
 - [Documentation tooling and CI](../project/docs-tooling-and-ci.md)
 - [Testing strategy](testing-strategy.md)

@@ -9,7 +9,7 @@
 - **Deciders:** Founding maintainer
 - **Supersedes:** none
 - **Superseded by:** none
-- **Related:** [ADR index](README.md), [ADR-0001](0001-record-architecture-decisions.md), [ADR-0006](0006-vulnerability-reporting.md), [Governance overview](../../GOVERNANCE.md)
+- **Related:** [ADR index](README.md), [ADR-0001](0001-record-architecture-decisions.md), [ADR-0006](0006-vulnerability-reporting.md), [Governance overview](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/GOVERNANCE.md)
 
 ## Context and problem statement
 

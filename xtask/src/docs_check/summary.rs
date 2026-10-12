@@ -27,7 +27,10 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
                 report.error(&location, format!("entry `{path}` does not exist"));
             }
             if !listed.insert(path.to_owned()) {
-                report.error(&location, format!("entry `{path}` is listed more than once"));
+                report.error(
+                    &location,
+                    format!("entry `{path}` is listed more than once"),
+                );
             }
         }
     }

@@ -34,5 +34,6 @@ Miri runs the engine crates' tests on a nightly toolchain in CI.
 The approval state machine is property-tested from v0.3.
 
 ## Read next
+
 - [Workspace and crates](workspace-and-crates.md)
 - [Continuous integration](ci.md)

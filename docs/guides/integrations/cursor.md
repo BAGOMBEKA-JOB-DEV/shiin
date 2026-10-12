@@ -23,5 +23,5 @@ Hooks return allow, deny, or ask responses and support a `failClosed` option.
 
 ## Read next
 
-- [Adapter contract](../spec/adapter-contract.md)
-- [Enforcement levels](../security/enforcement-levels.md)
+- [Adapter contract](../../spec/adapter-contract.md)
+- [Enforcement levels](../../security/enforcement-levels.md)

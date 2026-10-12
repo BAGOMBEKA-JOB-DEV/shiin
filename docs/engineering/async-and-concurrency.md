@@ -25,5 +25,6 @@ Evaluation is deterministic.
 Concurrent evaluations must not share mutable state.
 
 ## Read next
+
 - [Workspace and crates](workspace-and-crates.md)
 - [Toolchain and MSRV](toolchain-and-msrv.md)

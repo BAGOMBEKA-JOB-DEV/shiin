@@ -26,6 +26,7 @@ A memory-safety bug in Shiin could change a decision from `deny` to `allow`, com
 ## Considered options
 
 1. Forbid `unsafe_code` in all crates except a single `shiin-platform` crate.
+
 - `unsafe_code = "forbid"` in `[workspace.lints.rust]`.
 - Only `shiin-platform` is allowed `unsafe`, and only where no safe crate provides the needed facility.
 - Every `unsafe` block has a `// SAFETY:` comment, one unsafe operation per block, and tests on every supported platform.

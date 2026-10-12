@@ -18,11 +18,20 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
             let location = format!("{}:{number}", page.rel);
             let prose = strip_inline_code(line);
 
-            if !FORMER_NAME_PAGES.contains(&page.rel.as_str()) && patterns.former_name.is_match(line) {
-                report.error(&location, "the former working name may appear only in ADR-0003 and the landscape page");
+            if !FORMER_NAME_PAGES.contains(&page.rel.as_str())
+                && patterns.former_name.is_match(line)
+            {
+                report.error(
+                    &location,
+                    "the former working name may appear only in ADR-0003 and the landscape page",
+                );
             }
-            if page.rel != "overview/landscape.md" && patterns.mischaracterization.is_match(&prose) {
-                report.error(&location, "Shiin is an authorization layer, not a firewall, guardrail, or sandbox");
+            if page.rel != "overview/landscape.md" && patterns.mischaracterization.is_match(&prose)
+            {
+                report.error(
+                    &location,
+                    "Shiin is an authorization layer, not a firewall, guardrail, or sandbox",
+                );
             }
             if patterns.exclusionary.is_match(line) {
                 report.error(&location, "write `allowlist` or `denylist`");
@@ -34,7 +43,10 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
                 if let Some(keyword) = patterns.requirement_keyword.find(&prose) {
                     report.error(
                         &location,
-                        format!("requirement keyword `{}` is only allowed on kind=spec pages", keyword.as_str()),
+                        format!(
+                            "requirement keyword `{}` is only allowed on kind=spec pages",
+                            keyword.as_str()
+                        ),
                     );
                 }
             }

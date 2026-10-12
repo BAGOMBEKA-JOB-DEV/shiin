@@ -6,33 +6,33 @@
 > **RFC: accepted.**
 > This is the template for proposal records.
 
-# RFC-NNNN: Short title
+## RFC-NNNN: Short title
 
 - **Date:** YYYY-MM-DD
 - **Status:** draft
 - **Supersedes:** none
 - **Superseded by:** none
 
-## Summary
+### Summary
 
 In one paragraph, what is proposed.
 
-## Motivation
+### Motivation
 
 Why is this change needed?
 
-## Proposal
+### Proposal
 
 What exactly changes?
 
-## Considered alternatives
+### Considered alternatives
 
 What else was considered and why was it rejected?
 
-## Consequences
+### Consequences
 
 What does this change affect?
 
-## Confirmation
+### Confirmation
 
 How will this change be confirmed?

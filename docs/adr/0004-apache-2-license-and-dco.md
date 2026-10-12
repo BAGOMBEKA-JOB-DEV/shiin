@@ -37,7 +37,7 @@ Chosen option: "Apache License 2.0 with Developer Certificate of Origin", becaus
 
 - The license is Apache-2.0, as set in `[workspace.package].license` in `Cargo.toml`.
 - Every commit requires a DCO sign-off (`git commit -s`); no contributor license agreement is used.
-- This choice is recorded in [ADR-0004](0004-apache-2-license-and-dco.md) and referenced from [CONTRIBUTING.md](../../CONTRIBUTING.md).
+- This choice is recorded in [ADR-0004](0004-apache-2-license-and-dco.md) and referenced from [CONTRIBUTING.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/CONTRIBUTING.md).
 
 ### Consequences
 

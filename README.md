@@ -108,22 +108,21 @@ The [roadmap](docs/project/roadmap.md) lists the scope and exit criteria of each
 ## Contributing
 
 The specification phase is the cheapest time to change the design, so reviews of the specifications and the threat model are the most useful contributions right now.
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Read [CONTRIBUTING.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/CONTRIBUTING.md) before opening a pull request.
 Commits need a Developer Certificate of Origin sign-off (`git commit -s`), and all code and tooling are written in Rust.
 
-- Everyone who participates follows the [code of conduct](CODE_OF_CONDUCT.md).
-- [GOVERNANCE.md](GOVERNANCE.md) describes how decisions are made, and [MAINTAINERS.md](MAINTAINERS.md) lists who makes them.
-- [SUPPORT.md](SUPPORT.md) explains where to ask questions.
-- AI coding agents working in this repository follow [AGENTS.md](AGENTS.md).
+- Everyone who participates follows the [code of conduct](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/CODE_OF_CONDUCT.md).
+- [GOVERNANCE.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/GOVERNANCE.md) describes how decisions are made, and [MAINTAINERS.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/MAINTAINERS.md) lists who makes them.
+- [SUPPORT.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/SUPPORT.md) explains where to ask questions.
+- AI coding agents working in this repository follow [AGENTS.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/AGENTS.md).
 
 ## Security
 
 A way to get an action past Shiin's decisions is a security vulnerability, even in a specification.
-Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
+Report vulnerabilities privately as described in [SECURITY.md](https://github.com/BAGOMBEKA-JOB-DEV/shiin/blob/main/SECURITY.md), never in a public issue.
 
 ## License
 
 Shiin is licensed under the [Apache License, Version 2.0](LICENSE).
 See [NOTICE](NOTICE) for attribution.
 Contributions are accepted under the same license with a DCO sign-off and no contributor license agreement ([ADR-0004](docs/adr/0004-apache-2-license-and-dco.md)).
-

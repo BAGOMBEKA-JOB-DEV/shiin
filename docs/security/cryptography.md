@@ -25,5 +25,6 @@ Shiin uses the operating system's randomness source for ids and keys.
 The engine crates never use a custom randomness source.
 
 ## Read next
+
 - [Receipts](../spec/receipts.md)
 - [Signing key storage](../adr/0032-signing-key-storage.md)

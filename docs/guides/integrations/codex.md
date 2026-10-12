@@ -23,5 +23,5 @@ Shiin uses Codex CLI's `PreToolUse` hooks covering Bash, `apply_patch`, and MCP 
 
 ## Read next
 
-- [Adapter contract](../spec/adapter-contract.md)
-- [Enforcement levels](../security/enforcement-levels.md)
+- [Adapter contract](../../spec/adapter-contract.md)
+- [Enforcement levels](../../security/enforcement-levels.md)

@@ -79,6 +79,7 @@ Shiin cannot see what an allowed command does; a sandbox covers that gap.
 ## Out of scope
 
 Shiin is not designed to resist:
+
 - Operating-system level attacks against the developer's account.
 - Hardware or firmware attacks.
 - Supply-chain attacks against Shiin's dependencies, which are covered by the supply-chain policy.

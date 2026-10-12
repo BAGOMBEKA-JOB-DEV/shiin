@@ -27,5 +27,6 @@ These budgets are measured in CI on every Tier 1 platform.
 A regression opens a bug, not an exception.
 
 ## Read next
+
 - [Testing strategy](testing-strategy.md)
 - [Platform support](../reference/platform-support.md)

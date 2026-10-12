@@ -13,7 +13,7 @@ Shiin sits in the data path between the client and each MCP server.
 
 ## Interception
 
-The MCP proxy maps tool calls to [action requests](../glossary.md#action-request) and applies the same policy that hook adapters use.
+The MCP proxy maps tool calls to [action requests](../../glossary.md#action-request) and applies the same policy that hook adapters use.
 MCP tool annotations can make a decision stricter but never more permissive.
 
 ## What it cannot see
@@ -22,5 +22,5 @@ MCP tool annotations can make a decision stricter but never more permissive.
 
 ## Read next
 
-- [Adapter contract](../spec/adapter-contract.md)
-- [Govern MCP tools](../overview/use-cases.md#uc-08)
+- [Adapter contract](../../spec/adapter-contract.md)
+- [Govern MCP tools](../../overview/use-cases.md#uc-08-govern-mcp-tools)

@@ -31,5 +31,6 @@ Signed release binaries with a software bill of materials are produced for every
 See [Verifying releases](verifying-releases.md).
 
 ## Read next
+
 - [Verifying releases](verifying-releases.md)
 - [Using Shiin with sandboxes](../guides/using-shiin-with-sandboxes.md)

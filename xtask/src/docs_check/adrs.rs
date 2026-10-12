@@ -18,11 +18,22 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
             continue;
         };
         if let Some(previous) = records.insert(number.clone(), page) {
-            report.error(&page.rel, format!("ADR number {number} is already used by {}", previous.rel));
+            report.error(
+                &page.rel,
+                format!("ADR number {number} is already used by {}", previous.rel),
+            );
         }
         let expected_title = format!("# ADR-{number}: ");
-        if !page.text.lines().nth(2).is_some_and(|line| line.starts_with(&expected_title)) {
-            report.error(format!("{}:3", page.rel), format!("title must start with `{expected_title}`"));
+        if !page
+            .text
+            .lines()
+            .nth(2)
+            .is_some_and(|line| line.starts_with(&expected_title))
+        {
+            report.error(
+                format!("{}:3", page.rel),
+                format!("title must start with `{expected_title}`"),
+            );
         }
     }
 

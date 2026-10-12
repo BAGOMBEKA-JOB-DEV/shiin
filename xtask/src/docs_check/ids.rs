@@ -34,12 +34,18 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
             let location = format!("{}:{number}", page.rel);
             for found in patterns.requirement_reference.find_iter(line) {
                 if !requirements.contains_key(found.as_str()) {
-                    report.error(&location, format!("requirement `{}` is not defined", found.as_str()));
+                    report.error(
+                        &location,
+                        format!("requirement `{}` is not defined", found.as_str()),
+                    );
                 }
             }
             for found in patterns.threat_reference.find_iter(line) {
                 if !threats.contains_key(found.as_str()) {
-                    report.error(&location, format!("threat `{}` is not defined", found.as_str()));
+                    report.error(
+                        &location,
+                        format!("threat `{}` is not defined", found.as_str()),
+                    );
                 }
             }
         }
@@ -60,18 +66,29 @@ fn collect_requirement_definitions(
                     continue;
                 };
                 let id = format!("{}-{}", prefix.as_str(), digits.as_str());
-                match PREFIX_OWNERS.iter().find(|(known, _)| *known == prefix.as_str()) {
-                    None => report.error(&location, format!("unknown requirement prefix in `{id}`")),
+                match PREFIX_OWNERS
+                    .iter()
+                    .find(|(known, _)| *known == prefix.as_str())
+                {
+                    None => {
+                        report.error(&location, format!("unknown requirement prefix in `{id}`"))
+                    }
                     Some((_, owner)) if *owner != page.rel => {
                         report.error(&location, format!("`{id}` must be defined in {owner}"));
                     }
                     Some(_) => {}
                 }
                 if !page.is_kind("spec") {
-                    report.error(&location, format!("`{id}` is defined on a page that is not kind=spec"));
+                    report.error(
+                        &location,
+                        format!("`{id}` is defined on a page that is not kind=spec"),
+                    );
                 }
                 if let Some(previous) = defined.insert(id.clone(), location.clone()) {
-                    report.error(&location, format!("`{id}` is already defined at {previous}"));
+                    report.error(
+                        &location,
+                        format!("`{id}` is already defined at {previous}"),
+                    );
                 }
             }
         }
@@ -93,10 +110,16 @@ fn collect_threat_definitions(
                     continue;
                 };
                 if page.rel != THREAT_MODEL {
-                    report.error(&location, format!("threat `{id}` must be defined in {THREAT_MODEL}"));
+                    report.error(
+                        &location,
+                        format!("threat `{id}` must be defined in {THREAT_MODEL}"),
+                    );
                 }
                 if let Some(previous) = defined.insert(id.clone(), location.clone()) {
-                    report.error(&location, format!("threat `{id}` is already defined at {previous}"));
+                    report.error(
+                        &location,
+                        format!("threat `{id}` is already defined at {previous}"),
+                    );
                 }
             }
         }

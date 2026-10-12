@@ -196,7 +196,9 @@ pub(crate) fn prose_lines(text: &str) -> impl Iterator<Item = (usize, &str)> {
     text.lines().enumerate().filter_map(move |(index, line)| {
         let trimmed = line.trim_start();
         if let Some(fence) = &open_fence {
-            if trimmed.starts_with(fence.as_str()) && trimmed.trim_end().chars().all(|c| fence.starts_with(c)) {
+            if trimmed.starts_with(fence.as_str())
+                && trimmed.trim_end().chars().all(|c| fence.starts_with(c))
+            {
                 open_fence = None;
             }
             return None;
@@ -238,6 +240,9 @@ mod tests {
 
     #[test]
     fn strip_inline_code_keeps_only_prose() {
-        assert_eq!(strip_inline_code("use `MUST` here but MAY there"), "use  here but MAY there");
+        assert_eq!(
+            strip_inline_code("use `MUST` here but MAY there"),
+            "use  here but MAY there"
+        );
     }
 }

@@ -32,5 +32,6 @@ An RFC is required when a change:
 | `superseded` | Replaced by a later RFC. |
 
 ## Read next
+
 - [Architecture decision records](../adr/README.md)
 - [RFC template](0000-template.md)

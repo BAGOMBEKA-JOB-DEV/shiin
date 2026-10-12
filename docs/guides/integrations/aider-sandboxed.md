@@ -21,4 +21,4 @@ Run Aider inside a sandbox such as a container or virtual machine, with Shiin's 
 ## Read next
 
 - [Using Shiin with sandboxes](../using-shiin-with-sandboxes.md)
-- [Shell wrapper](../architecture/overview.md)
+- [Shell wrapper](../../architecture/overview.md)

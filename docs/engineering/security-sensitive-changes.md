@@ -26,8 +26,9 @@ Security-sensitive changes need:
 
 ## Disclosure
 
-A change that might be a way to bypass Shiin is handled through [Vulnerability disclosure](vulnerability-disclosure.md), not as an ordinary bug.
+A change that might be a way to bypass Shiin is handled through [Vulnerability disclosure](../security/vulnerability-disclosure.md), not as an ordinary bug.
 
 ## Read next
-- [Vulnerability disclosure](vulnerability-disclosure.md)
+
+- [Vulnerability disclosure](../security/vulnerability-disclosure.md)
 - [Unsafe code policy](unsafe-policy.md)

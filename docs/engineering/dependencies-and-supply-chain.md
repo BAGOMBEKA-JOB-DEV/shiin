@@ -28,5 +28,6 @@ Members reference it with `workspace = true` and enable only the features they u
 - A dependency that gains a soundness advisory is treated as a potential vulnerability.
 
 ## Read next
+
 - [Workspace and crates](workspace-and-crates.md)
 - [Unsafe code policy](unsafe-policy.md)
