@@ -10,6 +10,7 @@
 )]
 
 mod adrs;
+mod codes;
 mod ids;
 mod metadata;
 mod registries;
@@ -141,6 +142,7 @@ pub(crate) fn run() -> ExitCode {
     ids::check(&pages, &patterns, &mut report);
     adrs::check(&pages, &patterns, &mut report);
     registries::check(&pages, &mut report);
+    codes::check(&workspace_root(), &pages, &mut report);
     schemas::check(&docs, &pages, &patterns, &mut report);
 
     if report.errors.is_empty() {

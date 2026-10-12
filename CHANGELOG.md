@@ -26,3 +26,7 @@ Shiin has not been released yet, so every entry below is unreleased.
 - `cargo xtask docs-check` now rejects a reason code or action type that is not in its registry, including in test vectors.
 - Effects may name their own action type, so a rule written for `fs.read` also covers a read performed by a shell command (AR-010, AR-011, TV-009). Found while implementing use case UC-02.
 - The ADR-0014 spike was retired once `shiin-policy` and `shiin-engine` covered the same corpus, as its disposition note required.
+- Stable error codes are emitted by the crates and documented, and `cargo xtask docs-check` now rejects a code documented as emitted that no crate emits, a code marked reserved that a crate does emit, and a code in the source that is documented nowhere.
+- Fault-injection tests cover the paths that would otherwise become an allow: an unparsable policy, an unknown policy key, an unwritable audit log, an empty payload, a tampered log, and a decision that arrives too close to a host timeout.
+- The getting-started guides, the policy guide, and the CLI, configuration, and error-code references now describe what a source build does, with each command and setting marked as working today or planned.
+
