@@ -448,14 +448,19 @@ fn validate(path: &Path) -> Result<String, String> {
     ))
 }
 
-/// The workspace this command applies to.
+/// The workspace this command applies to, canonicalized.
+///
+/// Canonicalizing matters: policy globs are resolved against this root and effects are
+/// canonicalized, so a root reached through a symlink would put them in different
+/// namespaces and nothing would match (`AR-008`).
 fn workspace_root() -> String {
-    std::env::var("SHIIN_WORKSPACE").unwrap_or_else(|_| {
+    let reported = std::env::var("SHIIN_WORKSPACE").unwrap_or_else(|_| {
         std::env::current_dir().map_or_else(
             |_| ".".to_owned(),
             |path| path.to_string_lossy().into_owned(),
         )
-    })
+    });
+    shiin_classify::canonical_root(&reported)
 }
 
 /// Decides a request read from a file, optionally explaining the outcome.
@@ -588,7 +593,7 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
             let root = if payload.cwd.is_empty() {
                 fallback
             } else {
-                payload.cwd.clone()
+                shiin_classify::canonical_root(&payload.cwd)
             };
             (claude_code::to_action_request(&payload, &root), root)
         }
@@ -598,14 +603,14 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
             let root = if payload.cwd.is_empty() {
                 fallback
             } else {
-                payload.cwd.clone()
+                shiin_classify::canonical_root(&payload.cwd)
             };
             (codex::to_action_request(&payload, &root), root)
         }
         HostKind::Cursor => {
             let payload: cursor::HookPayload = serde_json::from_str(input)
                 .map_err(|error| format!("the hook payload is not valid: {error}"))?;
-            let root = payload.workspace(&fallback);
+            let root = shiin_classify::canonical_root(&payload.workspace(&fallback));
             (cursor::to_action_request(&payload, &root), root)
         }
     };

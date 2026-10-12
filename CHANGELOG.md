@@ -36,3 +36,4 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Codex CLI and Cursor hook adapters, each speaking its host's own protocol, with Cursor's `failClosed` requirement and Codex's unverified payload field names documented rather than hidden.
 - `shiin policy test`, which runs an operator's own cases through the same runner as the project's conformance corpus.
 - Four more conformance vectors (TV-010 to TV-013) covering task limits, expiry, ask-for, and host constraints.
+- A workspace root reported by a host is canonicalized before use. Policy globs resolve against the root while effects are canonicalized, so a root reached through a symlink, as on macOS where `/var` links to `/private/var`, put them in different namespaces and every action fell through to the default decision.

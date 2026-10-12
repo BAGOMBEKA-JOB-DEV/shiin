@@ -103,6 +103,18 @@ fn display(path: &Path) -> String {
     format!("/{joined}")
 }
 
+/// Canonicalizes a workspace root reported by a host.
+///
+/// A host reports whatever path it was started with, which may run through a symlink:
+/// macOS puts temporary directories under `/var`, which is a link to `/private/var`.
+/// Policy globs are resolved against this root while effects are canonicalized, so if
+/// the root is not canonical too, a rule written `./src/**` never matches the very paths
+/// it is about, and every action falls through to the default decision (`AR-008`).
+#[must_use]
+pub fn canonical_root(root: &str) -> String {
+    canonical_path(root, root)
+}
+
 /// A path effect with exact confidence.
 #[must_use]
 pub fn path_effect(raw: &str, workspace_root: &str) -> Effect {
@@ -221,6 +233,22 @@ mod tests {
         assert_eq!(
             canonical_path("./src/login.rs", ROOT),
             "/shiin-test-root/project/src/login.rs"
+        );
+    }
+
+    #[test]
+    fn a_workspace_root_is_canonical() {
+        // A root that exists nowhere is already canonical.
+        assert_eq!(
+            canonical_root("/shiin-test-root/project"),
+            "/shiin-test-root/project"
+        );
+        // A root reached through a symlink resolves to the same place as its effects.
+        let root = canonical_root(&std::env::temp_dir().to_string_lossy());
+        assert_eq!(
+            canonical_root(&root),
+            root,
+            "canonicalizing a root is stable"
         );
     }
 

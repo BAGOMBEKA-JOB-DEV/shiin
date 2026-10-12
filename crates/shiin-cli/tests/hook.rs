@@ -563,3 +563,27 @@ fn policy_cases_pass_and_a_wrong_expectation_fails() {
     assert!(failing.contains("FAILED  wrong"), "{failing}");
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+// Reproduces on any Unix what macOS does by default: its temporary directories live
+// under /var, which is a symlink to /private/var.
+#[cfg(unix)]
+fn a_workspace_reached_through_a_symlink_still_matches_policy() {
+    let real = workspace("symlink-real");
+    let mut link = std::env::temp_dir();
+    link.push(format!("shiin-cli-{}-symlink-view", std::process::id()));
+    let _ = fs::remove_file(&link);
+    std::os::unix::fs::symlink(&real, &link).expect("the symlink is created");
+
+    // The host reports the path it was started with, which here runs through the link.
+    let response = run_hook(
+        &link,
+        &payload(&link, "Write", r#"{"file_path":"src/login.rs"}"#),
+    );
+    assert!(
+        response.contains("\"permissionDecision\":\"allow\""),
+        "a root reached through a symlink must resolve to the same place as its effects: {response}"
+    );
+    let _ = fs::remove_file(link);
+    let _ = fs::remove_dir_all(real);
+}

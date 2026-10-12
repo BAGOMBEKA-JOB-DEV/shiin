@@ -1448,6 +1448,7 @@ version = "0.0.0"
 dependencies = [
  "serde_json",
  "shiin-audit",
+ "shiin-classify",
  "shiin-engine",
  "shiin-hooks",
  "shiin-policy",
