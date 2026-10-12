@@ -1,0 +1,30 @@
+name: Documentation issue
+description: Something in the documentation is wrong, unclear, or missing
+title: "docs: "
+labels: ["area/docs"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Path or URL, for example docs/concepts/limitations.md
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of problem
+      options:
+        - Wrong or out of date
+        - Unclear
+        - Missing information
+        - Describes an unbuilt feature as if it worked
+        - Broken link, example, or diagram
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+    validations:
+      required: true

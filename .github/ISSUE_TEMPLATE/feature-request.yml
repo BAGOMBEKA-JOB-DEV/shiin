@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a capability or a change in behavior
+title: "feat: "
+labels: ["kind/feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What situation is not handled today? Describe the problem, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Policy and evaluation
+        - Tasks and intent binding
+        - Risk signals
+        - Approvals and grants
+        - Audit, receipts, and replay
+        - Adapters and host integrations
+        - Command-line interface
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: rfc
+    attributes:
+      label: Scope
+      options:
+        - label: This may need an RFC, because it changes an accepted specification, a stable surface, or the roadmap.
