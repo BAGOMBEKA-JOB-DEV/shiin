@@ -42,6 +42,17 @@ pub enum AuditError {
     },
 }
 
+impl AuditError {
+    /// The stable code for this error, as registered in `docs/reference/error-codes.md`.
+    #[must_use]
+    pub fn code(&self) -> &'static str {
+        match *self {
+            Self::Io { .. } => "SHIIN-AUD-0001",
+            Self::Malformed { .. } => "SHIIN-AUD-0002",
+        }
+    }
+}
+
 /// One record in the audit log.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditEvent {

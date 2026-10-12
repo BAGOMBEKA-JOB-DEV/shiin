@@ -54,6 +54,26 @@ pub enum PolicyError {
     },
 }
 
+impl PolicyError {
+    /// The stable code for this error, as registered in `docs/reference/error-codes.md`.
+    ///
+    /// Codes are part of the interface: a script may match on them, so they are never
+    /// renumbered or reused.
+    #[must_use]
+    pub fn code(&self) -> &'static str {
+        match *self {
+            // An unknown key is distinguished from other syntax errors, because it is
+            // the common mistake and it fails closed rather than being ignored.
+            Self::Syntax { ref message } if message.contains("unknown field") => "SHIIN-POL-0003",
+            Self::Syntax { .. } => "SHIIN-POL-0002",
+            Self::DuplicateRule(_) => "SHIIN-POL-0004",
+            Self::Pattern { .. } => "SHIIN-POL-0005",
+            Self::Cedar { .. } => "SHIIN-POL-0006",
+            Self::Request(_) => "SHIIN-GEN-0001",
+        }
+    }
+}
+
 /// What the policy stage concluded.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PolicyOutcome {

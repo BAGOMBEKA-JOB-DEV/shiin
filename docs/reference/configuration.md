@@ -1,34 +1,44 @@
-<!-- shiin-doc: kind=reference status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
 
 # Configuration
 
 > [!NOTE]
 > **Reference: draft.**
-> Facts to look up. No implementation exists yet.
+> This describes what a source build reads today, and marks what is planned.
 
-## Configuration files
+## Files
 
-| File | Purpose | Location |
+| File | Purpose | Status |
 |---|---|---|
-| `policy.toml` | Policy rules and capabilities | `.shiin/policy.toml` |
-| `config.toml` | Shiin configuration | `.shiin/config.toml` |
-| `tasks/` | Task declarations | `.shiin/tasks/` |
+| `.shiin/policy.toml` | The policy for this workspace | works today |
+| `.shiin/audit.jsonl` | The append-only audit log | works today |
+| `.shiin/config.toml` | Settings that are not policy, such as the audit log's location | planned, v0.2 |
+| `.shiin/tasks/` | Task declarations | planned, v0.2 |
 
-## Global options
+Paths are relative to the workspace, which is the directory the host reports as its
+working directory. Under [ADR-0016](../adr/0016-built-in-protected-resources.md) everything
+under `.shiin/` is a built-in protected resource, so no policy can let an agent change it.
 
-| Option | Description |
-|---|---|
-| `--config <path>` | Path to a Shiin configuration file. |
-| `--state <path>` | Path to Shiin's state directory. |
+A per-user state directory in the usual operating-system locations arrives with the
+daemon in v0.3; see [state and storage](../architecture/state-and-storage.md).
 
 ## Environment variables
 
-| Variable | Description |
-|---|---|
-| `SHIIN_STATE` | Shiin's state directory. Overrides the default. |
-| `SHIIN_LOG` | Log level filter, such as `shiin=info`. |
+| Variable | Description | Status |
+|---|---|---|
+| `SHIIN_WORKSPACE` | Overrides the workspace root. Useful when a host reports no working directory | works today |
+| `SHIIN_UNATTENDED` | If set to any value, a `pending` decision becomes a denial, because no approver can be reached | works today |
+| `CI` | Treated the same as `SHIIN_UNATTENDED`, since continuous integration has no approver | works today |
+| `SHIIN_LOG` | Log level filter | planned, v0.2 |
+
+## Options
+
+Global options such as `--config` and `--state` are planned for v0.2, once there is
+configuration beyond policy to point at. Today the workspace and the environment
+variables above are the only inputs.
 
 ## Read next
 
 - [CLI](cli.md)
 - [Error codes](error-codes.md)
+- [Writing policies](../guides/writing-policies.md)

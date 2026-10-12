@@ -1,51 +1,55 @@
-<!-- shiin-doc: kind=reference status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
 
 # CLI
 
 > [!NOTE]
 > **Reference: draft.**
-> Facts to look up. No implementation exists yet.
+> The commands marked "works today" run from a source build.
+> Shiin has no releases yet, so there is nothing to install from a package manager.
 
-The `shiin` command-line binary provides these subcommands.
+```console
+$ shiin <command>
+```
 
-## Commands by milestone
+## Commands
 
-| Command | Description | Milestone |
+| Command | What it does | Status |
 |---|---|---|
-| `shiin init` | Create a workspace policy file. | v0.1 |
-| `shiin check` | Check that a policy file is valid. | v0.1 |
-| `shiin explain` | Explain a decision in detail. | v0.1 |
-| `shiin policy validate` | Validate a policy and report diagnostics. | v0.1 |
-| `shiin policy test` | Test a policy against recorded cases. | v0.2 |
-| `shiin hook claude-code` | Run the Claude Code hook adapter. | v0.1 |
-| `shiin hook codex` | Run the Codex CLI hook adapter. | v0.2 |
-| `shiin hook cursor` | Run the Cursor hook adapter. | v0.2 |
-| `shiin task` | Manage task declarations. | v0.2 |
-| `shiin pending` | Manage pending approvals. | v0.3 |
-| `shiin approve` | Resolve an approval request. | v0.3 |
-| `shiin log` | Show the audit log. | v0.1 |
-| `shiin verify` | Verify the audit log's hash chain. | v0.4 |
-| `shiin replay` | Re-evaluate recorded requests. | v0.4 |
-| `shiin doctor` | Diagnose the Shiin installation. | v0.1 |
-
-## Global options
-
-| Option | Description |
-|---|---|
-| `--config <path>` | Path to a Shiin configuration file. |
-| `--state <path>` | Path to Shiin's state directory. |
-| `--json` | Emit machine-readable output. |
+| `shiin init` | Writes a starter policy to `.shiin/policy.toml`, refusing to overwrite one | works today |
+| `shiin policy validate [path]` | Parses and compiles a policy, reporting rule and signal counts or a diagnostic | works today |
+| `shiin check <request.json>` | Decides one action request and prints the decision and reason code | works today |
+| `shiin explain <request.json>` | Decides, and also prints the stage that decided and the rules that matched | works today |
+| `shiin hook claude-code` | Serves one Claude Code `PreToolUse` hook call, reading the payload on standard input | works today |
+| `shiin log [count]` | Prints recent audit events, most recent last | works today |
+| `shiin verify` | Checks the audit log's hash chain | works today |
+| `shiin doctor` | Reports this workspace's policy, audit log, mode, and enforcement level | works today |
+| `shiin policy test` | Runs recorded policy cases, the way the conformance corpus does | planned, v0.2 |
+| `shiin task` | Declares, lists, and ends task declarations | planned, v0.2 |
+| `shiin hook codex`, `shiin hook cursor` | The same hook service for other hosts | planned, v0.2 |
+| `shiin pending`, `shiin approve` | Lists and resolves approval requests | planned, v0.3 |
+| `shiin replay` | Re-evaluates recorded requests, including against a different policy | planned, v0.4 |
 
 ## Exit codes
 
+`shiin check` and `shiin explain` report the decision as an exit code, so a script can branch on it.
+
 | Code | Meaning |
 |---|---|
-| 0 | Success. |
-| 1 | A user-facing error, such as an invalid policy. |
-| 2 | An internal error, which produces a fail-closed deny at run time. |
+| 0 | The action is allowed |
+| 1 | The action is denied, or the command failed |
+| 2 | The action is pending, so a person needs to decide |
+
+`shiin hook claude-code` exits 0 whenever it produced a response, including a denial,
+because the host reads the decision from the response rather than from the exit code.
+It exits 2 only when it could not produce a response at all, which the host treats as blocking.
+
+## Files it uses
+
+See [configuration](configuration.md). In short, policy is read from `.shiin/policy.toml`
+and events are appended to `.shiin/audit.jsonl`.
 
 ## Read next
 
-- [Configuration](configuration.md)
+- [Quickstart with Claude Code](../getting-started/quickstart-claude-code.md)
 - [Error codes](error-codes.md)
-- [Platform support](platform-support.md)
+- [Configuration](configuration.md)

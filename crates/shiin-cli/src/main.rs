@@ -142,11 +142,17 @@ fn init() -> Result<String, String> {
 
 /// Reads and compiles the policy for this workspace.
 fn load_policy(path: &Path, workspace_root: &str) -> Result<(Policy, CompiledPolicy), String> {
-    let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
-    let policy = toml_front_end::parse(&text).map_err(|error| error.to_string())?;
+    let text = fs::read_to_string(path)
+        .map_err(|error| format!("SHIIN-POL-0001: {}: {error}", path.display()))?;
+    let policy = toml_front_end::parse(&text).map_err(|error| described(&error))?;
     let compiled =
-        CompiledPolicy::compile(&policy, workspace_root).map_err(|error| error.to_string())?;
+        CompiledPolicy::compile(&policy, workspace_root).map_err(|error| described(&error))?;
     Ok((policy, compiled))
+}
+
+/// Renders a policy error with its stable code, so a script can match on it.
+fn described(error: &shiin_policy::PolicyError) -> String {
+    format!("{}: {error}", error.code())
 }
 
 fn validate(path: &Path) -> Result<String, String> {
@@ -289,28 +295,25 @@ fn serve_hook() -> Result<HookResponse, String> {
 fn record(request: &ActionRequest, decision: &Decision) -> Result<(), String> {
     let log = AuditLog::new(AUDIT_PATH);
     if let Some(parent) = log.path().parent() {
-        fs::create_dir_all(parent).map_err(|error| format!("{}: {error}", parent.display()))?;
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("SHIIN-AUD-0001: {}: {error}", parent.display()))?;
     }
     let now = clock::now_rfc3339();
-    log.append(
-        "request.received",
-        &now,
-        serde_json::to_value(request).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
-    log.append(
-        "decision.made",
-        &now,
-        serde_json::to_value(decision).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
+    for (event_type, body) in [
+        ("request.received", serde_json::to_value(request)),
+        ("decision.made", serde_json::to_value(decision)),
+    ] {
+        let body = body.map_err(|error| format!("SHIIN-GEN-0001: {error}"))?;
+        log.append(event_type, &now, body)
+            .map_err(|error| format!("{}: {error}", error.code()))?;
+    }
     Ok(())
 }
 
 fn show_log(count: usize) -> Result<String, String> {
     let events = AuditLog::new(AUDIT_PATH)
         .read()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| format!("{}: {error}", error.code()))?;
     if events.is_empty() {
         return Ok("the audit log is empty".to_owned());
     }
@@ -343,19 +346,26 @@ fn show_log(count: usize) -> Result<String, String> {
 
 fn verify() -> Result<String, String> {
     let log = AuditLog::new(AUDIT_PATH);
-    let events = log.read().map_err(|error| error.to_string())?;
-    let breaks = log.verify().map_err(|error| error.to_string())?;
+    let events = log
+        .read()
+        .map_err(|error| format!("{}: {error}", error.code()))?;
+    let breaks = log
+        .verify()
+        .map_err(|error| format!("{}: {error}", error.code()))?;
     if breaks.is_empty() {
         Ok(format!(
             "the audit log is intact: {} event(s), chain verified",
             events.len()
         ))
     } else {
-        Err(breaks
-            .iter()
-            .map(|chain_break| format!("event {}: {}", chain_break.seq, chain_break.detail))
-            .collect::<Vec<_>>()
-            .join("\n"))
+        Err(format!(
+            "SHIIN-AUD-0002: the audit log does not verify\n{}",
+            breaks
+                .iter()
+                .map(|chain_break| format!("  event {}: {}", chain_break.seq, chain_break.detail))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ))
     }
 }
 
