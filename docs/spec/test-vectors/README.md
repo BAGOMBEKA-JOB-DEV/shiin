@@ -14,6 +14,13 @@ Each test vector is a JSON file in `docs/spec/test-vectors/` validated against `
 
 A test vector records one action request, the policy it is evaluated against, and the expected decision.
 
+Two optional fields carry the remaining engine inputs, so that every vector can be decided from the vector alone:
+
+| Field | Meaning |
+|---|---|
+| `task` | The active task declaration, for vectors that exercise intent binding. |
+| `mode` | `attended` or `unattended`. Absent means attended. |
+
 ## Golden use cases
 
 | ID | Use case | Vector file |
@@ -32,4 +39,5 @@ Implementations run every vector and check the decision matches.
 
 ## Revision history
 
+- v1-draft.2 (2026-10-12): Added the optional `task` and `mode` fields, so TV-004 and TV-007 are decidable from their own inputs.
 - v1-draft.1 (2026-10-01): Initial draft.

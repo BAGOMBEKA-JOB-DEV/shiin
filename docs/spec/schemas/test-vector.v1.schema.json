@@ -3,21 +3,67 @@
   "$id": "urn:shiin:schema:test-vector:v1",
   "title": "Shiin test vector",
   "type": "object",
-  "required": ["schema", "id", "name", "action_request", "policy", "expected"],
+  "required": [
+    "schema",
+    "id",
+    "name",
+    "action_request",
+    "policy",
+    "expected"
+  ],
   "properties": {
-    "schema": { "type": "string", "const": "shiin.test-vector/v1-draft.1" },
-    "id": { "type": "string", "minLength": 1 },
-    "name": { "type": "string", "minLength": 1 },
-    "action_request": { "$ref": "urn:shiin:schema:action-request:v1" },
-    "policy": { "$ref": "urn:shiin:schema:policy:v1" },
+    "schema": {
+      "type": "string",
+      "const": "shiin.test-vector/v1-draft.1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "action_request": {
+      "$ref": "urn:shiin:schema:action-request:v1"
+    },
+    "policy": {
+      "$ref": "urn:shiin:schema:policy:v1"
+    },
     "expected": {
       "type": "object",
-      "required": ["decision", "reason"],
+      "required": [
+        "decision",
+        "reason"
+      ],
       "properties": {
-        "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
-        "reason": { "type": "string", "minLength": 1 }
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny",
+            "pending"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": false
+    },
+    "task": {
+      "$ref": "urn:shiin:schema:intent-binding:v1#/properties/task",
+      "description": "The active task declaration, when the vector exercises intent binding."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "attended",
+        "unattended"
+      ],
+      "default": "attended",
+      "description": "Whether an approver can be reached. Absent means attended."
     }
   },
   "additionalProperties": false

@@ -23,6 +23,16 @@ The engine performs no I/O and is deterministic: the same inputs always produce 
 
 **[EVAL-004]** The identity, capability, intent, and risk stages are [gates](../glossary.md#gate): they may return `deny`, `pending`, or `pass`, but never `allow`.
 
+## Inputs
+
+**[EVAL-014]** The engine's inputs MUST be exactly the action request, the policy snapshot, the active task declaration if one exists, the evaluation mode, and the current time.
+
+**[EVAL-015]** The engine MUST NOT read any other input, so that the same inputs always produce the same decision ([ADR-0010](../adr/0010-pure-synchronous-engine.md)).
+
+**[EVAL-016]** The evaluation mode MUST be either `attended`, meaning an approver can be reached, or `unattended`, meaning none can.
+
+**[EVAL-017]** In `unattended` mode, a decision that would be `pending` MUST instead be `deny` with reason code `deny.unattended`.
+
 ## Combining
 
 **[EVAL-005]** If any stage returns `deny`, the decision is `deny` ([ADR-0011](../adr/0011-decision-values-and-combining.md)).
@@ -70,4 +80,5 @@ The engine performs no I/O and is deterministic: the same inputs always produce 
 
 ## Revision history
 
+- v1-draft.2 (2026-10-12): Stated the engine's inputs, and defined attended and unattended evaluation modes (EVAL-014 to EVAL-017).
 - v1-draft.1 (2026-10-01): Initial draft.

@@ -41,6 +41,7 @@ A [decision](../glossary.md#decision) is the [engine](../glossary.md#engine)'s a
 | `deny.risk` | deny | A risk signal denied the action. |
 | `deny.failure` | deny | A failure produced a fail-closed deny. |
 | `deny.builtin` | deny | A built-in protected resource was touched. |
+| `deny.unattended` | deny | A `pending` result could not be resolved because no approver is available. |
 | `pending.identity` | pending | The agent identity needs confirmation. |
 | `pending.capability` | pending | The agent capability needs confirmation. |
 | `pending.intent` | pending | The action needs confirmation against the task. |

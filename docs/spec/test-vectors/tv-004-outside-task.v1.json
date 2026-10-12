@@ -6,14 +6,24 @@
     "schema": "shiin.action-request/v1-draft.1",
     "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0e",
     "session": "sess-001",
-    "agent": { "id": "agent-001", "assurance": "asserted" },
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
     "action_type": "fs.write",
     "effects": [
-      { "kind": "path", "value": "/home/dev/project/migrations/0042.sql", "confidence": "exact" }
+      {
+        "kind": "path",
+        "value": "/home/dev/project/migrations/0042.sql",
+        "confidence": "exact"
+      }
     ],
     "task": "task-001",
     "policy_snapshot": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    "host": { "name": "claude-code", "tool": "Write" }
+    "host": {
+      "name": "claude-code",
+      "tool": "Write"
+    }
   },
   "policy": {
     "schema": "shiin.policy/v1-draft.1",
@@ -25,13 +35,36 @@
           {
             "id": "allow-workspace-writes",
             "effect": "allow",
-            "action_types": ["fs.write"],
-            "resources": ["./**"]
+            "action_types": [
+              "fs.write"
+            ],
+            "resources": [
+              "./**"
+            ]
           }
         ]
       }
     ],
     "default": "deny"
   },
-  "expected": { "decision": "deny", "reason": "deny.intent" }
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.intent"
+  },
+  "task": {
+    "id": "task-001",
+    "description": "Fix the login bug",
+    "scope": {
+      "paths": [
+        "./src/auth/**",
+        "./tests/auth/**"
+      ]
+    },
+    "forbid": {
+      "action_types": [
+        "db.schema_change"
+      ]
+    },
+    "expires_at": "2026-10-12T18:00:00Z"
+  }
 }
