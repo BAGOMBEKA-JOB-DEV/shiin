@@ -20,11 +20,11 @@ Shiin stores its state on the developer's machine and collects no telemetry ([AD
 
 ## Durability
 
-A non-read action MUST NOT proceed until its audit event is durably recorded ([ADR-0030](../adr/0030-audit-durability.md)).
+A non-read action does not proceed until its audit event is durably recorded ([ADR-0030](../adr/0030-audit-durability.md)).
 
 ## Redaction
 
-The audit log MUST NOT contain secret values ([AUD-006](../spec/audit-events.md#required-fields)).
+The audit log never contains secret values ([AUD-006](../spec/audit-events.md#required-fields)).
 
 ## Read next
 

@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use super::{Page, Patterns, Report, prose_lines};
+use super::{Page, Patterns, Report, prose_lines, strip_inline_code};
 
 /// Each requirement ID prefix and the page that owns it.
 const PREFIX_OWNERS: &[(&str, &str)] = &[
@@ -21,6 +21,7 @@ const PREFIX_OWNERS: &[(&str, &str)] = &[
     ("ADP", "spec/adapter-contract.md"),
     ("API", "spec/local-api.md"),
     ("SEC", "security/security-model.md"),
+    ("ENF", "security/enforcement-levels.md"),
 ];
 
 const THREAT_MODEL: &str = "security/threat-model.md";
@@ -32,6 +33,7 @@ pub(crate) fn check(pages: &[Page], patterns: &Patterns, report: &mut Report) {
     for page in pages {
         for (number, line) in prose_lines(&page.text) {
             let location = format!("{}:{number}", page.rel);
+            let line = &strip_inline_code(line);
             for found in patterns.requirement_reference.find_iter(line) {
                 if !requirements.contains_key(found.as_str()) {
                     report.error(
@@ -61,6 +63,7 @@ fn collect_requirement_definitions(
     for page in pages {
         for (number, line) in prose_lines(&page.text) {
             let location = format!("{}:{number}", page.rel);
+            let line = &strip_inline_code(line);
             for captures in patterns.requirement_definition.captures_iter(line) {
                 let (Some(prefix), Some(digits)) = (captures.get(1), captures.get(2)) else {
                     continue;
@@ -71,7 +74,7 @@ fn collect_requirement_definitions(
                     .find(|(known, _)| *known == prefix.as_str())
                 {
                     None => {
-                        report.error(&location, format!("unknown requirement prefix in `{id}`"))
+                        report.error(&location, format!("unknown requirement prefix in `{id}`"));
                     }
                     Some((_, owner)) if *owner != page.rel => {
                         report.error(&location, format!("`{id}` must be defined in {owner}"));
@@ -105,6 +108,7 @@ fn collect_threat_definitions(
     for page in pages {
         for (number, line) in prose_lines(&page.text) {
             let location = format!("{}:{number}", page.rel);
+            let line = &strip_inline_code(line);
             for captures in patterns.threat_definition.captures_iter(line) {
                 let Some(id) = captures.get(1).map(|m| m.as_str().to_owned()) else {
                     continue;

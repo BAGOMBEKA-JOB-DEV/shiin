@@ -86,7 +86,7 @@ impl Patterns {
             summary_link: Regex::new(r"\]\(([^)]*)\)")?,
             requirement_definition: Regex::new(r"\*\*\[([A-Z]+)-(\d{3})\]\*\*")?,
             requirement_reference: Regex::new(
-                r"\b(AT|AR|DEC|EVAL|ID|POL|SYN|INT|RISK|APR|AUD|RCPT|ADP|API|SEC)-\d{3}\b",
+                r"\b(AT|AR|DEC|EVAL|ID|POL|SYN|INT|RISK|APR|AUD|RCPT|ADP|API|SEC|ENF)-\d{3}\b",
             )?,
             threat_definition: Regex::new(r"\*\*\[(ST-[STRIDE]-\d{2})\]\*\*")?,
             threat_reference: Regex::new(r"\bST-[STRIDE]-\d{2}\b")?,
@@ -203,11 +203,12 @@ pub(crate) fn prose_lines(text: &str) -> impl Iterator<Item = (usize, &str)> {
             }
             return None;
         }
-        let marker = trimmed.chars().next().filter(|c| *c == '`' || *c == '~')?;
-        let run = trimmed.chars().take_while(|c| *c == marker).count();
-        if run >= 3 {
-            open_fence = Some(marker.to_string().repeat(run));
-            return None;
+        if let Some(marker @ ('`' | '~')) = trimmed.chars().next() {
+            let run = trimmed.chars().take_while(|c| *c == marker).count();
+            if run >= 3 {
+                open_fence = Some(marker.to_string().repeat(run));
+                return None;
+            }
         }
         Some((index + 1, line))
     })
