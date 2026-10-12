@@ -1,30 +1,87 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
 
-# Quickstart: Claude Code
+# Quickstart with Claude Code
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> These steps work with a source build. Read [installation](installation.md) first.
 
-## Steps
+By the end you will have refused a real action: Claude Code will ask to read a `.env`
+file, and Shiin will say no.
 
-1. [Install](installation.md) Shiin.
-2. Create a workspace policy:
+## 1. Write a policy
 
-   ```console
-   $ shiin init
-   ```
+From the root of the project you want to protect:
 
-3. Configure Claude Code to use Shiin's hook.
-4. Start Claude Code in your workspace.
-5. When an agent proposes an action, Shiin evaluates it against policy.
+```console
+$ shiin init
+$ shiin policy validate
+```
 
-## Example
+`init` writes `.shiin/policy.toml`. It allows reads and edits under `src/`, `tests/`,
+and `docs/`, allows a few test and status commands, denies reads of secrets, and denies
+everything it does not mention.
 
-An agent tries to read `.env`.
-Shiin denies it with reason code `deny.policy`.
+## 2. Connect the hook
+
+Claude Code can run a program before each tool use and read a decision back
+(verified against <https://code.claude.com/docs/en/hooks> on 2026-09-14).
+Add this to `.claude/settings.json` in the same project:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "shiin hook claude-code",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The matcher `*` sends every tool call to Shiin, which is what you want: a rule that
+only covers file tools would miss the same file being read by a shell command.
+
+## 3. Watch it refuse something
+
+Start Claude Code in that project and ask it to read your `.env` file.
+The hook answers, and the agent is told the action was denied.
+
+Then look at what happened:
+
+```console
+$ shiin log
+   1  2026-10-12T13:34:39Z  request.received   fs.read
+   2  2026-10-12T13:34:39Z  decision.made      deny (deny.policy)
+$ shiin verify
+the audit log is intact: 2 event(s), chain verified
+```
+
+Ask it to run `cat .env` instead. That is a shell command, not a file tool, and it is
+denied by the same rule, because the classifier records the read the command performs.
+
+## 4. Know what you have
+
+```console
+$ shiin doctor
+```
+
+The line that matters most reads `enforcement   L1 cooperative`. It means Claude Code
+honors Shiin's decisions but can be started without hooks, and that Shiin never sees an
+action the host does not send it. [Enforcement levels](../security/enforcement-levels.md)
+explains what that does and does not protect, and
+[using Shiin with sandboxes](../guides/using-shiin-with-sandboxes.md) covers the rest.
 
 ## Read next
 
 - [Your first policy](first-policy.md)
-- [Claude Code](../guides/integrations/claude-code.md)
+- [Writing policies](../guides/writing-policies.md)
+- [Limitations](../concepts/limitations.md)
