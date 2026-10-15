@@ -96,7 +96,7 @@ A crate that is listed here but not yet created does not exist in any form, incl
 | `shiin-ipc` | Local transport over Unix domain sockets and Windows named pipes | v0.3 |
 | `shiind` | The per-user daemon | v0.3 |
 | `shiin-client` | The Rust client for daemon evaluation and policy validation | v0.5 |
-| `shiin-mcp-proxy` | The MCP proxy | v0.5 |
+| `shiin-mcp-proxy` | The stdio MCP proxy for downstream tools | v0.5 |
 | `shiin-platform` | The only crate allowed to contain `unsafe` code; created only if needed | as needed |
 | `xtask` | Repository tooling | exists |
 | `fuzz/` | Fuzz targets; a separate workspace, not a member crate | v0.1 |

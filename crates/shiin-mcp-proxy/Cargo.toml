@@ -1,0 +1,30 @@
+[package]
+name = "shiin-mcp-proxy"
+version = "0.0.0"
+description = "Shiin's stdio MCP authorization proxy"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+# `publish = false` would otherwise hide this executable from cargo-dist.
+[package.metadata.dist]
+dist = true
+
+[[bin]]
+name = "shiin-mcp-proxy"
+path = "src/main.rs"
+
+[dependencies]
+rmcp = { version = "3.0.0", default-features = false, features = ["client", "server", "transport-child-process", "transport-io"] }
+serde_json.workspace = true
+sha2.workspace = true
+shiin-client.workspace = true
+shiin-policy.workspace = true
+shiin-schema.workspace = true
+tokio = { workspace = true, features = ["io-std", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
+
+[lints]
+workspace = true

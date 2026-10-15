@@ -9,6 +9,7 @@ members = [
   "crates/shiin-engine",
   "crates/shiin-hooks",
   "crates/shiin-ipc",
+  "crates/shiin-mcp-proxy",
   "crates/shiin-policy",
   "crates/shiin-schema",
   "crates/shiind",
@@ -34,6 +35,7 @@ chacha20poly1305 = { version = "0.10", default-features = false, features = ["st
 zeroize = { version = "1.8", default-features = false, features = ["std"] }
 shiin-approval = { path = "crates/shiin-approval" }
 shiin-ipc = { path = "crates/shiin-ipc" }
+shiin-mcp-proxy = { path = "crates/shiin-mcp-proxy" }
 cedar-policy = "4"
 getrandom = "0.3"
 globset = "0.4"
