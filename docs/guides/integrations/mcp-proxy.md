@@ -13,9 +13,9 @@ Shiin sits in the data path between the client and each MCP server.
 
 ## Interception
 
-The `shiin-mcp-proxy` binary launches one downstream server, forwards `tools/list`, and sends each `tools/call` through the local daemon before forwarding it. Start it with `--workspace ABSOLUTE_PATH -- SERVER ABSOLUTE_PATH [ARG ...]`, and configure `SHIIN_DAEMON=1` or an absolute `SHIIN_SOCKET`.
+The `shiin-mcp-proxy` binary launches one downstream server, negotiates MCP revision `2026-07-28` without legacy fallback, forwards `tools/list`, and sends each `tools/call` through the local daemon before forwarding it. Start it with `--workspace ABSOLUTE_PATH -- SERVER ABSOLUTE_PATH [ARG ...]`, and configure `SHIIN_DAEMON=1` or an absolute `SHIIN_SOCKET`.
 
-The proxy maps each tool name to an `mcp.tool.*` action type, records tool arguments as a digest, and marks their effect opaque. It returns a caller-visible tool error, including an approval ticket when present, for `deny`, `pending`, or a daemon failure. Only `allow` reaches the downstream server. Other MCP methods are not proxied yet.
+The proxy maps each tool name to an `mcp.tool.*` action type, records the full tool invocation as a digest, and marks its effect opaque. It returns a caller-visible tool error, including an approval ticket when present, for `deny`, `pending`, or a daemon failure. Only `allow` reaches the downstream server. Other MCP methods are not proxied yet.
 
 The target is the [MCP specification revision 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28), checked on 2026-10-16. The current proxy does not use tool annotations to change its decision; annotation handling and conformance remain open.
 

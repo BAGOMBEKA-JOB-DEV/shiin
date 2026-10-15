@@ -19,10 +19,12 @@ use shiin_client::Client;
 use shiin_schema::{
     ActionRequest, Agent, Assurance, Confidence, DecisionValue, Effect, Host, Workspace, clock,
 };
-use std::{env, path::PathBuf, process::ExitCode};
+use std::{borrow::Cow, env, path::PathBuf, process::ExitCode};
 use tokio::process::Command;
 
 type Downstream = rmcp::service::RunningService<RoleClient, ()>;
+
+const SUPPORTED_PROTOCOL_VERSIONS: &[ProtocolVersion] = &[ProtocolVersion::V_2026_07_28];
 
 fn main() -> ExitCode {
     match run() {
@@ -127,6 +129,10 @@ struct Proxy {
 }
 
 impl ServerHandler for Proxy {
+    fn supported_protocol_versions(&self) -> Cow<'static, [ProtocolVersion]> {
+        Cow::Borrowed(SUPPORTED_PROTOCOL_VERSIONS)
+    }
+
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
     }
@@ -163,7 +169,7 @@ impl ServerHandler for Proxy {
                 ));
             }
         };
-        if decision.decision != DecisionValue::Allow {
+        if !should_forward(decision.decision) {
             let ticket = decision
                 .approval
                 .as_ref()
@@ -180,6 +186,10 @@ impl ServerHandler for Proxy {
 
 fn tool_error(message: &str) -> CallToolResponse {
     CallToolResult::error(vec![ContentBlock::text(message.to_owned())]).into()
+}
+
+fn should_forward(decision: DecisionValue) -> bool {
+    decision == DecisionValue::Allow
 }
 
 fn action_request(
@@ -209,9 +219,9 @@ fn action_request_for(
     if id.is_empty() {
         return Err("OS randomness failed".to_owned());
     }
-    let arguments =
-        serde_json::to_vec(&tool.arguments).map_err(|_| "tool arguments could not be encoded")?;
-    let digest = format!("sha256:{:x}", Sha256::digest(arguments));
+    let invocation =
+        serde_json::to_vec(tool).map_err(|_| "tool invocation could not be encoded")?;
+    let digest = format!("sha256:{:x}", Sha256::digest(invocation));
     let action_type = tool_action_type(&tool.name)?;
     let request = ActionRequest {
         schema: "shiin.action-request/v1-draft.1".to_owned(),
@@ -261,7 +271,7 @@ fn tool_action_type(name: &str) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{action_request_for, tool_action_type};
+    use super::{action_request_for, should_forward, tool_action_type};
     use rmcp::model::CallToolRequestParams;
     use serde_json::json;
 
@@ -297,5 +307,12 @@ mod tests {
             Ok("mcp.tool.db.read_2a".to_owned())
         );
         assert!(tool_action_type("").is_err());
+    }
+
+    #[test]
+    fn only_allow_reaches_the_downstream_server() {
+        assert!(should_forward(shiin_schema::DecisionValue::Allow));
+        assert!(!should_forward(shiin_schema::DecisionValue::Deny));
+        assert!(!should_forward(shiin_schema::DecisionValue::Pending));
     }
 }
