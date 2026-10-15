@@ -73,9 +73,8 @@ impl HookResponse {
     pub fn from_decision(decision: &Decision) -> Self {
         let permission = match decision.decision {
             DecisionValue::Allow => "allow",
-            DecisionValue::Deny => "deny",
             DecisionValue::Pending if decision.approval.is_none() => "ask",
-            DecisionValue::Pending => "deny",
+            DecisionValue::Deny | DecisionValue::Pending => "deny",
         };
         Self::new(permission, &agent_message(decision))
     }
@@ -240,6 +239,37 @@ mod tests {
         };
         let response = HookResponse::from_decision(&decision);
         assert_eq!(response.hook_specific_output.permission_decision, "ask");
+    }
+
+    #[test]
+    fn a_pending_ticket_denies_in_the_legacy_host_protocol() {
+        let decision = Decision {
+            approval: Some(shiin_schema::ApprovalRequest {
+                schema: "shiin.approval-protocol/v1-draft.1".to_owned(),
+                request_id: "request".to_owned(),
+                decision: DecisionValue::Pending,
+                reason: "pending.risk".to_owned(),
+                message: DecisionValue::Pending.message().to_owned(),
+                ticket: "ticket".to_owned(),
+                created_at: "2026-10-16T00:00:00Z".to_owned(),
+                expires_at: "2026-10-16T00:05:00Z".to_owned(),
+                resolution: None,
+            }),
+            schema: versions::DECISION.to_owned(),
+            request_id: "request".to_owned(),
+            decision: DecisionValue::Pending,
+            reason: "pending.risk".to_owned(),
+            message: DecisionValue::Pending.message().to_owned(),
+            trace: None,
+            stage: "risk".to_owned(),
+            matched_rules: Vec::new(),
+            policy_snapshot: "sha256:0".to_owned(),
+            engine_version: "0".to_owned(),
+        };
+
+        let response = HookResponse::from_decision(&decision);
+
+        assert_eq!(response.hook_specific_output.permission_decision, "deny");
     }
 
     #[test]

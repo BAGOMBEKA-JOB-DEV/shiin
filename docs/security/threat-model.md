@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # Threat model
 
@@ -102,7 +102,7 @@ The [M0 external-review criterion](../project/roadmap.md#m0-specification) remai
 | ST-D-01 | Existing timeout, panic, contention, and budget tests remain required; the performance command measures local latency. | Large-input/log bounds and cross-platform memory measurements remain incomplete. |
 | ST-S-01 | Hook identities remain asserted and the identity stage passes through. | Review the lack of assurance enforcement before claiming identity protection. |
 | ST-T-02 | Built-in protections cannot be granted by operator rules. | Review single-file policy loading against the designed trust layers. |
-| ST-E-02 | Cursor and Codex pending decisions are denied rather than relying on unsupported or unverified holding behavior. | Check host configuration, disabling controls, and every supported host version. |
+| ST-E-02 | Cursor and Codex pending decisions are denied rather than relying on unsupported or unverified holding behavior; Claude Code also denies a pending response carrying a daemon ticket instead of treating it as a native prompt. | The adapter regression test covers this branch. Check host configuration, disabling controls, and every supported host version. |
 
 Additional topics for the reviewer are shell classification coverage, path-error and Unicode/case handling, task timestamp parsing, and policy matching for multiple effects.
 The Unix approval state machine and grant consumption, receipt signature verification, and replay have source implementations with focused tests. Their security properties still require independent review; Windows approval transport and live-host behavior remain unvalidated.
