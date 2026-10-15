@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # ADR-0038: Supply chain policy
 
@@ -36,7 +36,8 @@ Chosen option: "Workspace-level declaration with default features off and review
 - Every third-party dependency is declared in `[workspace.dependencies]` with a version requirement and `default-features = false`.
 - Members reference it with `workspace = true` and enable only the features they use.
 - Admission criteria include: amount of unsafe code, documentation of unsafe blocks, RustSec advisory history, and whether a safe alternative exists.
-- `cargo-deny` checks the dependency tree in CI (planned: v0.4).
+- `cargo-deny` checks advisories, licenses, bans, and sources in CI.
+- `cargo-vet` is not selected; its audit database would add maintenance cost without replacing the configured `cargo-deny` checks.
 
 ### Consequences
 
@@ -47,7 +48,7 @@ Chosen option: "Workspace-level declaration with default features off and review
 ### Confirmation
 
 - `Cargo.toml` declares dependencies in `[workspace.dependencies]`.
-- CI runs `cargo-deny` (planned: v0.4).
+- CI runs `cargo deny check`.
 
 ## Pros and cons of the options
 

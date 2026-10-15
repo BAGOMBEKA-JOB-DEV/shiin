@@ -198,7 +198,21 @@ pub fn classify_sql(statement: &str) -> (String, Vec<Effect>) {
         "CREATE" | "ALTER" | "DROP" | "RENAME" | "GRANT" | "REVOKE" => Some("db.schema_change"),
         _ => None,
     };
+    let has_query_side_effect = matches!(first.as_str(), "SELECT" | "EXPLAIN")
+        && normalized
+            .split_ascii_whitespace()
+            .any(|word| matches!(word.to_ascii_uppercase().as_str(), "INTO" | "ANALYZE"))
+        || first == "SELECT"
+            && normalized
+                .split_ascii_whitespace()
+                .collect::<Vec<_>>()
+                .windows(2)
+                .any(|pair| {
+                    pair[0].eq_ignore_ascii_case("FOR")
+                        && matches!(pair[1].to_ascii_uppercase().as_str(), "UPDATE" | "SHARE")
+                });
     let simple = action_type.is_some()
+        && !has_query_side_effect
         && !normalized.is_empty()
         && normalized.bytes().all(|byte| {
             byte.is_ascii_alphanumeric()
@@ -408,6 +422,16 @@ mod tests {
         let (action, effects) = classify_sql("SELECT dangerous() FROM users");
         assert_eq!(action, "db.query");
         assert_eq!(effects[0].confidence, Confidence::Opaque);
+
+        for statement in [
+            "SELECT value INTO new_table FROM users",
+            "SELECT value FROM users FOR UPDATE",
+            "EXPLAIN ANALYZE SELECT value FROM users",
+        ] {
+            let (action, effects) = classify_sql(statement);
+            assert!(matches!(action.as_str(), "db.query" | "db.schema_change"));
+            assert_eq!(effects[0].confidence, Confidence::Opaque, "{statement}");
+        }
 
         let (action, effects) = classify_sql("SELECT 1; DROP TABLE users");
         assert_eq!(action, "db.query");

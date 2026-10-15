@@ -115,7 +115,7 @@
 - `shiin verify` and `shiin replay`, including what-if replay against a different policy.
 - Key management and rotation.
 - Redaction of sensitive values in audit events.
-- cargo-vet enforced in CI.
+- `cargo-deny` enforced in CI, as selected in [ADR-0038](../adr/0038-supply-chain-policy.md).
 
 **Exit criteria.**
 
