@@ -4,7 +4,7 @@
 
 > [!NOTE]
 > **Project status: pre-alpha.**
-> Hook adapters exist in source; live-host validation remains incomplete. MCP and custom-agent integrations are planned.
+> Hook adapters and the Unix local API exist in source; live-host validation remains incomplete. The MCP proxy remains planned.
 
 Adapters connect a host — Claude Code, Codex CLI, Cursor, an MCP client, or a custom agent — to the Shiin engine.
 Each integration page documents the host's interception mechanism, the enforcement level it can provide, and what it cannot see.
@@ -20,7 +20,7 @@ Integration pages only describe the host-specific wiring, not the contract.
 | [Codex CLI](codex.md) | L1 cooperative | Implemented; live-host validation open |
 | [Cursor](cursor.md) | L1 cooperative | Implemented; live-host validation open |
 | [MCP proxy](mcp-proxy.md) | L2 mediated | Planned v0.5 |
-| [Custom agents](custom-agents.md) | L1/L2 via API | Planned v0.5 |
+| [Custom agents](custom-agents.md) | L1/L2 via API | Partial; Unix API and Rust client exist |
 | [Aider in a sandbox](aider-sandboxed.md) | L1 cooperative | Planned v0.6 |
 
 ## Writing a new integration

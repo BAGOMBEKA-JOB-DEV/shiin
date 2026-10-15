@@ -116,13 +116,13 @@ async fn serve() -> Result<(), String> {
                         match result {
                             Ok(Ok(result)) => json!({"jsonrpc":"2.0", "id":id, "result":result}),
                             _ => shiin_ipc::failure(
-                                id,
+                                &id,
                                 -32000,
                                 "Shiin could not authorize this request",
                             ),
                         }
                     }
-                    _ => shiin_ipc::failure(Value::Null, -32600, "Invalid request"),
+                    _ => shiin_ipc::failure(&Value::Null, -32600, "Invalid request"),
                 };
                 let mut bytes = serde_json::to_vec(&response)?;
                 bytes.push(b'\n');

@@ -4,6 +4,7 @@ members = [
   "crates/shiin-approval",
   "crates/shiin-audit",
   "crates/shiin-classify",
+  "crates/shiin-client",
   "crates/shiin-cli",
   "crates/shiin-engine",
   "crates/shiin-hooks",
@@ -41,6 +42,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 sha2 = "0.10"
 shiin-audit = { path = "crates/shiin-audit" }
 shiin-classify = { path = "crates/shiin-classify" }
+shiin-client = { path = "crates/shiin-client" }
 shiin-engine = { path = "crates/shiin-engine" }
 shiin-hooks = { path = "crates/shiin-hooks" }
 shiin-policy = { path = "crates/shiin-policy" }

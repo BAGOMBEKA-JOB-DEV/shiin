@@ -15,6 +15,7 @@ Shiin sits in the data path between the client and each MCP server.
 
 The MCP proxy maps tool calls to [action requests](../../glossary.md#action-request) and applies the same policy that hook adapters use.
 MCP tool annotations can make a decision stricter but never more permissive.
+The target is the [MCP specification revision 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28), checked on 2026-10-16. It says tool behavior annotations are untrusted unless they come from a trusted server; Shiin therefore treats them as hints and never as evidence that a call is safe.
 
 ## What it cannot see
 

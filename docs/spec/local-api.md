@@ -1,10 +1,11 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.5 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.5 reviewed=2026-10-16 -->
 
 # Local API
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> The Unix daemon implements JSON-RPC evaluation, policy validation, and operator approval methods; `shiin-client` exposes evaluation and policy validation.
+> Windows named pipes and attested agent identity remain unimplemented.
 >
 > Version: `shiin.local-api/v1-draft.1`.
 
@@ -27,16 +28,20 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
 | Method | Description |
 |---|---|
 | `shiin.evaluate` | Evaluate an action request and return a decision. |
+| `shiin.evaluate.unattended` | Evaluate without an available approver; `pending` becomes `deny`. |
 | `shiin.policy.validate` | Validate a policy and return diagnostics. |
 | `shiin.approve.resolve` | Resolve an approval request. |
+| `shiin.pending` | List pending requests; requires the operator credential. |
+| `shiin.grants` | List grants; requires the operator credential. |
+| `shiin.revoke` | Revoke a request or grant; requires the operator credential. |
 
 ## Authentication
 
-**[API-005]** The caller's identity MUST be established at the `attested-local` assurance level or higher.
+**[API-005]** The caller's identity MUST be established at the `attested-local` assurance level or higher. The current service verifies that Unix peers share the daemon user's UID but does not yet bind that credential to the request's agent identity.
 
 ## Failure
 
-**[API-006]** Any error, timeout, or unreachable daemon MUST produce a fail-closed `deny`.
+**[API-006]** Any error, timeout, or unreachable daemon MUST produce a fail-closed `deny`. `shiin-client` returns an error; callers MUST stop the requested action unless the decision is `allow`.
 
 ## Example
 
@@ -65,3 +70,4 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
 ## Revision history
 
 - v1-draft.1 (2026-10-01): Initial draft.
+- Implementation update (2026-10-16): Documented the existing Unix daemon methods and Rust client. Windows transport and identity binding remain open.

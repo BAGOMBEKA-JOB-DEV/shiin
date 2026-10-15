@@ -2268,6 +2268,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "shiin-client"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
+ "shiin-ipc",
+ "shiin-schema",
+ "thiserror",
+]
+
+[[package]]
 name = "shiin-engine"
 version = "0.0.0"
 dependencies = [

@@ -63,11 +63,35 @@ pub fn enabled() -> bool {
 /// Authentication, framing, timeouts, protocol errors, and unsupported platforms fail closed.
 pub fn call(runtime: &Runtime, method: &str, params: Value) -> Result<Value, String> {
     let path = endpoint()?;
-    runtime.block_on(async {
-        tokio::time::timeout(TIMEOUT, exchange(&path, method, params))
-            .await
-            .map_err(|_| "local daemon deadline exceeded".to_owned())?
-    })
+    call_at(runtime, &path, method, params)
+}
+
+/// Sends one RPC to an explicitly selected absolute local endpoint.
+///
+/// # Errors
+/// Relative paths, authentication, framing, timeouts, protocol errors, and unsupported
+/// platforms fail closed.
+pub fn call_at(
+    runtime: &Runtime,
+    path: &Path,
+    method: &str,
+    params: Value,
+) -> Result<Value, String> {
+    runtime.block_on(call_at_async(path, method, params))
+}
+
+/// Sends one asynchronous RPC to an explicitly selected absolute local endpoint.
+///
+/// # Errors
+/// Relative paths, authentication, framing, timeouts, protocol errors, and unsupported
+/// platforms fail closed.
+pub async fn call_at_async(path: &Path, method: &str, params: Value) -> Result<Value, String> {
+    if !path.is_absolute() {
+        return Err("local daemon endpoint must be absolute".to_owned());
+    }
+    tokio::time::timeout(TIMEOUT, exchange(path, method, params))
+        .await
+        .map_err(|_| "local daemon deadline exceeded".to_owned())?
 }
 
 #[cfg(unix)]
@@ -153,6 +177,6 @@ pub async fn receive(
 
 /// A JSON-RPC failure with a fixed, non-sensitive diagnostic.
 #[must_use]
-pub fn failure(id: Value, code: i32, message: &str) -> Value {
+pub fn failure(id: &Value, code: i32, message: &str) -> Value {
     json!({"jsonrpc":"2.0", "id":id, "error":{"code":code,"message":message}})
 }

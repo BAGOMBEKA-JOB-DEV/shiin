@@ -9,7 +9,15 @@
     "id": { "type": "string" },
     "method": {
       "type": "string",
-      "enum": ["shiin.evaluate", "shiin.policy.validate", "shiin.approve.resolve"]
+      "enum": [
+        "shiin.evaluate",
+        "shiin.evaluate.unattended",
+        "shiin.policy.validate",
+        "shiin.approve.resolve",
+        "shiin.pending",
+        "shiin.grants",
+        "shiin.revoke"
+      ]
     },
     "params": { "type": "object" }
   },

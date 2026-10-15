@@ -1,0 +1,19 @@
+[package]
+name = "shiin-client"
+version = "0.0.0"
+description = "Rust client for Shiin's local authorization API"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+serde_json.workspace = true
+shiin-ipc.workspace = true
+shiin-schema.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
