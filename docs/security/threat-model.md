@@ -35,7 +35,8 @@ Approver identity is established through an approval channel that the agent does
 **[ST-T-01]** An agent modifies the audit log.
 Chain verification detects altered records and broken links.
 An unsigned local chain cannot establish whether its entire contents were replaced or its tail was removed.
-Signed checkpoints are planned for v0.4.
+Signed checkpoints exist in source when evidence recording is enabled.
+They help detect replacement or truncation before the signed head, but cannot establish integrity after that checkpoint.
 
 **[ST-T-02]** An agent modifies policy.
 The designed trust model loads trusted layers and lets a workspace layer only restrict.

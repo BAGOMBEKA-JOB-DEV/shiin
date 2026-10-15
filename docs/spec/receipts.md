@@ -1,12 +1,12 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.4 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
 
 # Receipts
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> Normative design. Signed receipts, checkpoints, and encrypted replay artifacts are implemented in source; schema and cross-platform conformance remain incomplete.
 >
-> Version: `shiin.receipts/v1-draft.1`.
+> Version: `shiin.receipts/v1-draft.2`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -34,22 +34,31 @@ A [receipt](../glossary.md#receipt) is a signed statement that attests a [decisi
 
 **[RCPT-007]** Signing keys MUST be stored as described in [Signing key storage](../adr/0032-signing-key-storage.md).
 
+## Current implementation
+
+The daemon writes signed decision receipts, encrypted replay inputs, and a signed audit checkpoint under `.shiin/evidence/` when it starts with `SHIIN_EVIDENCE=1` and an initialized signing key.
+`shiin verify <evidence.json> <public.json>` verifies a receipt offline.
+For a checkpoint, it also checks the matching local `.shiin/audit.jsonl` history, so copying only the checkpoint and public key to another machine is insufficient.
+`shiin replay <encrypted-replay.json>` requires the matching local replay key; the optional policy argument performs a what-if comparison.
+Windows support, complete schemas and vectors for all evidence payloads, and Tier 1 offline verification remain open.
+
 ## Example
 
 <!-- validate: spec/schemas/receipts.v1.schema.json -->
 ```json
 {
-  "schema": "shiin.receipt/v1-draft.1",
+  "schema": "shiin.receipt/v1-draft.2",
   "key_id": "key-001",
   "request_id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
   "decision": "allow",
   "reason": "allow.policy",
   "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-  "signed_at": "2026-10-01T13:58:33Z",
-  "signature": "sig-001"
+  "request_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "signed_at": "2026-10-01T13:58:33Z"
 }
 ```
 
 ## Revision history
 
 - v1-draft.1 (2026-10-01): Initial draft.
+- v1-draft.2 (2026-10-16): Add the request digest bound by the source implementation.

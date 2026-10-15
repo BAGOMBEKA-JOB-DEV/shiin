@@ -4,7 +4,7 @@
 
 > [!NOTE]
 > **Project status: pre-alpha.**
-> Core contracts have source implementations and conformance tests; approval, receipts, and local API implementations remain planned.
+> Core contracts have source implementations and conformance tests; approval, evidence, and local API implementations are partial and still need milestone validation.
 > No release has shipped; source builds are available.
 > Tests check implemented wire values against the schemas.
 

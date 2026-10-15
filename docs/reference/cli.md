@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.3 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
 
 # CLI
 
@@ -22,6 +22,9 @@ $ shiin <command>
 | `shiin hook claude-code` | Serves one Claude Code `PreToolUse` hook call, reading the payload on standard input | works today |
 | `shiin log [count]` | Prints recent audit events, most recent last | works today |
 | `shiin verify` | Checks the audit log's hash chain | works today |
+| `shiin verify <evidence.json> <public.json>` | Verifies a signed receipt or checkpoint; checkpoints also require matching local audit history | implemented in source; platform validation incomplete |
+| `shiin replay <encrypted-replay.json> [policy.toml]` | Replays captured inputs with the original or alternate policy | implemented in source; requires the originating OS keyring |
+| `shiin key init`, `shiin key rotate`, `shiin key public` | Initializes or rotates the evidence key and prints its public key | implemented in source on supported keyring platforms |
 | `shiin doctor` | Reports this workspace's policy, audit log, mode, and enforcement level | works today |
 | `shiin policy test [dir]` | Runs policy cases from `.shiin/tests`, using the same runner as the conformance corpus | works today |
 | `shiin task start \| show \| end` | Declares what the agent is working on, shows it with its usage, or ends it | works today |
@@ -29,7 +32,6 @@ $ shiin <command>
 | `shiin pending`, `shiin approve` | Lists and resolves approval requests using a separate operator credential and terminal confirmation | implemented in source on Unix; validation in progress |
 | `shiin grants`, `shiin revoke` | Inspects and revokes grants or unresolved tickets | implemented in source on Unix; validation in progress |
 | `shiind --operator` | Runs the local approval daemon and displays its in-memory operator credential in a dedicated terminal | implemented in source on Unix; validation in progress |
-| `shiin replay` | Re-evaluates recorded requests, including against a different policy | planned, v0.4 |
 
 `shiin policy test` exits non-zero when any case fails, so it belongs in whatever runs your checks.
 

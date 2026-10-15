@@ -2,7 +2,7 @@
 
 # Custom agents
 
-> [!WARNING]
+> [!NOTE]
 > **Guide: draft.**
 > The Unix local API and Rust client exist in source. Windows transport, attested agent identity, and independent validation remain open.
 

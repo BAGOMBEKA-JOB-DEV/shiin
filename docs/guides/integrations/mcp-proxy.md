@@ -2,7 +2,7 @@
 
 # MCP proxy
 
-> [!WARNING]
+> [!NOTE]
 > **Guide: draft.**
 > An early source implementation wraps one downstream stdio server and evaluates tool calls through the daemon. MCP conformance, identity binding, and independent review remain open.
 

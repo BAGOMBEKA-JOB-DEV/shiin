@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
 
 # Audit events
 
 > [!NOTE]
 > **Specification: draft.**
-> Requests, decisions, hash chaining, redacted summaries, and local verification exist in source.
-> Approval and grant events are reserved for v0.3; signed evidence and replay are planned for v0.4.
+> Requests, decisions, approval and grant events, hash chaining, redacted summaries, and local verification exist in source.
+> Signed evidence and replay are implemented in part; platform and conformance validation remain open.
 >
 > Version: `shiin.audit-events/v1-draft.2`.
 
