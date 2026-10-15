@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Agents and identity
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 An [agent](../glossary.md#agent) is software that uses a model to propose actions on a person's behalf, such as Claude Code or Codex CLI.
 Shiin treats every agent as untrusted.
@@ -14,6 +14,9 @@ Shiin treats every agent as untrusted.
 An [agent identity](../glossary.md#agent-identity) is the identifier of the agent that proposed an action, together with its [assurance level](../glossary.md#assurance-level).
 
 ## Assurance levels
+
+Current hooks report asserted identities; assurance-based identity enforcement is not implemented.
+The stronger levels below are planned.
 
 | Level | Meaning |
 |---|---|

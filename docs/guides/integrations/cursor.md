@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-15 -->
 
 # Cursor
 
@@ -49,16 +49,17 @@ Shiin uses the first entry of `workspace_roots` as the workspace, falling back t
 
 ## Known gaps
 
-- **Whether `ask` is honored** for shell and tool events is not verified. A pending
-  decision is reported as `ask` and the reason is also put in both messages, so that if
-  Cursor treats it as an allow, at least the person sees why a human was wanted. Until
-  this is confirmed, set risk signals you care about to `deny` rather than `pending` in
-  policy.
+- **Pending is denied by this adapter.** Live-host approval behavior has not been verified, so Shiin returns `deny` for both engine `deny` and `pending` decisions.
+  The engine's pending reason remains in the local audit log.
+  This does not create an approval ticket or grant; those remain v0.3 work.
 - **Cloud agents skip the tool events**, so an action taken there never reaches Shiin.
 - **MCP calls are opaque by design.** Precise mapping of tool calls arrives with the MCP
   proxy in v0.5, which sits in the data path instead of relying on a hook.
 
 ## Read next
+
+The current [Cursor hook documentation](https://cursor.com/docs/hooks) describes `failClosed` and the response fields used by this adapter (verified 2026-10-15).
+Automated protocol checks do not establish behavior in a running Cursor installation.
 
 - [Claude Code](claude-code.md)
 - [MCP proxy](mcp-proxy.md)

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Audit and evidence
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 ## Audit log
 
@@ -13,8 +13,10 @@ It is tamper-evident, not tamper-proof.
 
 ## Evidence
 
-Every decision produces an audit event.
-The audit log records every request, decision, approval, and grant.
+Hook requests and decisions produce audit events before the hook responds.
+Offline `check` and `explain` do not write hook audit events.
+Approval and grant events are planned for v0.3.
+Command and URL values are recorded as digests, as described in [audit events](../spec/audit-events.md).
 
 ## Verification
 
@@ -22,7 +24,7 @@ The audit log records every request, decision, approval, and grant.
 
 ## Replay
 
-`shiin replay` re-evaluates past requests, including against a proposed new policy, to show what would have changed.
+Planned for v0.4: `shiin replay` re-evaluates past requests, including against a proposed new policy, to show what would have changed.
 
 ## Receipts
 

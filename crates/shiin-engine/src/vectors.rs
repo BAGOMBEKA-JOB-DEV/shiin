@@ -45,6 +45,7 @@ pub fn run(case: &Value, fallback: Option<&Policy>) -> Result<Outcome, String> {
     let id = case["id"].as_str().unwrap_or("case").to_owned();
     let request: ActionRequest = serde_json::from_value(case["action_request"].clone())
         .map_err(|error| format!("the action request does not parse: {error}"))?;
+    request.validate().map_err(str::to_owned)?;
 
     let source: Policy = match (case.get("policy"), fallback) {
         (Some(value), _) if value.is_object() => serde_json::from_value(value.clone())

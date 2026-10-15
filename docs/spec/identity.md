@@ -1,16 +1,19 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Identity
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
 > Version: `shiin.identity/v1-draft.1`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
 The identity stage answers: do we know which agent is asking, and how sure are we?
+
+Current hook adapters supply asserted identities.
+The engine's identity stage is a pass-through; unknown-identity and assurance-based enforcement below are not implemented.
 
 ## Assurance levels
 

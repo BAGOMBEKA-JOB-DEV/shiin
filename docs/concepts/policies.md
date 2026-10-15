@@ -1,16 +1,17 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Policies
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 A [policy](../glossary.md#policy) is the complete set of [rules](../glossary.md#rule), [capabilities](../glossary.md#capability), defaults, and risk configuration that applies to an evaluation.
 
 ## Layers
 
-Policy is drawn from layers, in order: built-in, user, and workspace.
+The designed layers are built-in, user, and workspace.
+The current CLI loads `.shiin/policy.toml` as one operator-controlled layer; separate user/workspace loading and trust-by-hash are not implemented.
 A workspace layer can restrict a user layer only; it can never make a deny into an allow unless the operator trusts it by hash.
 
 ## Rules

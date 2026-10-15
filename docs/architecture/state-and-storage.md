@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=m0 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
 
 # State and storage
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes the intended design. No implementation exists yet.
+> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
 
 Shiin stores its state on the developer's machine and collects no telemetry ([ADR-0007](../adr/0007-no-telemetry.md)).
 
@@ -15,7 +15,7 @@ Shiin stores its state on the developer's machine and collects no telemetry ([AD
 | Policy | `.shiin/policy.toml` in the workspace | v0.1 |
 | Audit log | `.shiin/audit.jsonl` in the workspace | v0.1 |
 | Grants | `.shiin/grants.jsonl` in Shiin's state directory | v0.3 |
-| Signing keys | Shiin's state directory, with restricted permissions | v0.4 |
+| Signing keys | OS keyring, following [ADR-0032](../adr/0032-signing-key-storage.md) | planned: v0.4 |
 | Tasks | `.shiin/tasks/` in the workspace | v0.2 |
 
 ## Durability

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-15 -->
 
 # Landscape
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes where Shiin's intended design fits among existing tools. No implementation of Shiin exists yet.
+> Shiin has a pre-alpha source implementation. Third-party comparisons remain the dated source snapshot stated below.
 > Every statement about another project links its source and gives the date it was verified.
 
 ## Summary
@@ -18,7 +18,7 @@ Deciding whether an agent's action proceeds, is refused, or waits for a person i
 Several open-source projects already do it, and [Open-source agent action gates](#open-source-agent-action-gates) credits them with sources.
 Shiin's case rests on the four differentiators described in the [vision](vision.md#what-makes-shiin-different):
 task-intent binding, an open agent-neutral contract, analyzable policy, and explicit enforcement levels.
-Shiin exists only as a specification.
+Shiin's authorization core and experimental tasks are available from source; no release has shipped.
 If you need a working tool today, evaluate the projects on this page.
 
 ### How to read this page
@@ -140,8 +140,9 @@ They do not intercept agent actions themselves; other tools embed them.
 
 **How Shiin relates.**
 Shiin builds on Cedar rather than competing with it.
-Operators write TOML policy, which Shiin compiles deterministically to Cedar, and advanced users can write Cedar directly.
-The choice is proposed in [ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md) and confirmed only by a spike; the fallback is a native Rust evaluator behind the same policy model.
+Operators write TOML policy, which Shiin compiles to Cedar.
+The choice was accepted in [ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), and the source implementation uses it.
+Direct Cedar input remains unimplemented.
 
 ### Open-source agent action gates
 
@@ -183,7 +184,7 @@ This is where Shiin overlaps most, as the section [Where Shiin overlaps and wher
 ## Comparison dimensions
 
 These questions help compare any tool on this page, including Shiin.
-The last column states Shiin's design, which is not implemented.
+The last column includes current and planned design; the [roadmap](../project/roadmap.md) records implementation scope.
 
 | Dimension | Question to ask of any tool | Shiin's design |
 |---|---|---|
@@ -192,7 +193,7 @@ The last column states Shiin's design, which is not implemented.
 | Decision determinism | Do the same inputs always produce the same decision, and can model output change it? | The same action request and policy snapshot always produce the same decision; no language-model or machine-learning output is an input ([ADR-0009](../adr/0009-deterministic-enforcement.md)) |
 | Approval model | How does a person approve, and is the approval format specified beyond one application? | A versioned [approval protocol](../spec/approval-protocol.md) with single-use and scoped grants (planned: v0.3) |
 | Evidence | What record remains, and can someone else verify it? | A hash-chained [audit log](../glossary.md#audit-log) (planned: v0.1), then signed checkpoints and [receipts](../glossary.md#receipt) (planned: v0.4) |
-| Policy portability | Can policy be reviewed, tested, and reused outside one host? | TOML compiled to Cedar, with raw Cedar allowed ([ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), proposed) |
+| Policy portability | Can policy be reviewed, tested, and reused outside one host? | TOML compiled to Cedar ([ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), accepted); direct Cedar input is planned |
 | Task-intent binding | Can a decision depend on the constraints of the current task, not only on standing rules? | Structured, human-confirmed [task declarations](../glossary.md#task-declaration) (planned: v0.2, experimental) |
 | Local-first | Does it run on the developer's machine without a hosted service or telemetry? | Runs locally with no telemetry, and every network feature is opt-in ([ADR-0007](../adr/0007-no-telemetry.md)) |
 
@@ -247,7 +248,8 @@ intercepting actions through hooks, returning allow-or-deny outcomes, keeping an
 ### Differences
 
 Shiin's case rests on the four differentiators in the [vision](vision.md#what-makes-shiin-different).
-Each one is a design commitment, and none is implemented.
+Each is a design commitment; the source implements task constraints, core wire contracts, policy evaluation, and cooperative hooks.
+Approval services and stronger enforcement remain planned.
 
 1. **Task-intent binding.**
    Shiin is designed to check each action against the constraints of a human-confirmed [task declaration](../glossary.md#task-declaration), not only against standing policy (planned: v0.2, experimental).
@@ -259,7 +261,7 @@ Each one is a design commitment, and none is implemented.
    This page records no verified fact that another project listed here publishes such specifications.
 3. **Analyzable policy.**
    Policy as code is not new; Cupcake uses Rego and agentgateway uses CEL.
-   Shiin's difference is its proposed choice of Cedar, a formally verified authorization language, behind a TOML front-end, so that policies can be tested, explained, and reasoned about ([ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), proposed).
+   Shiin uses Cedar behind a TOML front-end so that policies can be tested and explained ([ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), accepted).
 4. **Explicit enforcement levels.**
    Vendors already state the limits of their own controls:
    Codex CLI calls hooks "a useful guardrail, not a complete enforcement boundary" ([hooks](https://learn.chatgpt.com/docs/hooks), verified 2026-09-14),

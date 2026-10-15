@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Quickstart with Claude Code
 
@@ -38,7 +38,8 @@ Add this to `.claude/settings.json` in the same project:
           {
             "type": "command",
             "command": "shiin hook claude-code",
-            "timeout": 10
+            "timeout": 10,
+            "onFailure": "block"
           }
         ]
       }
@@ -49,6 +50,10 @@ Add this to `.claude/settings.json` in the same project:
 
 The matcher `*` sends every tool call to Shiin, which is what you want: a rule that
 only covers file tools would miss the same file being read by a shell command.
+
+`onFailure` requires Claude Code 2.1.295 or later and denies the action when the hook cannot start, crashes, or times out
+([hooks reference](https://code.claude.com/docs/en/hooks#block-the-action-when-a-hook-fails), verified 2026-10-15).
+The internal watchdog covers a running Shiin process; host configuration also covers failures before it starts.
 
 ## 3. Watch it refuse something
 

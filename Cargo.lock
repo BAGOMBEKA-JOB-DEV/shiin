@@ -1432,6 +1432,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "shiin-schema",
  "thiserror",
 ]
 
@@ -1446,6 +1447,7 @@ dependencies = [
 name = "shiin-cli"
 version = "0.0.0"
 dependencies = [
+ "jsonschema",
  "serde_json",
  "shiin-audit",
  "shiin-classify",
@@ -1453,6 +1455,7 @@ dependencies = [
  "shiin-hooks",
  "shiin-policy",
  "shiin-schema",
+ "toml",
 ]
 
 [[package]]
@@ -1963,6 +1966,9 @@ dependencies = [
  "jsonschema",
  "regex",
  "serde_json",
+ "shiin-engine",
+ "shiin-policy",
+ "shiin-schema",
  "walkdir",
 ]
 

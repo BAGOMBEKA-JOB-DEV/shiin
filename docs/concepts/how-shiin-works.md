@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=v0.1 reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # How Shiin works
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes the intended design. No implementation exists yet.
+> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
 > The [specifications](../spec/README.md) are the precise source for everything summarized here.
 
 This page follows one action from the moment an agent proposes it to the moment it is recorded,
@@ -32,7 +32,7 @@ then walks through four concrete examples.
    or [denying with a ticket](../glossary.md#deny-with-ticket) when the host cannot wait.
 7. **An audit event is written** to the [audit log](../spec/audit-events.md) before a non-read action is allowed to proceed.
 
-The following sequence diagram shows the same flow when a decision needs approval.
+The following diagram shows the planned v0.3 approval service; current adapters use host responses.
 
 ```mermaid
 sequenceDiagram
@@ -80,25 +80,33 @@ The examples use this policy, written in the TOML format specified in [Policy sy
 The syntax shown here is illustrative until that specification is accepted.
 
 ```toml
-# .shiin/policy.toml (illustrative)
+# .shiin/policy.toml
+version = 1
+
+[defaults]
+decision = "deny"
+
 [[rule]]
 id = "edit-source"
 effect = "allow"
-actions = ["fs.read", "fs.write", "fs.create"]
+action_types = ["fs.read", "fs.write", "fs.create"]
 resources = ["./src/**", "./tests/**"]
 
 [[rule]]
 id = "no-secrets"
 effect = "deny"
-actions = ["fs.read"]
+action_types = ["fs.read"]
 resources = ["**/.env", "**/.env.*", "~/.ssh/**"]
 reason = "Secret files are not readable by agents."
 
 [[rule]]
 id = "run-tests"
 effect = "allow"
-actions = ["shell.exec"]
+action_types = ["shell.exec"]
 commands = ["cargo test", "cargo nextest run"]
+
+[risk]
+opaque_command = "pending"
 ```
 
 ### 1. An allowed edit
@@ -117,7 +125,7 @@ The agent tries to read `.env` to "check the configuration".
 - The action request has action type `fs.read` on `/home/dev/project/.env`.
 - The `no-secrets` rule matches and returns `deny`. The `edit-source` rule does not matter, because `deny` wins.
 - The decision is `deny` with reason code `deny.policy`.
-- The agent receives the rule's reason, which says what is refused without revealing the rest of the policy.
+- The agent receives a fixed denial message; the operator can inspect the reason code and trace.
 
 ### 3. A command whose effects are unknown
 
@@ -135,7 +143,7 @@ This example also shows a limit: once the script is allowed, Shiin does not see 
 
 ### 4. An action outside the task
 
-The developer declares a task before handing work to the agent (planned: v0.2):
+The developer declares an experimental task; the following is illustrative task data, not a command-line input format:
 
 ```toml
 # task declaration (illustrative)
@@ -171,7 +179,8 @@ flowchart LR
 
 ## What exists today
 
-Nothing on this page is implemented yet.
+The engine, policy, hooks, audit log, and experimental task constraints exist in source.
+Identity and capability gates currently pass through; approvals and grants are not implemented.
 The [roadmap](../project/roadmap.md) lists the milestone that delivers each part.
 
 | Part | Milestone |

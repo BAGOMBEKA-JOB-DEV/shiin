@@ -2,28 +2,44 @@
 //!
 //! Codex runs a `PreToolUse` hook and reads a decision back in the same shape Claude Code
 //! uses, including `hookSpecificOutput.permissionDecision`
-//! (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-09-14).
+//! (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-10-15).
 //!
 //! Enforcement level L1, cooperative, and weaker than it first appears: Codex requires a
 //! hook to be trusted before it runs, it does not intercept hosted tools such as its web
 //! search, and its own documentation calls hooks "a useful guardrail, not a complete
 //! enforcement boundary".
 //!
-//! The payload field names were not verified, so this adapter accepts the names Claude
-//! Code uses and the aliases Codex is likely to use, and refuses to guess beyond that: an
-//! unrecognized tool becomes a vendor extension action type that no rule can match.
+//! The documented fields are `session_id`, `cwd`, `tool_name`, and `tool_input`.
+//! Legacy aliases remain compatibility inputs rather than verified host contracts.
+//! Patch text is not parsed into paths: patches without a readable path remain opaque.
+//! Live host behavior has not been validated; an unrecognized tool becomes a vendor
+//! extension action type, and its effect remains opaque.
 
 use serde::Deserialize;
 use serde_json::Value;
 use shiin_classify::{classify_command, path_effect};
 use shiin_schema::{
-    ActionRequest, Agent, Assurance, Confidence, Effect, Host, Workspace, clock, versions,
+    ActionRequest, Agent, Assurance, Confidence, Decision, DecisionValue, Effect, Host, Workspace,
+    clock, versions,
 };
 
 use crate::{field as read_field, some_or};
 
 /// The agent identifier this adapter reports.
 pub const AGENT_ID: &str = "codex-cli";
+
+/// Builds a supported Codex response, conservatively refusing pending actions.
+///
+/// Codex does not hold a `PreToolUse` action for an `ask` response (verified against
+/// <https://learn.chatgpt.com/docs/hooks#pretooluse> on 2026-10-15).
+#[must_use]
+pub fn response_from_decision(decision: &Decision) -> crate::claude_code::HookResponse {
+    let mut response = crate::claude_code::HookResponse::from_decision(decision);
+    if decision.decision == DecisionValue::Pending {
+        "deny".clone_into(&mut response.hook_specific_output.permission_decision);
+    }
+    response
+}
 
 /// A `PreToolUse` payload from Codex.
 #[derive(Debug, Default, Deserialize)]
@@ -177,5 +193,35 @@ mod tests {
     fn an_unknown_tool_becomes_a_vendor_extension() {
         let request = to_action_request(&payload("web_search", Value::Null), ROOT);
         assert_eq!(request.action_type, "x-codex.web_search");
+    }
+
+    #[test]
+    fn responses_use_supported_values_and_deny_pending() {
+        for (decision, expected) in [
+            (DecisionValue::Allow, "allow"),
+            (DecisionValue::Deny, "deny"),
+            (DecisionValue::Pending, "deny"),
+        ] {
+            let decision = Decision {
+                schema: versions::DECISION.to_owned(),
+                request_id: "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b".to_owned(),
+                decision,
+                reason: "EXAMPLE-private-rule".to_owned(),
+                message: decision.message().to_owned(),
+                trace: None,
+                stage: String::new(),
+                matched_rules: Vec::new(),
+                policy_snapshot: String::new(),
+                engine_version: String::new(),
+            };
+            let response = response_from_decision(&decision);
+            assert_eq!(response.hook_specific_output.permission_decision, expected);
+            assert!(
+                !response
+                    .hook_specific_output
+                    .permission_decision_reason
+                    .contains("EXAMPLE-private-rule")
+            );
+        }
     }
 }

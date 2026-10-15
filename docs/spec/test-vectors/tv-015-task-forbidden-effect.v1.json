@@ -4,7 +4,7 @@
   "name": "A task forbids a read performed through a shell command",
   "action_request": {
     "schema": "shiin.action-request/v1-draft.1",
-    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a09",
+    "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a09",
     "session": "sess-001",
     "agent": {
       "id": "agent-001",

@@ -3,14 +3,14 @@
 //! Claude Code runs a program before each tool use and reads a decision back. This
 //! module translates its `PreToolUse` payload into an action request, and a decision
 //! into the response Claude Code expects
-//! (verified against <https://code.claude.com/docs/en/hooks> on 2026-09-14).
+//! (verified against <https://code.claude.com/docs/en/hooks> on 2026-10-15).
 //!
 //! Enforcement level L1, cooperative: the host honors the decision, and the hook can
 //! be disabled by the person running the host
 //! ([enforcement levels](../../../docs/security/enforcement-levels.md)).
 //!
-//! The host treats a crashed, timed-out, or unparsable hook as an allow, so every
-//! failure here must be turned into an explicit deny
+//! The host continues after hook failures by default. Configure `onFailure: "block"`
+//! on supported versions, and turn handled failures into an explicit deny
 //! ([ADR-0013](../../../docs/adr/0013-fail-closed-failure-semantics.md)).
 
 use crate::{agent_message, field as read_field, some_or};
@@ -81,10 +81,10 @@ impl HookResponse {
 
     /// Builds a deny response, used when anything at all goes wrong.
     #[must_use]
-    pub fn fail_closed(detail: &str) -> Self {
+    pub fn fail_closed(_detail: &str) -> Self {
         Self::new(
             "deny",
-            &format!("Shiin denied this action because it could not decide safely: {detail}"),
+            "Shiin could not decide safely. This action is denied.",
         )
     }
 
@@ -229,6 +229,8 @@ mod tests {
             request_id: "r".to_owned(),
             decision: DecisionValue::Pending,
             reason: "pending.risk".to_owned(),
+            message: DecisionValue::Pending.message().to_owned(),
+            trace: None,
             stage: "risk".to_owned(),
             matched_rules: Vec::new(),
             policy_snapshot: "sha256:0".to_owned(),

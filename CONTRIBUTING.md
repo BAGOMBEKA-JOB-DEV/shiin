@@ -1,7 +1,8 @@
 # Contributing to Shiin
 
 Thank you for considering a contribution.
-Shiin is in its specification phase: there is no product code yet, only documentation, specifications, architecture decision records, and a small Rust tool that checks the documentation.
+Shiin is pre-alpha with an authorization core, CLI, hook adapters, audit log, and experimental task constraints available from source.
+No release has shipped; specifications, conformance tests, and independent review remain central to development.
 
 That makes this the cheapest moment to change the design, so review is the most valuable contribution right now.
 
@@ -21,7 +22,7 @@ Follow [SECURITY.md](SECURITY.md) instead.
 - Everyone participating agrees to the [Code of Conduct](CODE_OF_CONDUCT.md).
 - Rust is the language for the product and for all tooling, including documentation checks. See [ADR-0002](docs/adr/0002-rust-for-product-and-tooling.md). Please do not add Python or Node tooling.
 - Documentation follows the [documentation style guide](docs/project/docs-style-guide.md), and the checks enforce most of it.
-- Nothing is implemented, so no page or comment may describe Shiin's behavior as if it already worked.
+- Describe only implemented behavior as working, and label planned behavior explicitly.
 
 ## Developer Certificate of Origin
 
@@ -110,7 +111,7 @@ $ mdbook build docs
 
 ## Security-sensitive changes
 
-Some paths carry extra review requirements, including the specifications, the security documentation, the future engine and adapter crates, the workflows, and the dependency policy.
+Some paths carry extra review requirements, including the specifications, the security documentation, the engine and adapter crates, the workflows, and the dependency policy.
 [Security-sensitive changes](docs/engineering/security-sensitive-changes.md) lists them and what each pull request must include.
 Never weaken fail-closed behavior without an accepted decision record.
 

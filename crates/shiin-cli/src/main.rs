@@ -419,6 +419,9 @@ fn start_task(description: &str, options: &[&str]) -> Result<String, String> {
         require_pending_for: ask_for,
         expires_at,
     };
+    if task.id.is_empty() {
+        return Err("SHIIN-GEN-0001: OS randomness failed; no task was written".to_owned());
+    }
 
     if let Some(parent) = Path::new(TASK_PATH).parent() {
         fs::create_dir_all(parent).map_err(|error| format!("{}: {error}", parent.display()))?;
@@ -531,6 +534,7 @@ fn decide_file(path: &str, explain: bool) -> ExitCode {
         let text = fs::read_to_string(path).map_err(|error| format!("{path}: {error}"))?;
         let request: ActionRequest =
             serde_json::from_str(&text).map_err(|error| format!("{path}: {error}"))?;
+        request.validate().map_err(str::to_owned)?;
         let (source, compiled) = load_policy(Path::new(POLICY_PATH), &request.workspace.root)?;
         let task = load_task()?;
         Ok(decide(&Inputs {
@@ -559,6 +563,14 @@ fn decide_file(path: &str, explain: bool) -> ExitCode {
                     }
                 );
                 println!("engine        {}", decision.engine_version);
+                if let Some(trace) = &decision.trace {
+                    for entry in trace {
+                        println!(
+                            "trace         {}: {} ({})",
+                            entry.stage, entry.result, entry.reason
+                        );
+                    }
+                }
             } else {
                 println!("{:?} ({})", decision.decision, decision.reason);
             }
@@ -637,9 +649,16 @@ fn serve(kind: HostKind) -> ExitCode {
 /// Renders a decision, or a failure, in a host's own protocol.
 fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, serde_json::Error> {
     match kind {
-        HostKind::ClaudeCode | HostKind::Codex => {
+        HostKind::ClaudeCode => {
             let response = match decision {
                 Ok(decision) => HookResponse::from_decision(decision),
+                Err(detail) => HookResponse::fail_closed(detail),
+            };
+            serde_json::to_string(&response)
+        }
+        HostKind::Codex => {
+            let response = match decision {
+                Ok(decision) => codex::response_from_decision(decision),
                 Err(detail) => HookResponse::fail_closed(detail),
             };
             serde_json::to_string(&response)
@@ -693,6 +712,7 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
         .first()
         .map(|layer| layer.digest.clone())
         .unwrap_or_default();
+    request.validate().map_err(str::to_owned)?;
 
     let task = load_task()?;
     request.task = task.as_ref().map(|task| task.id.clone());
@@ -726,10 +746,17 @@ fn record(request: &ActionRequest, decision: &Decision) -> Result<(), String> {
     let now = clock::now_rfc3339();
     for (event_type, body) in [
         ("request.received", serde_json::to_value(request)),
-        ("decision.made", serde_json::to_value(decision)),
+        (
+            "decision.made",
+            serde_json::to_value(decision).map(|mut body| {
+                body["policy_snapshot"] =
+                    serde_json::Value::String(decision.policy_snapshot.clone());
+                body
+            }),
+        ),
     ] {
         let body = body.map_err(|error| format!("SHIIN-GEN-0001: {error}"))?;
-        log.append(event_type, &now, body)
+        log.append(event_type, &now, &body)
             .map_err(|error| format!("{}: {error}", error.code()))?;
     }
     Ok(())

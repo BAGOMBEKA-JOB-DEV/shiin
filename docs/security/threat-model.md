@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=m0 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
 
 # Threat model
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 
 This page defines the threats Shiin is designed to resist.
 Threats are referenced throughout the documentation as `**[ST-<category>-<nn>]**`.
@@ -33,10 +33,13 @@ Approver identity is established through an approval channel that the agent does
 ### Tampering
 
 **[ST-T-01]** An agent modifies the audit log.
-The hash chain makes removal or alteration detectable.
+Chain verification detects altered records and broken links.
+An unsigned local chain cannot establish whether its entire contents were replaced or its tail was removed.
+Signed checkpoints are planned for v0.4.
 
 **[ST-T-02]** An agent modifies policy.
-Policy is loaded from trusted layers; a workspace layer can only restrict.
+The designed trust model loads trusted layers and lets a workspace layer only restrict.
+The current CLI instead loads one operator-controlled workspace file; separate trust-layer loading is unimplemented.
 
 **[ST-T-03]** An agent modifies Shiin's own state.
 Shiin's state is a built-in protected resource that no policy can make allowable.
@@ -83,3 +86,25 @@ Shiin is not designed to resist:
 - Operating-system level attacks against the developer's account.
 - Hardware or firmware attacks.
 - Supply-chain attacks against Shiin's dependencies, which are covered by the supply-chain policy.
+
+## Current changes and independent review
+
+The 2026-10-15 reconciliation strengthens existing controls without making a failure or unknown configuration more permissive.
+AI assistance was used; this section is a review packet, not an independent review or security sign-off.
+The [M0 external-review criterion](../project/roadmap.md#m0-specification) remains open.
+
+| Threat | Change or evidence | Remaining review |
+|---|---|---|
+| ST-I-01 | Hook failure and decision messages omit internal reason codes, file paths, and error text; regression tests exercise both response protocols. | Verify messages and exit behavior in running hosts, including startup failures. |
+| ST-I-02 | Audit summaries omit free text and raw host input; command and URL values become digests. | Review identifier/path exposure and the limits of hashing low-entropy values. |
+| ST-T-01 | Audit wire records follow the versioned schema and an existing chain is verified before append. | Review incompatible old-log handling and the absence of signed anchors. |
+| ST-D-01 | Existing timeout, panic, contention, and budget tests remain required; the performance command measures local latency. | Large-input/log bounds and cross-platform memory measurements remain incomplete. |
+| ST-S-01 | Hook identities remain asserted and the identity stage passes through. | Review the lack of assurance enforcement before claiming identity protection. |
+| ST-T-02 | Built-in protections cannot be granted by operator rules. | Review single-file policy loading against the designed trust layers. |
+| ST-E-02 | Cursor and Codex pending decisions are denied rather than relying on unsupported or unverified holding behavior. | Check host configuration, disabling controls, and every supported host version. |
+
+Additional topics for the reviewer are shell classification coverage, path-error and Unicode/case handling, task timestamp parsing, and policy matching for multiple effects.
+Approval self-authorization, grant consumption, receipt signatures, and replay cannot be reviewed as working features because they are not implemented.
+
+The external reviewer should record their name, reviewed commit or diff, platform and host versions, findings, and resolution of each finding.
+No reviewer has supplied that record yet.

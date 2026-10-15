@@ -226,7 +226,7 @@ fn every_adapter_enforces_task_denials() {
         );
         assert!(started.contains("started"), "{started}");
         let action = if host == "cursor" {
-            serde_json::json!({"hook_event_name":"beforeReadFile", "file_path":"src/login.rs", "workspace_roots":[root]}).to_string()
+            serde_json::json!({"conversation_id":"EXAMPLE-session", "hook_event_name":"beforeReadFile", "file_path":"src/login.rs", "workspace_roots":[root]}).to_string()
         } else {
             payload(&root, "Read", r#"{"file_path":"src/login.rs"}"#)
         };
@@ -763,7 +763,7 @@ fn policy_cases_pass_and_a_wrong_expectation_fails() {
             "name": id,
             "action_request": {
                 "schema": "shiin.action-request/v1-draft.1",
-                "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9aa3",
+                "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9aa3",
                 "session": "m",
                 "agent": { "id": "claude-code", "assurance": "asserted" },
                 "action_type": "fs.read",

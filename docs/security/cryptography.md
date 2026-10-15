@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Cryptography
 
@@ -16,8 +16,8 @@
 
 ## Key management
 
-Signing keys are stored with restricted permissions in Shiin's state directory.
-Keys are rotated on a schedule and on maintainer change.
+Planned for v0.4: signing keys live in the OS keyring, following [ADR-0032](../adr/0032-signing-key-storage.md).
+Key generation and rotation are not implemented.
 
 ## Randomness
 

@@ -20,7 +20,7 @@
       "const": "shiin.action-request/v1-draft.1"
     },
     "id": {
-      "$ref": "urn:shiin:schema:common:v1#/$defs/uuid"
+      "$ref": "urn:shiin:schema:common:v1#/$defs/uuid_v4"
     },
     "session": {
       "type": "string",

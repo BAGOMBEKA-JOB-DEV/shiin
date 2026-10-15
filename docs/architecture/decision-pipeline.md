@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=m0 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
 
 # Decision pipeline
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes the intended design. No implementation exists yet.
+> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
 
 The decision pipeline is the path an [action](../glossary.md#action) takes from proposal to enforcement.
 
@@ -14,8 +14,8 @@ The decision pipeline is the path an [action](../glossary.md#action) takes from 
 2. **Normalize.** The adapter builds an [action request](../spec/action-request.md).
 3. **Evaluate.** The [engine](../glossary.md#engine) runs five stages in order: identity, capability, policy, intent, and risk.
 4. **Decide.** The engine produces a [decision](../spec/decision.md): `allow`, `deny`, or `pending`.
-5. **Enforce.** The adapter returns the decision in the host's own protocol.
-6. **Record.** An [audit event](../spec/audit-events.md) is written.
+5. **Record.** Request and decision [audit events](../spec/audit-events.md) are synced; a write failure denies the action.
+6. **Enforce.** The adapter returns the decision in the host's own protocol.
 
 ## Stage order
 
@@ -28,6 +28,10 @@ Only a policy rule, or a [grant](../glossary.md#grant) created by an approver, c
 Any failure produces `deny` ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md)).
 
 ## Diagram
+
+This diagram describes the planned v0.3 approval service.
+The current engine returns a decision to the hook service, which performs the audit I/O.
+Identity and capability gates currently pass through; grant evaluation is unimplemented.
 
 ```mermaid
 sequenceDiagram

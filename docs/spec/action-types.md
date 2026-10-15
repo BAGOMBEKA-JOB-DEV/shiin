@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Action types
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -24,6 +24,7 @@ Filesystem effects.
 | Action type | Meaning |
 |---|---|
 | `fs.read` | Read a file or directory entry. |
+| `fs.list` | List directory entries or search for matching paths. |
 | `fs.write` | Write or overwrite a file. |
 | `fs.create` | Create a new file, directory, or symlink. |
 | `fs.delete` | Delete a file, directory, or symlink. |

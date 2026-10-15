@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Adapters
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 An [adapter](../glossary.md#adapter) connects a [host](../glossary.md#host) to Shiin.
 It intercepts proposed actions, builds [action requests](../glossary.md#action-request), and enforces the resulting [decision](../glossary.md#decision) using the host's own protocol.

@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.5 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.5 reviewed=2026-10-15 -->
 
 # Local API
 
@@ -44,11 +44,11 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
 ```json
 {
   "jsonrpc": "2.0",
-  "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
+  "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
   "method": "shiin.evaluate",
   "params": {
     "schema": "shiin.action-request/v1-draft.1",
-    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0c",
+    "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0c",
     "session": "sess-001",
     "agent": { "id": "agent-001", "assurance": "asserted" },
     "action_type": "fs.read",

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.4 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.4 reviewed=2026-10-15 -->
 
 # Audit, replay, and receipts
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.4. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> Log inspection and chain verification exist in source. Signed receipts and replay remain planned for v0.4.
 
 ## Audit log
 
@@ -17,7 +17,7 @@ It is tamper-evident, not tamper-proof.
 
 ## Replay
 
-`shiin replay` re-evaluates past requests against their recorded [policy snapshots](../glossary.md#policy-snapshot).
+Planned for v0.4: `shiin replay` re-evaluates past requests against their recorded [policy snapshots](../glossary.md#policy-snapshot).
 It can replay against a different policy to answer "what if".
 
 ## Receipts
