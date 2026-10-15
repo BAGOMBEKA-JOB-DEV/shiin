@@ -169,6 +169,19 @@ impl Store {
         &self.grants
     }
 
+    /// Checks a historical grant snapshot without changing state or issuing a ticket.
+    ///
+    /// # Errors
+    /// Invalid snapshots and request serialization errors prevent replay.
+    pub fn covered(&self, request: &ActionRequest, now: u64) -> Result<bool, String> {
+        self.validate()?;
+        let digest = binding(request)?;
+        Ok(self
+            .grants
+            .iter()
+            .any(|grant| grant.matches(request, &digest, now)))
+    }
+
     /// Workspace whose audit log records a ticket or grant transition.
     #[must_use]
     pub fn workspace_for(&self, id: &str) -> Option<&str> {
@@ -207,9 +220,11 @@ impl Store {
         {
             grant.consumed |= grant.scope.is_none();
             decision.decision = DecisionValue::Allow;
-            decision.reason = "allow.grant".to_owned();
-            decision.message = DecisionValue::Allow.message().to_owned();
-            decision.stage = "grant".to_owned();
+            "allow.grant".clone_into(&mut decision.reason);
+            DecisionValue::Allow
+                .message()
+                .clone_into(&mut decision.message);
+            "grant".clone_into(&mut decision.stage);
             decision.approval = None;
             return Ok(Some(Transition {
                 kind: "grant.used",

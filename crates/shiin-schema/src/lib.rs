@@ -491,6 +491,32 @@ pub struct ApprovalRequest {
     pub resolution: Option<Resolution>,
 }
 
+/// Complete authoritative inputs retained inside an encrypted replay artifact.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReplayInputs<G> {
+    /// Replay wire version.
+    pub schema: String,
+    /// Normalized request before the action executes.
+    pub request: ActionRequest,
+    /// Policy snapshot used by the engine.
+    pub policy: Policy,
+    /// Active task declaration, if any.
+    pub task: Option<TaskDeclaration>,
+    /// Counters before evaluating this action.
+    pub usage: TaskUsage,
+    /// Original evaluation timestamp.
+    pub now: String,
+    /// Original attendance mode.
+    pub mode: Mode,
+    /// Decision being reproduced.
+    pub decision: Decision,
+    /// Approval snapshot before grant consumption.
+    pub grants: G,
+    /// Engine implementation version.
+    pub engine_version: String,
+}
+
 /// One stage's result in an operator-facing decision trace (`EVAL-011`).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct StageTrace {

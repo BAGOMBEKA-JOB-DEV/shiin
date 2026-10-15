@@ -9,7 +9,18 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
+[features]
+default = []
+receipts = ["dep:base64", "dep:ed25519-dalek", "dep:chacha20poly1305"]
+keyring = ["receipts", "dep:keyring", "dep:getrandom", "dep:zeroize"]
+
 [dependencies]
+base64 = { workspace = true, optional = true }
+ed25519-dalek = { workspace = true, optional = true }
+chacha20poly1305 = { workspace = true, optional = true }
+keyring = { workspace = true, optional = true }
+getrandom = { workspace = true, optional = true }
+zeroize = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }

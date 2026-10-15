@@ -49,6 +49,7 @@ pub struct Service {
     store: Store,
     state: PathBuf,
     operator: OperatorKey,
+    keys: Option<shiin_audit::keys::Keys>,
     _lock: File,
 }
 
@@ -82,10 +83,16 @@ impl Service {
             Err(error) => return Err(error.to_string()),
         };
         store.validate()?;
+        let keys = if std::env::var("SHIIN_EVIDENCE").as_deref() == Ok("1") {
+            Some(shiin_audit::keys::Keys::active()?)
+        } else {
+            None
+        };
         Ok(Self {
             store,
             state,
             operator,
+            keys,
             _lock: lock,
         })
     }
@@ -284,6 +291,19 @@ impl Service {
         let mut body = serde_json::to_value(&decision).map_err(|error| error.to_string())?;
         body["policy_snapshot"] = json!(snapshot);
         audit(&log, "decision.made", &body)?;
+        if let Some(keys) = &self.keys {
+            self.record_evidence(
+                keys,
+                &request,
+                &decision,
+                &source,
+                task.as_ref(),
+                usage,
+                now,
+                mode,
+                &log,
+            )?;
+        }
         if task.is_some() && decision.decision == shiin_schema::DecisionValue::Allow {
             persist(
                 &usage_path,
@@ -298,6 +318,94 @@ impl Service {
         self.store = next;
         serde_json::to_value(decision).map_err(|error| error.to_string())
     }
+
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "the replay record captures each authoritative evaluation input explicitly"
+    )]
+    fn record_evidence(
+        &self,
+        keys: &shiin_audit::keys::Keys,
+        request: &ActionRequest,
+        decision: &shiin_schema::Decision,
+        policy: &shiin_schema::Policy,
+        task: Option<&TaskDeclaration>,
+        usage: TaskUsage,
+        now: u64,
+        mode: Mode,
+        log: &AuditLog,
+    ) -> Result<(), String> {
+        use sha2::{Digest, Sha256};
+        use shiin_audit::receipts::{self, CHECKPOINT_TYPE, RECEIPT_TYPE, REPLAY_TYPE};
+        let root = Path::new(&request.workspace.root).join(".shiin");
+        let directory = root.join("evidence");
+        fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+        let now_text = clock::rfc3339_from_unix_seconds(now);
+        let request_digest = format!(
+            "sha256:{:x}",
+            Sha256::digest(
+                shiin_audit::canonical_bytes(
+                    &serde_json::to_value(request).map_err(|error| error.to_string())?
+                )
+                .map_err(|error| error.to_string())?
+            )
+        );
+        let receipt = receipts::sign(
+            &keys.signing,
+            RECEIPT_TYPE,
+            &json!({
+                "schema":"shiin.receipt/v1-draft.2", "key_id":keys.id(), "request_id":request.id,
+                "decision":decision.decision, "reason":decision.reason, "policy_snapshot":request.policy_snapshot,
+                "request_digest":request_digest, "signed_at":now_text
+            }),
+        )?;
+        let replay = json!({"schema":"shiin.replay-input/v1-draft.1", "request":request, "policy":policy, "task":task,
+            "usage":usage, "now":now_text, "mode":mode, "decision":decision, "grants":self.store, "engine_version":shiin_engine::ENGINE_VERSION});
+        let encrypted = keys.encrypt(
+            &request.id,
+            &shiin_audit::canonical_bytes(&replay).map_err(|error| error.to_string())?,
+        )?;
+        let replay_envelope = receipts::sign(
+            &keys.signing,
+            REPLAY_TYPE,
+            &serde_json::to_value(encrypted).map_err(|error| error.to_string())?,
+        )?;
+        let events = log.read().map_err(|error| error.to_string())?;
+        let last = events.last().ok_or("audit head missing")?;
+        let checkpoint = receipts::sign(
+            &keys.signing,
+            CHECKPOINT_TYPE,
+            &json!({
+                "schema":"shiin.checkpoint/v1-draft.1", "key_id":keys.id(), "seq":last.seq, "head":last.hash, "signed_at":now_text
+            }),
+        )?;
+        persist(
+            &directory.join(format!("{}.receipt.json", request.id)),
+            &serde_json::to_vec(&receipt).map_err(|error| error.to_string())?,
+        )?;
+        persist(
+            &directory.join(format!("{}.replay.json", request.id)),
+            &serde_json::to_vec(&replay_envelope).map_err(|error| error.to_string())?,
+        )?;
+        persist(
+            &directory.join("checkpoint.json"),
+            &serde_json::to_vec(&checkpoint).map_err(|error| error.to_string())?,
+        )?;
+        persist(
+            &directory.join(format!(
+                "{}.public.json",
+                keys.id().trim_start_matches("sha256:")
+            )),
+            &serde_json::to_vec(&json!({"key_id":keys.id(), "public_key":base64_public(keys)}))
+                .map_err(|error| error.to_string())?,
+        )?;
+        Ok(())
+    }
+}
+
+fn base64_public(keys: &shiin_audit::keys::Keys) -> String {
+    use base64::Engine as _;
+    base64::engine::general_purpose::STANDARD.encode(keys.public())
 }
 
 fn audit(log: &AuditLog, kind: &str, body: &Value) -> Result<(), String> {

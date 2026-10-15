@@ -18,9 +18,11 @@ name = "shiin"
 path = "src/main.rs"
 
 [dependencies]
+base64.workspace = true
 rpassword.workspace = true
 serde_json = { workspace = true }
-shiin-audit = { workspace = true }
+shiin-audit = { workspace = true, features = ["keyring"] }
+shiin-approval.workspace = true
 shiin-classify = { workspace = true }
 shiin-engine = { workspace = true }
 shiin-hooks = { workspace = true }

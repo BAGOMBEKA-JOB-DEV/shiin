@@ -14,6 +14,11 @@ use sha2::{Digest, Sha256};
 use shiin_schema::clock;
 use thiserror::Error;
 
+#[cfg(feature = "keyring")]
+pub mod keys;
+#[cfg(feature = "receipts")]
+pub mod receipts;
+
 /// The genesis value for the first event's `prev_hash`.
 pub const GENESIS: &str = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -284,8 +289,30 @@ fn hash_of(event: &AuditEvent) -> Result<String, serde_json::Error> {
     }
     Ok(format!(
         "sha256:{:x}",
-        Sha256::digest(serde_json::to_vec(&unsigned)?)
+        Sha256::digest(canonical_bytes(&unsigned)?)
     ))
+}
+
+/// Encodes compact JSON with recursively sorted keys, independent of feature unification.
+///
+/// # Errors
+/// Values that cannot be serialized are rejected rather than replaced with empty bytes.
+pub fn canonical_bytes(value: &serde_json::Value) -> Result<Vec<u8>, serde_json::Error> {
+    fn sorted(value: &serde_json::Value) -> serde_json::Value {
+        use serde_json::Value;
+        match value {
+            Value::Object(object) => {
+                let ordered: std::collections::BTreeMap<_, _> = object
+                    .iter()
+                    .map(|(key, value)| (key.clone(), sorted(value)))
+                    .collect();
+                Value::Object(ordered.into_iter().collect())
+            }
+            Value::Array(values) => Value::Array(values.iter().map(sorted).collect()),
+            other => other.clone(),
+        }
+    }
+    serde_json::to_vec(&sorted(value))
 }
 
 /// Retains identifiers and paths, never raw commands, URLs, file contents, or host payloads.
@@ -359,7 +386,7 @@ fn redacted_summary(payload: &serde_json::Value) -> Result<serde_json::Value, se
         "digest".to_owned(),
         Value::String(format!(
             "sha256:{:x}",
-            Sha256::digest(serde_json::to_vec(payload)?)
+            Sha256::digest(canonical_bytes(payload)?)
         )),
     );
     Ok(Value::Object(summary))

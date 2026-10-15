@@ -12,6 +12,9 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+/// Runtime types re-exported so the calling binary owns runtime creation and shutdown.
+pub use tokio::runtime::{Builder as RuntimeBuilder, Runtime};
+
 /// Maximum serialized frame, including its terminating newline.
 pub const MAX_FRAME: usize = 65_536;
 /// Deadline for a complete client exchange.
@@ -58,12 +61,8 @@ pub fn enabled() -> bool {
 ///
 /// # Errors
 /// Authentication, framing, timeouts, protocol errors, and unsupported platforms fail closed.
-pub fn call(method: &str, params: Value) -> Result<Value, String> {
+pub fn call(runtime: &Runtime, method: &str, params: Value) -> Result<Value, String> {
     let path = endpoint()?;
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|error| error.to_string())?;
     runtime.block_on(async {
         tokio::time::timeout(TIMEOUT, exchange(&path, method, params))
             .await

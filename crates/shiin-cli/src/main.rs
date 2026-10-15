@@ -17,6 +17,9 @@ use std::process::ExitCode;
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::Duration;
 
+mod evidence;
+use evidence::{key_command, key_public, replay_evidence, verify_evidence};
+
 use shiin_audit::AuditLog;
 use shiin_engine::{Inputs, decide, vectors};
 use shiin_hooks::claude_code::{self, HookResponse, PreToolUse};
@@ -41,6 +44,9 @@ const USAGE_PATH: &str = ".shiin/tasks/active.usage.json";
 const LOCK_PATH: &str = ".shiin/state.lock";
 /// Internal deadline, including reading the host's input.
 const HOOK_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// The binary owns its IPC runtime; engine and service libraries create none.
+static DAEMON_RUNTIME: std::sync::OnceLock<shiin_ipc::Runtime> = std::sync::OnceLock::new();
 
 /// The policy written by `shiin init`.
 const STARTER_POLICY: &str = r#"# Shiin policy. See docs/guides/writing-policies.md
@@ -89,6 +95,23 @@ fn main() -> ExitCode {
         HostKind::ClaudeCode
     };
     install_panic_hook(panic_host);
+    if shiin_ipc::enabled()
+        || words
+            .first()
+            .is_some_and(|command| ["pending", "approve", "grants", "revoke"].contains(command))
+    {
+        let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+            .enable_all()
+            .build();
+        match runtime {
+            Ok(runtime) => {
+                let _ = DAEMON_RUNTIME.set(runtime);
+            }
+            Err(error) => {
+                return report(Err(format!("cannot initialize local transport: {error}")));
+            }
+        }
+    }
     match words.as_slice() {
         ["init"] => report(init()),
         ["policy", "validate"] => report(validate(Path::new(POLICY_PATH))),
@@ -106,6 +129,12 @@ fn main() -> ExitCode {
             report(show_log(count))
         }
         ["verify"] => report(verify()),
+        ["verify", artifact, public] => report(verify_evidence(artifact, public)),
+        ["replay", artifact] => report(replay_evidence(artifact, None)),
+        ["replay", artifact, policy] => report(replay_evidence(artifact, Some(policy))),
+        ["key", "init"] => report(key_command(false)),
+        ["key", "rotate"] => report(key_command(true)),
+        ["key", "public"] => report(key_public()),
         ["doctor"] => report(Ok(doctor())),
         ["version" | "--version" | "-V"] => report(Ok(version())),
         ["task", rest @ ..] => report(task_command(rest)),
@@ -186,6 +215,9 @@ fn usage() {
     eprintln!("  hook cursor               serve a Cursor hook on stdin");
     eprintln!("  log [count]               show recent audit events");
     eprintln!("  verify                    check the audit log's hash chain");
+    eprintln!("  verify <evidence.json> <public.json>   verify signed evidence offline");
+    eprintln!("  replay <encrypted-replay.json> [policy.toml]   reproduce or compare a decision");
+    eprintln!("  key init / rotate / public   manage OS-keyring evidence keys");
     eprintln!("  doctor                    check this workspace's setup");
     eprintln!("  version                   print the version of this build");
     eprintln!("  pending / grants          inspect daemon state from an operator terminal");
@@ -237,7 +269,7 @@ fn operator_call(method: &str, mut params: serde_json::Value) -> Result<String, 
     let proof = rpassword::read_password().map_err(|error| error.to_string())?;
     if method == "shiin.approve.resolve" {
         let ticket = params["ticket"].as_str().ok_or("approval ticket missing")?;
-        let pending = shiin_ipc::call(
+        let pending = daemon_call(
             "shiin.pending",
             serde_json::json!({"proof":proof, "ticket":ticket}),
         )?;
@@ -264,8 +296,15 @@ fn operator_call(method: &str, mut params: serde_json::Value) -> Result<String, 
         }
     }
     params["proof"] = serde_json::json!(proof);
-    let result = shiin_ipc::call(method, params)?;
+    let result = daemon_call(method, params)?;
     serde_json::to_string_pretty(&result).map_err(|error| error.to_string())
+}
+
+fn daemon_call(method: &str, params: serde_json::Value) -> Result<serde_json::Value, String> {
+    let runtime = DAEMON_RUNTIME
+        .get()
+        .ok_or("local transport runtime is unavailable")?;
+    shiin_ipc::call(runtime, method, params)
 }
 
 fn init() -> Result<String, String> {
@@ -788,7 +827,7 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
         } else {
             "shiin.evaluate"
         };
-        let value = shiin_ipc::call(
+        let value = daemon_call(
             method,
             serde_json::to_value(&request).map_err(|error| error.to_string())?,
         )?;
