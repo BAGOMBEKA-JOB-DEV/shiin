@@ -132,7 +132,7 @@
 - Local API over the daemon.
 - `shiin-client`, the Rust client library.
 - Peer-credential identity (`attested-local`).
-- SQL and migration classifiers.
+- SQL and migration classifiers. Partial classifier primitives exist in source; host integration remains open.
 
 **Exit criteria.**
 
