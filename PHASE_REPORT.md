@@ -61,7 +61,8 @@ The fixture was corrected; the timing limit and fail-closed deadline were preser
 All 27 hook tests, seven wire-contract tests, 39 unit tests, and the one conformance test passed from cached executables.
 The conformance test checks all 19 vectors.
 These results do not claim that the interrupted Cargo command or unexecuted doctests passed.
-The performance command passed compilation lint checks, but was not executed; the hook timing smoke test is not a substitute for milestone performance measurements.
+The performance command was not executed on the laptop; hosted measurements appear below.
+The hook timing smoke test is not a substitute for milestone performance measurements.
 
 ## Hosted validation follow-up
 
@@ -72,7 +73,8 @@ The test now normalizes line endings without skipping examples or weakening its 
 The fix passed the subsequent hosted Windows run for commit `f4e5a1d`.
 
 Hosted Linux and macOS release-latency jobs have been added to measure the existing budgets without rebuilding on the laptop.
-For commit `f4e5a1d`, [CI run 38799111580](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/38799111580) passed all seven jobs: Linux, macOS, and Windows tests; Rust 1.96; dependency checks; and optimized latency on Linux and macOS.
+For commit `2399559`, [CI run 38800302812](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/38800302812) passed all seven jobs: Linux, macOS, and Windows tests; Rust 1.96; dependency checks; and optimized latency on Linux and macOS.
+The Linux run passed all 75 tests, including the updated real-CLI pending-response assertion and the 19-vector corpus.
 The documentation workflow also passed.
 Component memory profiling and large-policy/log measurements remain open.
 
@@ -80,20 +82,20 @@ Maximum observed latency for that commit, in milliseconds:
 
 | Path | Samples per platform | Linux x86_64 | macOS arm64 | Budget |
 |---|---:|---:|---:|---:|
-| Engine evaluation | 250 | 0.783 | 3.673 | 50 |
-| Policy parse and compilation | 25 | 0.405 | 1.501 | 1000 |
-| Claude Code hook process, policy, and audit | 20 | 5.499 | 109.968 | 200 |
-| Codex hook process, policy, and audit | 20 | 4.779 | 14.103 | 200 |
-| Cursor hook process, policy, and audit | 20 | 5.370 | 14.891 | 200 |
+| Engine evaluation | 250 | 1.065 | 1.406 | 50 |
+| Policy parse and compilation | 25 | 0.519 | 1.150 | 1000 |
+| Claude Code hook process, policy, and audit | 20 | 8.318 | 60.780 | 200 |
+| Codex hook process, policy, and audit | 20 | 5.690 | 8.877 | 200 |
+| Cursor hook process, policy, and audit | 20 | 6.035 | 9.370 | 200 |
 
 These are protocol fixtures with a small policy and a log growing to 120 events, not running host sessions.
-Linux harness peak RSS was 8,656 KiB; this is not isolated component memory profiling.
+Linux harness peak RSS was 8,312 KiB; this is not isolated component memory profiling.
 
 The follow-up Codex response fix maps pending actions to a supported explicit denial.
 The vendor documents the native ask response as unsupported and continuing execution, verified against [official hooks documentation](https://learn.chatgpt.com/docs/hooks#pretooluse) on 2026-10-15.
 The maintainer explicitly directed inclusion in public PR #12 after the repository's private-disclosure rule was explained.
 The targeted hook suite passed all 15 tests and workspace Clippy passed locally with memory capped at 256 MiB.
-CI will validate the updated real-CLI integration assertion after this fix is pushed.
+The updated CLI integration assertion passed on all three platforms in the hosted run above.
 
 ## Security review and milestone status
 
@@ -103,6 +105,8 @@ The suggested account, `BAGOMBEKA-JOB-DEV`, authored PR #12 and therefore does n
 No outside reviewer or human sign-off has been obtained, so M0 remains open.
 
 The hook tests execute the real Shiin binary with protocol payloads; they do not launch Claude Code, Codex, or Cursor.
+Local availability checks found Codex CLI `0.162.0-alpha.17.2` with an existing ChatGPT login; Claude Code and Cursor executables were absent from the command path.
+Version and login probes are setup checks, not enforcement tests.
 Live host configuration, timeout/crash handling, pending behavior, and host-version coverage still need validation before claiming the v0.1/v0.2 exit criteria are complete.
 Latency coverage beyond the measured platform samples, component memory limits, large audit histories, and the intent-binding evaluation plan also remain open.
 
