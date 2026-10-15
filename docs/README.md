@@ -4,7 +4,7 @@
 
 > [!NOTE]
 > **Project status: pre-alpha.**
-> The authorization core, CLI, hook adapters, audit log, and experimental tasks exist in source; no release has shipped.
+> The authorization core, CLI, hook adapters, audit log, experimental tasks, and Unix approval services exist in source; no release has shipped.
 > Build from source using [installation](getting-started/installation.md); planned services are labeled separately.
 
 Shiin is an agent-agnostic authorization layer for AI agent actions.
@@ -22,9 +22,9 @@ so an action can be refused because it does not belong to that task, even if it 
 
 | State | What it covers |
 |---|---|
-| **Exists today** | The local engine, policy, hooks, CLI, audit log, experimental tasks, schemas, conformance vectors, and documentation tooling |
+| **Exists today** | The local engine, policy, hooks, CLI, audit log, experimental tasks, Unix approval daemon and grants, schemas, conformance vectors, and documentation tooling |
 | **Specified** | The [action request](spec/action-request.md), [decision](spec/decision.md), [evaluation](spec/evaluation.md), [policy model](spec/policy-model.md), [intent binding](spec/intent-binding.md), [approval protocol](spec/approval-protocol.md), [audit events](spec/audit-events.md), [receipts](spec/receipts.md), [adapter contract](spec/adapter-contract.md), and [local API](spec/local-api.md) |
-| **Planned** | The daemon, approval protocol, grants, receipts, replay, MCP proxy, and client library; see the [roadmap](project/roadmap.md) for what each milestone delivers |
+| **Planned** | Receipts, replay, MCP proxy, client library, and Windows daemon transport; see the [roadmap](project/roadmap.md) for what each milestone delivers |
 
 ## Start here
 

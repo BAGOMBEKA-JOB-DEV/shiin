@@ -5,7 +5,8 @@
 > [!NOTE]
 > **Project policy: draft.**
 > This page is the only home of Shiin's crate list.
-> The workspace has seven product crates and `xtask`; later milestone crates remain planned.
+> The workspace has ten product crates and `xtask`, including the v0.3 local approval services.
+> Evidence and integration crates remain planned.
 
 Shiin is built as a single Cargo workspace.
 This page describes the repository layout, the crates the workspace will contain, what each crate is responsible for,
@@ -30,13 +31,16 @@ The workspace section of today's `Cargo.toml` is:
 [workspace]
 resolver = "3"
 members = [
+  "crates/shiin-approval",
   "crates/shiin-audit",
   "crates/shiin-classify",
   "crates/shiin-cli",
   "crates/shiin-engine",
   "crates/shiin-hooks",
+  "crates/shiin-ipc",
   "crates/shiin-policy",
   "crates/shiin-schema",
+  "crates/shiind",
   "xtask",
 ]
 ```
@@ -56,7 +60,7 @@ rust-toolchain.toml    pinned toolchain
 rustfmt.toml           formatter settings
 .editorconfig          editor settings
 .cargo/config.toml     cargo aliases, including `cargo xtask`
-crates/<name>/         seven implemented product crates
+crates/<name>/         ten implemented product crates
 xtask/                 repository tooling, never published
 fuzz/                  fuzz targets, a separate nightly workspace (planned: v0.1)
 docs/                  this documentation

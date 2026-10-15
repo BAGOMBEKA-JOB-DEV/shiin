@@ -218,6 +218,10 @@ impl CompiledPolicy {
                 "*/shiin approve*",
                 "shiin init*",
                 "*/shiin init*",
+                "shiin revoke*",
+                "*/shiin revoke*",
+                "shiind*",
+                "*/shiind*",
             ]
             .into_iter()
             .map(str::to_owned)

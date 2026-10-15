@@ -109,6 +109,23 @@ fn main() -> ExitCode {
         ["doctor"] => report(Ok(doctor())),
         ["version" | "--version" | "-V"] => report(Ok(version())),
         ["task", rest @ ..] => report(task_command(rest)),
+        ["pending"] => report(operator_call("shiin.pending", serde_json::json!({}))),
+        ["grants"] => report(operator_call("shiin.grants", serde_json::json!({}))),
+        ["revoke", id] => report(operator_call("shiin.revoke", serde_json::json!({"id":id}))),
+        ["approve", ticket, resolution, lifetime] => report(operator_call(
+            "shiin.approve.resolve",
+            serde_json::json!({
+                "ticket":ticket, "resolution":resolution, "lifetime":lifetime.parse::<u64>().unwrap_or(0), "scope":null
+            }),
+        )),
+        ["approve", ticket, "allow_always", lifetime, scope] => {
+            let outcome = fs::read_to_string(scope).map_err(|error| error.to_string())
+                .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).map_err(|error| error.to_string()))
+                .and_then(|scope| operator_call("shiin.approve.resolve", serde_json::json!({
+                    "ticket":ticket, "resolution":"allow_always", "lifetime":lifetime.parse::<u64>().unwrap_or(0), "scope":scope
+                })));
+            report(outcome)
+        }
         _ => {
             usage();
             ExitCode::FAILURE
@@ -171,6 +188,10 @@ fn usage() {
     eprintln!("  verify                    check the audit log's hash chain");
     eprintln!("  doctor                    check this workspace's setup");
     eprintln!("  version                   print the version of this build");
+    eprintln!("  pending / grants          inspect daemon state from an operator terminal");
+    eprintln!("  approve <ticket> <allow_once|deny> <seconds>   resolve an action");
+    eprintln!("  approve <ticket> allow_always <seconds> <scope.json>   create a scoped grant");
+    eprintln!("  revoke <ticket-or-grant>   revoke a pending request or grant");
     eprintln!();
     eprintln!("  task start <description> [options]   declare what the agent is working on");
     eprintln!("  task show                            show the active task and its usage");
@@ -199,6 +220,52 @@ fn report(outcome: Result<String, String>) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// Operator credentials are read from a separate terminal, never stdin payloads or environment variables.
+fn operator_call(method: &str, mut params: serde_json::Value) -> Result<String, String> {
+    use std::io::IsTerminal;
+    if !std::io::stdin().is_terminal()
+        || !std::io::stderr().is_terminal()
+        || !std::io::stdout().is_terminal()
+    {
+        return Err("approval administration requires your own operator terminal".to_owned());
+    }
+    eprintln!(
+        "Enter the credential displayed by shiind --operator (never share it with an agent):"
+    );
+    let proof = rpassword::read_password().map_err(|error| error.to_string())?;
+    if method == "shiin.approve.resolve" {
+        let ticket = params["ticket"].as_str().ok_or("approval ticket missing")?;
+        let pending = shiin_ipc::call(
+            "shiin.pending",
+            serde_json::json!({"proof":proof, "ticket":ticket}),
+        )?;
+        let item = pending
+            .as_array()
+            .ok_or("invalid pending response")?
+            .iter()
+            .find(|item| item["approval"]["ticket"].as_str() == Some(ticket))
+            .ok_or("ticket is no longer pending")?;
+        eprintln!(
+            "Normalized action and approval request:\n{}",
+            serde_json::to_string_pretty(item).map_err(|error| error.to_string())?
+        );
+        if !params["scope"].is_null() {
+            eprintln!("Requested scope: {}", params["scope"]);
+        }
+        let resolution = params["resolution"].as_str().ok_or("resolution missing")?;
+        eprintln!(
+            "Lifetime: {} seconds. Type {resolution} to confirm:",
+            params["lifetime"]
+        );
+        if rpassword::read_password().map_err(|error| error.to_string())? != resolution {
+            return Err("resolution was not confirmed".to_owned());
+        }
+    }
+    params["proof"] = serde_json::json!(proof);
+    let result = shiin_ipc::call(method, params)?;
+    serde_json::to_string_pretty(&result).map_err(|error| error.to_string())
 }
 
 fn init() -> Result<String, String> {
@@ -675,7 +742,7 @@ fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, 
 
 /// Builds the action request for a host's payload, then decides it.
 fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
-    let _lock = lock_workspace()?;
+    let workspace_lock = lock_workspace()?;
     let fallback = workspace_root();
     let (mut request, root) = match kind {
         HostKind::ClaudeCode => {
@@ -713,6 +780,20 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
         .map(|layer| layer.digest.clone())
         .unwrap_or_default();
     request.validate().map_err(str::to_owned)?;
+
+    if shiin_ipc::enabled() {
+        drop(workspace_lock);
+        let method = if mode() == Mode::Unattended {
+            "shiin.evaluate.unattended"
+        } else {
+            "shiin.evaluate"
+        };
+        let value = shiin_ipc::call(
+            method,
+            serde_json::to_value(&request).map_err(|error| error.to_string())?,
+        )?;
+        return serde_json::from_value(value).map_err(|error| error.to_string());
+    }
 
     let task = load_task()?;
     request.task = task.as_ref().map(|task| task.id.clone());

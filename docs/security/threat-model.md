@@ -108,3 +108,17 @@ Approval self-authorization, grant consumption, receipt signatures, and replay c
 
 The external reviewer should record their name, reviewed commit or diff, platform and host versions, findings, and resolution of each finding.
 No reviewer has supplied that record yet.
+
+## Local approval service changes
+
+The v0.3 source implementation addresses ST-E-01 and ST-E-02 by requiring an out-of-band operator credential for resolution, listing, and revocation.
+The local transport authenticates the peer's Unix user identity; an asserted agent role is insufficient to administer approvals.
+Tests reject missing or incorrect credentials and generated transition sequences check that a single-use grant cannot authorize twice.
+Grant bindings include the session, task, workspace, policy snapshot, action type, and effects; only the fresh request correlation UUID is excluded.
+Explicit denials are re-evaluated before grants and cannot be overridden.
+Audit and state writes finish before an allow response.
+
+The credential is generated in memory and shown only in a dedicated operator terminal.
+Terminal allocation alone is not proof of a human; the separate credential and typed confirmation provide the operator authorization step.
+Allowed code running outside interception still shares the operating-system account and is outside the cooperative adapter's enforcement boundary.
+Review of this boundary, restart/crash behavior, state-file races, and Windows transport remains required.

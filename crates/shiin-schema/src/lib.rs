@@ -435,6 +435,9 @@ pub struct Decision {
     pub reason: String,
     /// Fixed agent-facing explanation, without policy internals (`DEC-009`).
     pub message: String,
+    /// The approval request for a held action, when a daemon is configured.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval: Option<ApprovalRequest>,
     /// Results of all five stages, available to the operator in explain mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace: Option<Vec<StageTrace>>,
@@ -450,6 +453,42 @@ pub struct Decision {
     /// Version of the engine that decided.
     #[serde(skip)]
     pub engine_version: String,
+}
+
+/// A human's resolution of a pending action (`APR-004`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Resolution {
+    /// Authorize one retry of exactly the normalized action.
+    AllowOnce,
+    /// Authorize a bounded, explicitly selected scope.
+    AllowAlways,
+    /// Refuse the pending action.
+    Deny,
+}
+
+/// The versioned approval request, separate from the normalized action shown to a human.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ApprovalRequest {
+    /// Wire version.
+    pub schema: String,
+    /// Original request identifier.
+    pub request_id: String,
+    /// Always pending for this request type.
+    pub decision: DecisionValue,
+    /// Stable reason for the hold.
+    pub reason: String,
+    /// Agent-facing generic explanation.
+    pub message: String,
+    /// Unpredictable identifier containing the normalized action binding digest.
+    pub ticket: String,
+    /// UTC creation time.
+    pub created_at: String,
+    /// UTC deadline, after which the request cannot be resolved.
+    pub expires_at: String,
+    /// Human resolution, if one exists.
+    pub resolution: Option<Resolution>,
 }
 
 /// One stage's result in an operator-facing decision trace (`EVAL-011`).

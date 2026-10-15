@@ -1,10 +1,11 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.3 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.3 reviewed=2026-10-15 -->
 
 # Approval protocol
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> Local approval state, grants, revocation, and Unix daemon integration exist in source.
+> Host validation and independent security review remain open.
 >
 > Version: `shiin.approval-protocol/v1-draft.1`.
 
@@ -50,6 +51,24 @@ An [approval request](../glossary.md#approval-request) is a [pending](../glossar
 
 **[APR-014]** An approval request MUST be revocable before it is resolved.
 
+## Local implementation
+
+The Unix daemon uses a 0700 per-user directory and a 0600 local socket, checks peer credentials, and holds an exclusive state lock.
+An in-memory 256-bit operator credential is disclosed only in an explicitly started operator terminal.
+Agent-facing requests cannot administer approvals without that credential.
+It is never included in tickets, audit records, files, or environment variables.
+
+The retry binding hashes the normalized request with only its fresh correlation `id` excluded.
+Agent, session, action type, every effect, task, workspace, policy snapshot, and host context remain bound.
+This lets a host retry the same action with a new request UUID without making the ticket itself an authorization credential.
+Single-use consumption is persisted before an allow response.
+Scoped grants require an explicit agent, exact action types, a resource glob, and a workspace; session, task, and snapshot remain bound as well.
+The initial pending deadline is five minutes, and grant lifetimes are positive and at most 24 hours, capped by an active task's expiry.
+
+The service re-evaluates the current policy and task before consulting grants.
+A deny is never eligible for a grant.
+State corruption, failed audit writes, failed persistence, missing task counters, and a configured but unreachable daemon all fail closed.
+
 ## Example
 
 <!-- validate: spec/schemas/approval-protocol.v1.schema.json -->
@@ -69,4 +88,5 @@ An [approval request](../glossary.md#approval-request) is a [pending](../glossar
 
 ## Revision history
 
+- Implementation update (2026-10-15): Added local service behavior and the retry binding; the normative draft version is unchanged.
 - v1-draft.1 (2026-10-01): Initial draft.

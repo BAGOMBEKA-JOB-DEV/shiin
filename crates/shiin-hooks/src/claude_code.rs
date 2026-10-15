@@ -74,7 +74,8 @@ impl HookResponse {
         let permission = match decision.decision {
             DecisionValue::Allow => "allow",
             DecisionValue::Deny => "deny",
-            DecisionValue::Pending => "ask",
+            DecisionValue::Pending if decision.approval.is_none() => "ask",
+            DecisionValue::Pending => "deny",
         };
         Self::new(permission, &agent_message(decision))
     }
@@ -225,6 +226,7 @@ mod tests {
     #[test]
     fn a_pending_decision_asks_the_host() {
         let decision = Decision {
+            approval: None,
             schema: versions::DECISION.to_owned(),
             request_id: "r".to_owned(),
             decision: DecisionValue::Pending,

@@ -1,13 +1,16 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/shiin-approval",
   "crates/shiin-audit",
   "crates/shiin-classify",
   "crates/shiin-cli",
   "crates/shiin-engine",
   "crates/shiin-hooks",
+  "crates/shiin-ipc",
   "crates/shiin-policy",
   "crates/shiin-schema",
+  "crates/shiind",
   "xtask",
 ]
 
@@ -19,6 +22,12 @@ repository = "https://github.com/BAGOMBEKA-JOB-DEV/shiin"
 authors = ["The Shiin Contributors"]
 
 [workspace.dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }
+tokio = { version = "1.53", default-features = false }
+subtle = { version = "2.6", default-features = false }
+rpassword = { version = "7", default-features = false }
+shiin-approval = { path = "crates/shiin-approval" }
+shiin-ipc = { path = "crates/shiin-ipc" }
 cedar-policy = "4"
 getrandom = "0.3"
 globset = "0.4"

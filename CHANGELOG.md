@@ -10,6 +10,8 @@ Shiin has not been released yet, so every entry below is unreleased.
 
 ### Added
 
+- Unix local approval service (`shiind`), a bounded JSON-RPC IPC crate, and an approval state-machine crate with expiring single-use and scoped grants, revocation, and deny-with-ticket responses.
+- Operator-terminal commands `shiin pending`, `shiin approve`, `shiin grants`, and `shiin revoke`, with a separate credential and normalized-action confirmation.
 - Hosted Linux and macOS CI jobs measure optimized engine, policy compilation, and daemonless-hook latency against the existing budgets.
 - Wire-contract regression tests for serialized engine decisions, hook audit events, malformed requests, unknown risk settings, and documented policy examples.
 - `cargo xtask performance`, which measures local engine, policy-compilation, and daemonless-hook latency against the existing budgets.

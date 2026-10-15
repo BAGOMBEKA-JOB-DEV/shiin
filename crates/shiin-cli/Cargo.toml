@@ -18,11 +18,13 @@ name = "shiin"
 path = "src/main.rs"
 
 [dependencies]
+rpassword.workspace = true
 serde_json = { workspace = true }
 shiin-audit = { workspace = true }
 shiin-classify = { workspace = true }
 shiin-engine = { workspace = true }
 shiin-hooks = { workspace = true }
+shiin-ipc = { workspace = true }
 shiin-policy = { workspace = true }
 shiin-schema = { workspace = true }
 

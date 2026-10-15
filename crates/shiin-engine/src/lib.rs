@@ -95,6 +95,7 @@ pub fn decide(inputs: &Inputs<'_>) -> Decision {
         decision,
         reason: reason.to_owned(),
         message: decision.message().to_owned(),
+        approval: None,
         trace: Some(trace),
         stage: stage_name.to_owned(),
         matched_rules: rules,

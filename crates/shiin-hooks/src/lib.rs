@@ -46,5 +46,14 @@ pub fn some_or(value: &str, fallback: &str) -> String {
 /// errors, so it cannot be used to probe for a bypass (`DEC-009`).
 #[must_use]
 pub fn agent_message(decision: &Decision) -> String {
-    decision.decision.message().to_owned()
+    decision.approval.as_ref().map_or_else(
+        || decision.decision.message().to_owned(),
+        |approval| {
+            format!(
+                "{} Approval ticket: {}. Retry after a human approves.",
+                decision.decision.message(),
+                approval.ticket
+            )
+        },
+    )
 }

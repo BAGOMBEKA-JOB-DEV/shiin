@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.3 reviewed=2026-10-15 -->
 
 # CLI
 
@@ -26,7 +26,9 @@ $ shiin <command>
 | `shiin policy test [dir]` | Runs policy cases from `.shiin/tests`, using the same runner as the conformance corpus | works today |
 | `shiin task start \| show \| end` | Declares what the agent is working on, shows it with its usage, or ends it | works today |
 | `shiin hook codex`, `shiin hook cursor` | The same hook service for those hosts | works today, untested against a running host |
-| `shiin pending`, `shiin approve` | Lists and resolves approval requests | planned, v0.3 |
+| `shiin pending`, `shiin approve` | Lists and resolves approval requests using a separate operator credential and terminal confirmation | implemented in source on Unix; validation in progress |
+| `shiin grants`, `shiin revoke` | Inspects and revokes grants or unresolved tickets | implemented in source on Unix; validation in progress |
+| `shiind --operator` | Runs the local approval daemon and displays its in-memory operator credential in a dedicated terminal | implemented in source on Unix; validation in progress |
 | `shiin replay` | Re-evaluates recorded requests, including against a different policy | planned, v0.4 |
 
 `shiin policy test` exits non-zero when any case fails, so it belongs in whatever runs your checks.
