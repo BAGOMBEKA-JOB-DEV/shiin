@@ -196,6 +196,93 @@ mod tests {
         std::fs::remove_file(path).expect("remove test socket");
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn preserves_deny_and_pending_and_rejects_mismatched_decision_ids() {
+        use serde_json::{Value, json};
+        use std::io::{BufRead as _, Write as _};
+        use std::os::unix::net::UnixListener;
+        use std::thread;
+
+        for (index, (expected, expected_value)) in [
+            ("deny", shiin_schema::DecisionValue::Deny),
+            ("pending", shiin_schema::DecisionValue::Pending),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let path = test_socket_path(&format!("non-allow-{index}"));
+            let listener = UnixListener::bind(&path).expect("bind test endpoint");
+            let server = thread::spawn(move || {
+                let (stream, _) = listener.accept().expect("accept client");
+                let mut reader = std::io::BufReader::new(stream);
+                let mut line = String::new();
+                reader.read_line(&mut line).expect("read request frame");
+                let request: Value = serde_json::from_str(&line).expect("valid JSON-RPC request");
+                let decision = json!({
+                    "schema":"shiin.decision/v1-draft.1",
+                    "request_id":request["params"]["id"],
+                    "decision":expected,
+                    "reason":format!("{expected}.policy"),
+                    "message":"The action must not proceed."
+                });
+                writeln!(
+                    reader.get_mut(),
+                    "{}",
+                    json!({"jsonrpc":"2.0","id":request["id"],"result":decision})
+                )
+                .expect("write response frame");
+            });
+            let client = Client::at(&path).expect("construct client");
+            let action = request();
+            let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("create test runtime");
+            let decision = runtime
+                .block_on(client.evaluate(&action))
+                .expect("receive decision");
+            assert_eq!(decision.decision, expected_value);
+            server.join().expect("server thread completes");
+            std::fs::remove_file(path).expect("remove test socket");
+        }
+
+        let path = test_socket_path("mismatched-id");
+        let listener = UnixListener::bind(&path).expect("bind test endpoint");
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().expect("accept client");
+            let mut reader = std::io::BufReader::new(stream);
+            let mut line = String::new();
+            reader.read_line(&mut line).expect("read request frame");
+            let request: Value = serde_json::from_str(&line).expect("valid JSON-RPC request");
+            let result = json!({
+                "schema":"shiin.decision/v1-draft.1",
+                "request_id":"0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0c",
+                "decision":"allow",
+                "reason":"allow.policy",
+                "message":"The action is allowed."
+            });
+            writeln!(
+                reader.get_mut(),
+                "{}",
+                json!({"jsonrpc":"2.0","id":request["id"],"result":result})
+            )
+            .expect("write response frame");
+        });
+        let client = Client::at(&path).expect("construct client");
+        let action = request();
+        let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("create test runtime");
+        assert!(matches!(
+            runtime.block_on(client.evaluate(&action)),
+            Err(ClientError::InvalidResponse)
+        ));
+        server.join().expect("server thread completes");
+        std::fs::remove_file(path).expect("remove test socket");
+    }
+
     fn request() -> ActionRequest {
         serde_json::from_str(
             r#"{"schema":"shiin.action-request/v1-draft.1","id":"0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b","session":"session-EXAMPLE","agent":{"id":"agent-EXAMPLE","assurance":"asserted"},"action_type":"fs.read","effects":[{"kind":"path","value":"/tmp/EXAMPLE/file","confidence":"exact"}],"task":null,"workspace":{"root":"/tmp/EXAMPLE"},"policy_snapshot":"sha256:0000000000000000000000000000000000000000000000000000000000000000","host":{"name":"custom-agent"}}"#,
