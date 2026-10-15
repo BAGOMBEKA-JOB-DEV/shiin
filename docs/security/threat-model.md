@@ -105,7 +105,7 @@ The [M0 external-review criterion](../project/roadmap.md#m0-specification) remai
 | ST-E-02 | Cursor and Codex pending decisions are denied rather than relying on unsupported or unverified holding behavior. | Check host configuration, disabling controls, and every supported host version. |
 
 Additional topics for the reviewer are shell classification coverage, path-error and Unicode/case handling, task timestamp parsing, and policy matching for multiple effects.
-Approval self-authorization, grant consumption, receipt signatures, and replay cannot be reviewed as working features because they are not implemented.
+The Unix approval state machine and grant consumption, receipt signature verification, and replay have source implementations with focused tests. Their security properties still require independent review; Windows approval transport and live-host behavior remain unvalidated.
 
 The external reviewer should record their name, reviewed commit or diff, platform and host versions, findings, and resolution of each finding.
 No reviewer has supplied that record yet.

@@ -1,15 +1,15 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Workspace and crates
 
 > [!NOTE]
 > **Project policy: draft.**
 > This page is the only home of Shiin's crate list.
-> The workspace has ten product crates and `xtask`, including the v0.3 local approval services.
-> Evidence and integration crates remain planned.
+> The workspace has twelve product crates and `xtask`, including partial approval, evidence, and integration implementations.
+> Host, platform, and milestone validation remain incomplete.
 
 Shiin is built as a single Cargo workspace.
-This page describes the repository layout, the crates the workspace will contain, what each crate is responsible for,
+This page describes the repository layout, the crates in the workspace, what each crate is responsible for,
 and the rules that keep the crate graph small, acyclic, and honest about what exists.
 The decision behind the layout is [ADR-0035](../adr/0035-workspace-layout.md).
 
@@ -34,10 +34,12 @@ members = [
   "crates/shiin-approval",
   "crates/shiin-audit",
   "crates/shiin-classify",
+  "crates/shiin-client",
   "crates/shiin-cli",
   "crates/shiin-engine",
   "crates/shiin-hooks",
   "crates/shiin-ipc",
+  "crates/shiin-mcp-proxy",
   "crates/shiin-policy",
   "crates/shiin-schema",
   "crates/shiind",
@@ -60,7 +62,7 @@ rust-toolchain.toml    pinned toolchain
 rustfmt.toml           formatter settings
 .editorconfig          editor settings
 .cargo/config.toml     cargo aliases, including `cargo xtask`
-crates/<name>/         ten implemented product crates
+crates/<name>/         twelve product crates with milestone validation in progress
 xtask/                 repository tooling, never published
 fuzz/                  fuzz targets, a separate nightly workspace (planned: v0.1)
 docs/                  this documentation
@@ -80,23 +82,22 @@ docs/                  this documentation
 
 ## Crates
 
-The table lists every crate the project plans, the one responsibility each has, and the [milestone](../project/roadmap.md) in which it is created.
-A crate that is listed here but not yet created does not exist in any form, including on crates.io.
+The table lists every product crate in the workspace, its responsibility, and the [milestone](../project/roadmap.md) that owns its implementation and validation.
 
 | Crate | Responsibility | Milestone |
 |---|---|---|
 | `shiin-schema` | Wire types for action requests, decisions, approval messages, and audit events, matching the JSON Schemas in `docs/spec/schemas/` | v0.1 |
-| `shiin-classify` | Normalizers for paths, shell commands, URLs, and SQL, and the derivation of effects from them | v0.1 (SQL: v0.5) |
+| `shiin-classify` | Normalizers for paths, shell commands, URLs, and experimental SQL, and the derivation of effects from them | v0.1 (SQL: v0.5; host integration open) |
 | `shiin-policy` | The TOML front-end and its compilation to Cedar, policy layering, and diagnostics | v0.1 |
 | `shiin-engine` | The pure, synchronous evaluation pipeline | v0.1 |
-| `shiin-audit` | The hash-chained audit log, verification, and replay; receipts behind a feature | v0.1 (receipts: v0.4) |
+| `shiin-audit` | The hash-chained audit log, verification, replay, and receipts behind a feature | v0.1 (receipts: v0.4; external review open) |
 | `shiin-hooks` | Host hook adapters: a `claude_code` module, then `codex` and `cursor` modules | v0.1 (Codex and Cursor: v0.2) |
 | `shiin-cli` | The `shiin` binary: `init`, `check`, `explain`, `policy validate`, `policy test`, `hook`, `task`, `pending`, `approve`, `log`, `verify`, `replay`, and `doctor` | v0.1 |
-| `shiin-approval` | The approval state machine and grants | v0.3 |
-| `shiin-ipc` | Local transport over Unix domain sockets and Windows named pipes | v0.3 |
-| `shiind` | The per-user daemon | v0.3 |
-| `shiin-client` | The Rust client for daemon evaluation and policy validation | v0.5 |
-| `shiin-mcp-proxy` | The stdio MCP proxy for downstream tools | v0.5 |
+| `shiin-approval` | The approval state machine and grants | v0.3 (source; review open) |
+| `shiin-ipc` | Local transport over Unix domain sockets and Windows named pipes | v0.3 (Unix source; Windows validation open) |
+| `shiind` | The per-user daemon | v0.3 (Unix source; platform validation open) |
+| `shiin-client` | The Rust client for daemon evaluation and policy validation | v0.5 (early source; conformance open) |
+| `shiin-mcp-proxy` | The stdio MCP proxy for downstream tools | v0.5 (early source; conformance open) |
 | `shiin-platform` | The only crate allowed to contain `unsafe` code; created only if needed | as needed |
 | `xtask` | Repository tooling | exists |
 | `fuzz/` | Fuzz targets; a separate workspace, not a member crate | v0.1 |

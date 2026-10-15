@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-16 -->
 
 # Use cases
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
+> Authorization, approvals, evidence, and early client/integration code exist in source; platform, host, and milestone validation remain incomplete.
 
 This page describes the situations Shiin is designed for.
 Each scenario has a stable ID (`UC-01` and so on).

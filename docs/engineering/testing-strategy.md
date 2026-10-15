@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Testing strategy
 
@@ -31,7 +31,8 @@ Miri coverage on a dated nightly is planned and is not currently configured in C
 
 ## Property tests
 
-The planned approval state machine will have property tests in v0.3.
+The Unix approval state machine has transition-sequence tests for expiry, revocation, binding, and single-use grant consumption.
+Cross-platform service tests and the independent security review remain open.
 
 ## Read next
 

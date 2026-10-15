@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # How Shiin works
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
+> Authorization, approval, evidence, and early client/integration code exist in source; host, platform, and milestone validation remain incomplete.
 > The [specifications](../spec/README.md) are the precise source for everything summarized here.
 
 This page follows one action from the moment an agent proposes it to the moment it is recorded,
@@ -32,7 +32,7 @@ then walks through four concrete examples.
    or [denying with a ticket](../glossary.md#deny-with-ticket) when the host cannot wait.
 7. **An audit event is written** to the [audit log](../spec/audit-events.md) before a non-read action is allowed to proceed.
 
-The following diagram shows the planned v0.3 approval service; current adapters use host responses.
+The diagram shows the Unix daemon approval path available in source. Host integration and cross-platform validation remain open.
 
 ```mermaid
 sequenceDiagram
@@ -160,8 +160,8 @@ The agent then tries to create `migrations/0042_add_login_attempts.sql`.
 - The decision is `deny` with reason code `deny.intent`, even though standing policy allowed the write.
 
 If the agent instead ran `psql -c "ALTER TABLE users ADD COLUMN login_attempts int"`,
-the SQL classifier (planned: v0.5) would identify a `db.schema_change` effect,
-and the `forbid.action_types` constraint would deny it the same way.
+the experimental SQL classifier can identify a `db.schema_change` effect,
+and the `forbid.action_types` constraint can deny it the same way. The classifier recognizes a conservative subset; unsupported or ambiguous SQL remains opaque, and host adapters do not yet use this classifier.
 
 ## Where Shiin sits relative to a sandbox
 
@@ -179,17 +179,17 @@ flowchart LR
 
 ## What exists today
 
-The engine, policy, hooks, audit log, and experimental task constraints exist in source.
-Identity and capability gates currently pass through; approvals and grants are not implemented.
-The [roadmap](../project/roadmap.md) lists the milestone that delivers each part.
+The engine, policy, hooks, audit log, experimental task constraints, Unix approvals, grants, receipts, replay, a Rust client, and an early MCP proxy exist in source.
+Identity and capability gates currently pass through. SQL classification remains experimental and is not wired into host adapters.
+The [roadmap](../project/roadmap.md) lists validation still required for each part.
 
 | Part | Milestone |
 |---|---|
-| Claude Code adapter, engine, policy, audit log | v0.1 |
-| Task declarations and intent binding | v0.2 |
-| Approval protocol and grants | v0.3 |
-| Receipts and replay | v0.4 |
-| MCP proxy and SQL classifiers | v0.5 |
+| Claude Code adapter, engine, policy, audit log | v0.1 (source; host validation open) |
+| Task declarations and intent binding | v0.2 (experimental source; measurements open) |
+| Approval protocol and grants | v0.3 (Unix source; platform validation open) |
+| Receipts and replay | v0.4 (source; external review open) |
+| MCP proxy, Rust client, and SQL classifiers | v0.5 (early source; conformance/integration validation open) |
 
 ## Read next
 

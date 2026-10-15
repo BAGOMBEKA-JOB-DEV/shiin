@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.3 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.3 reviewed=2026-10-16 -->
 
 # Approvals
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.3. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> Unix approval requests, grants, and CLI resolution exist in source. Remote approvals remain a draft proposal in RFC-0001.
 
 An [approval request](../glossary.md#approval-request) is a [pending](../glossary.md#pending) decision waiting for an [approver](../glossary.md#approver) to resolve it.
 
@@ -20,7 +20,9 @@ A grant never overrides `deny`.
 
 ## Channels
 
-Approval requests reach approvers through an [approval channel](../glossary.md#approval-channel), such as the command-line approver or a webhook.
+Approval requests reach a human through an [approval channel](../glossary.md#approval-channel).
+The current source implementation supports a separate operator terminal on Unix.
+Remote approval is not implemented; RFC-0001 proposes an opt-in signed polling transport.
 
 ## Deny-with-ticket
 

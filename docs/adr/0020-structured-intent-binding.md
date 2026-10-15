@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # ADR-0020: Structured intent binding
 
@@ -37,7 +37,7 @@ Chosen option: "Structured task declarations with a closed set of constraint kin
 - Constraints are from a closed set: `scope.paths`, `forbid.action_types`, `allow.hosts`, `limits`, `expires_at`, and `require_pending_for`.
 - Intent binding checks each action against the active task's constraints.
 - Natural-language descriptions of intent are recorded but never evaluated.
-- Task declarations are experimental and marked as such (planned: v0.2).
+- Task declarations are experimental and marked as such (partial source implementation in v0.2; host validation and measurements remain open).
 
 ### Consequences
 
