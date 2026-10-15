@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.6 reviewed=2026-10-15 -->
 
 # Aider in a sandbox
 
 > [!WARNING]
 > **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> Planned for v0.6. The shell wrapper is not implemented.
 
 ## Enforcement level
 

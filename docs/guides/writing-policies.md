@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Writing policies
 
@@ -103,15 +103,14 @@ $ shiin explain /tmp/request.json
 ```
 
 `explain` prints the stage that decided and the rules that matched, which is usually enough
-to see why a rule did not apply. Recorded policy cases through `shiin policy test` arrive in
-v0.2; see the [roadmap](../project/roadmap.md).
+to see why a rule did not apply.
+Recorded policy cases run through `shiin policy test`; see [testing policies](testing-policies.md).
 
 ## Not yet available
 
 | Feature | Arrives |
 |---|---|
 | Agent capabilities, as a coarse permission separate from rules | v0.2 |
-| Task declarations, which limit an agent to the task you gave it | v0.2 |
 | Grants, so an approval can cover later actions | v0.3 |
 | Writing rules directly in Cedar | after the policy language is stable |
 

@@ -1,9 +1,8 @@
 //! Wire types for Shiin's specifications.
 //!
 //! Every type here mirrors a JSON Schema under `docs/spec/schemas/`.
-//! Action requests accept unknown fields, because a reader ignores unknown
-//! non-critical fields. Policy and task declarations reject them, because an
-//! unrecognized policy key must fail closed rather than be silently dropped.
+//! Top-level action requests, policy, and task declarations reject unknown fields,
+//! because an unrecognized constraint must not be silently dropped.
 
 pub mod clock;
 
@@ -62,6 +61,7 @@ pub enum Mode {
 
 /// The agent that proposed an action.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct Agent {
     /// Host-defined agent identifier, such as `claude-code`.
     pub id: String,
@@ -71,6 +71,7 @@ pub struct Agent {
 
 /// The project an agent is working in.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct Workspace {
     /// Absolute, canonical path of the workspace root.
     pub root: String,
@@ -91,6 +92,7 @@ pub struct Host {
 
 /// One concrete consequence of an action.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct Effect {
     /// What the value refers to: `path`, `command`, `url`, or `count`.
     pub kind: String,
@@ -126,6 +128,7 @@ impl Effect {
 
 /// A normalized, host-independent description of one proposed action.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct ActionRequest {
     /// Specification version of this message.
     pub schema: String,
@@ -152,6 +155,63 @@ pub struct ActionRequest {
 }
 
 impl ActionRequest {
+    /// Checks the required wire fields before evaluation (`AR-001` to `AR-008`).
+    ///
+    /// # Errors
+    ///
+    /// Returns a fixed diagnostic for an unsupported version or malformed required field.
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if self.schema != versions::ACTION_REQUEST {
+            return Err("unsupported action request schema");
+        }
+        let id = self.id.as_bytes();
+        let uuid = id.len() == 36
+            && id.iter().enumerate().all(|(index, byte)| {
+                if [8, 13, 18, 23].contains(&index) {
+                    *byte == b'-'
+                } else {
+                    byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()
+                }
+            })
+            && id.get(14) == Some(&b'4')
+            && id.get(19).is_some_and(|byte| b"89ab".contains(byte));
+        if !uuid {
+            return Err("action request id must be a version 4 UUID");
+        }
+        if self.session.is_empty()
+            || self.agent.id.is_empty()
+            || self.action_type.is_empty()
+            || self.host.name.is_empty()
+            || self.effects.is_empty()
+            || self.effects.iter().any(|effect| effect.kind.is_empty())
+        {
+            return Err("action request is missing a required value");
+        }
+        let root = self.workspace.root.as_bytes();
+        let windows_absolute = root.first().is_some_and(u8::is_ascii_alphabetic)
+            && root.get(1) == Some(&b':')
+            && root.get(2).is_some_and(|byte| b"/\\".contains(byte));
+        if !self.workspace.root.starts_with('/')
+            && !windows_absolute
+            && !self.workspace.root.starts_with("\\\\")
+        {
+            return Err("workspace root must be absolute");
+        }
+        if !self
+            .policy_snapshot
+            .strip_prefix("sha256:")
+            .is_some_and(|digest| {
+                digest.len() == 64
+                    && digest
+                        .bytes()
+                        .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+            })
+        {
+            return Err("policy snapshot must be a SHA-256 digest");
+        }
+        Ok(())
+    }
+
     /// Values of every effect of the given kind.
     pub fn values_of(&self, kind: &str) -> impl Iterator<Item = &str> {
         self.effects
@@ -209,7 +269,7 @@ pub struct Layer {
 
 /// Configuration for one risk signal.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
+#[serde(untagged, deny_unknown_fields)]
 pub enum RiskSetting {
     /// Shorthand for an escalation with default settings.
     Escalation(DecisionValue),
@@ -335,6 +395,7 @@ impl TaskUsage {
 
 /// A human-confirmed statement of what an agent is working on.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct TaskDeclaration {
     /// Identifier referenced by an action request.
     pub id: String,
@@ -372,15 +433,46 @@ pub struct Decision {
     pub decision: DecisionValue,
     /// Stable reason code, such as `deny.policy`.
     pub reason: String,
+    /// Fixed agent-facing explanation, without policy internals (`DEC-009`).
+    pub message: String,
+    /// Results of all five stages, available to the operator in explain mode.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace: Option<Vec<StageTrace>>,
     /// The stage that determined the outcome.
+    #[serde(skip)]
     pub stage: String,
     /// Identifiers of the rules that determined the outcome.
-    #[serde(default)]
+    #[serde(skip)]
     pub matched_rules: Vec<String>,
     /// Digest of the policy snapshot used.
+    #[serde(skip)]
     pub policy_snapshot: String,
     /// Version of the engine that decided.
+    #[serde(skip)]
     pub engine_version: String,
+}
+
+/// One stage's result in an operator-facing decision trace (`EVAL-011`).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct StageTrace {
+    /// Stage name, in the fixed evaluation order.
+    pub stage: String,
+    /// `allow`, `deny`, `pending`, or `pass`.
+    pub result: String,
+    /// Reason code or rule identifiers that explain this result.
+    pub reason: String,
+}
+
+impl DecisionValue {
+    /// Agent-facing text that does not disclose the deciding rule or stage.
+    #[must_use]
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::Allow => "This action is allowed.",
+            Self::Deny => "This action is denied by Shiin.",
+            Self::Pending => "This action needs a person's approval before it can proceed.",
+        }
+    }
 }
 
 /// Wire version strings this release reads and writes.

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Evaluation
 
 > [!NOTE]
 > **Specification: accepted.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
 > Version: `shiin.evaluation/v1-draft.1`.
 
@@ -12,6 +12,9 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RE
 
 The [engine](../glossary.md#engine) evaluates an [action request](action-request.md) against a [policy snapshot](../glossary.md#policy-snapshot) and produces a [decision](decision.md).
 The engine performs no I/O and is deterministic: the same inputs always produce the same decision ([ADR-0009](../adr/0009-deterministic-enforcement.md), [ADR-0010](../adr/0010-pure-synchronous-engine.md)).
+
+Current identity and capability stages return `pass`; grant evaluation is planned for v0.3.
+Policy, task constraints, risk escalation, unattended denials, and five-stage traces exist in source.
 
 ## Stages
 
@@ -65,7 +68,7 @@ The engine performs no I/O and is deterministic: the same inputs always produce 
 ```json
 {
   "schema": "shiin.evaluation/v1-draft.1",
-  "request_id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
+  "request_id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
   "decision": "allow",
   "reason": "allow.policy",
   "trace": [

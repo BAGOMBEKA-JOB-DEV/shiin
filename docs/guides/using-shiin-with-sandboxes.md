@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Using Shiin with sandboxes
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 Shiin decides whether an action should happen.
 A sandbox limits the damage if an allowed action, or the code it runs, misbehaves.

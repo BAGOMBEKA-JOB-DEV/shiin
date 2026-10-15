@@ -2,13 +2,13 @@
 //!
 //! Cursor runs a hook per event rather than one hook for every tool, and reads back
 //! `permission` with `allow`, `deny`, or `ask`
-//! (verified against <https://cursor.com/docs/hooks> on 2026-09-14).
+//! (verified against <https://cursor.com/docs/hooks> on 2026-10-15).
 //!
 //! Enforcement level L1, cooperative. Two details matter when installing it: Cursor
 //! allows an action when a hook fails unless the hook is configured with
 //! `failClosed: true`, and whether `ask` is honored for shell and tool events is not
-//! verified, so a pending decision is reported as `ask` and also explained in the
-//! message in case the host treats it as an allow.
+//! verified in a running host, so this adapter denies a pending action rather than
+//! relying on an unverified native prompt.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -83,8 +83,8 @@ impl HookResponse {
     pub fn from_decision(decision: &Decision) -> Self {
         let permission = match decision.decision {
             DecisionValue::Allow => "allow",
-            DecisionValue::Deny => "deny",
-            DecisionValue::Pending => "ask",
+            // Fail closed until a live-host test establishes that pending is held.
+            DecisionValue::Deny | DecisionValue::Pending => "deny",
         };
         let message = agent_message(decision);
         Self {
@@ -96,9 +96,8 @@ impl HookResponse {
 
     /// Builds a deny response, used when anything at all goes wrong.
     #[must_use]
-    pub fn fail_closed(detail: &str) -> Self {
-        let message =
-            format!("Shiin denied this action because it could not decide safely: {detail}");
+    pub fn fail_closed(_detail: &str) -> Self {
+        let message = "Shiin could not decide safely. This action is denied.".to_owned();
         Self {
             permission: "deny".to_owned(),
             user_message: message.clone(),

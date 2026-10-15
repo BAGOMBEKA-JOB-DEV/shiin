@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Risk signals
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 A [risk signal](../glossary.md#risk-signal) is a discrete, deterministic property of an [action request](../glossary.md#action-request) that can escalate a decision.
 Shiin does not use numeric risk scores.

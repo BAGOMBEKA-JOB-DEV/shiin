@@ -152,7 +152,7 @@ The snapshot digest is a placeholder; the hook service fills in the loaded polic
 ```json
 {
   "schema": "shiin.action-request/v1-draft.1",
-  "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9aa3",
+  "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9aa3",
   "session": "EXAMPLE-session",
   "agent": { "id": "EXAMPLE-agent", "assurance": "asserted" },
   "action_type": "shell.exec",

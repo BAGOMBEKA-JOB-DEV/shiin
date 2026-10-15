@@ -1,16 +1,16 @@
-<!-- shiin-doc: kind=index status=draft implementation=none milestone=m0 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
 
 # About the specifications
 
 > [!NOTE]
 > **Project status: pre-alpha.**
-> These specifications are normative contracts written before any implementation exists.
-> No product code, binaries, or releases ship yet.
-> Implementations will be checked against these specifications when code ships.
+> Core contracts have source implementations and conformance tests; approval, receipts, and local API implementations remain planned.
+> No release has shipped; source builds are available.
+> Tests check implemented wire values against the schemas.
 
 The specifications define the contracts that make Shiin interchangeable: the [action request](action-request.md), the [decision](decision.md), the [evaluation](evaluation.md) pipeline, and the [approval protocol](approval-protocol.md), along with JSON Schemas and test vectors that other tools can implement.
 
-Everything on this page and in the specification files describes the intended design.
+Each page distinguishes implemented behavior from remaining design work.
 The [roadmap](../project/roadmap.md) lists the milestone that delivers each specification's implementation.
 
 ## Status and lifecycle
@@ -81,7 +81,7 @@ Every normative requirement in a specification starts with a bold, bracketed req
 | [Audit events](audit-events.md) | v0.1 | [schema](schemas/audit-events.v1.schema.json) |
 | [Receipts](receipts.md) | v0.4 | [schema](schemas/receipts.v1.schema.json) |
 | [Adapter contract](adapter-contract.md) | v0.1 | — |
-| [Local API](local-api.md) | v0.3 | [schema](schemas/local-api.v1.schema.json) |
+| [Local API](local-api.md) | v0.5 | [schema](schemas/local-api.v1.schema.json) |
 | [Test vectors](test-vectors/README.md) | m0 | [schema](schemas/test-vector.v1.schema.json) |
 
 ## Reading the specifications

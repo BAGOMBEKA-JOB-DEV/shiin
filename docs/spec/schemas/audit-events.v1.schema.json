@@ -3,10 +3,10 @@
   "$id": "urn:shiin:schema:audit-events:v1",
   "title": "Shiin audit event",
   "type": "object",
-  "required": ["schema", "id", "timestamp", "kind", "prev", "self"],
+  "required": ["schema", "id", "timestamp", "kind", "prev", "self", "seq", "payload"],
   "properties": {
-    "schema": { "type": "string", "const": "shiin.audit-event/v1-draft.1" },
-    "id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
+    "schema": { "type": "string", "const": "shiin.audit-event/v1-draft.2" },
+    "id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid_v4" },
     "timestamp": { "type": "string", "format": "date-time" },
     "kind": {
       "type": "string",
@@ -22,6 +22,12 @@
     },
     "prev": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
     "self": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["digest"],
+      "properties": { "digest": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" } }
+    },
     "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
     "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
     "reason": { "type": "string" }

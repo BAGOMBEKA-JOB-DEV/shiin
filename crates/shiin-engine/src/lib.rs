@@ -12,8 +12,8 @@ pub mod vectors;
 
 use shiin_policy::{CompiledPolicy, PolicyOutcome};
 use shiin_schema::{
-    ActionRequest, Decision, DecisionValue, Mode, Policy, TaskDeclaration, TaskUsage, reasons,
-    versions,
+    ActionRequest, Decision, DecisionValue, Mode, Policy, StageTrace, TaskDeclaration, TaskUsage,
+    reasons, versions,
 };
 
 /// Version reported in decisions.
@@ -71,12 +71,31 @@ pub fn decide(inputs: &Inputs<'_>) -> Decision {
 
     let stages = [&identity, &capability, &policy, &intent, &risk];
     let (decision, reason, stage_name, rules) = combine(&stages, &policy, inputs);
+    let trace = stages
+        .iter()
+        .zip(["identity", "capability", "policy", "intent", "risk"])
+        .map(|(stage, name)| {
+            let (result, reason) = match stage {
+                Stage::Deny(reason, _) => ("deny", (*reason).to_owned()),
+                Stage::Pending(reason, _) => ("pending", (*reason).to_owned()),
+                Stage::Allow(rules) => ("allow", format!("rule:{}", rules.join(","))),
+                Stage::Pass => ("pass", format!("{name}.pass")),
+            };
+            StageTrace {
+                stage: name.to_owned(),
+                result: result.to_owned(),
+                reason,
+            }
+        })
+        .collect();
 
     Decision {
         schema: versions::DECISION.to_owned(),
         request_id: inputs.request.id.clone(),
         decision,
         reason: reason.to_owned(),
+        message: decision.message().to_owned(),
+        trace: Some(trace),
         stage: stage_name.to_owned(),
         matched_rules: rules,
         policy_snapshot: inputs.request.policy_snapshot.clone(),

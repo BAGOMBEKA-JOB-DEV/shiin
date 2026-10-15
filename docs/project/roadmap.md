@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Roadmap
 
@@ -43,7 +43,7 @@
 
 - The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`. Done on 2026-10-12.
 - The threat model has been reviewed by at least one person outside the project. **Open: this is the last M0 criterion, and it needs a reviewer who is not the author.**
-- Every golden use case has test vectors. Done: 8 vectors, each decidable from its own inputs and checked in continuous integration.
+- The core golden use cases have test vectors. The original eight-case corpus has grown to 19 cases, each decidable from its own inputs and checked in continuous integration.
 - ADR-0014 is `accepted`. Done on 2026-10-12.
 
 ## v0.1: Gate

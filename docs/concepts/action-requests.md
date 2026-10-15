@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Action requests
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 An [action request](../spec/action-request.md) is the normalized, host-independent description of one proposed [action](../glossary.md#action).
 

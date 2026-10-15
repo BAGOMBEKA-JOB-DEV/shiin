@@ -67,6 +67,27 @@ pub fn parse(text: &str) -> Result<Policy, PolicyError> {
             message: "the default decision may not be `allow`".to_owned(),
         });
     }
+    for (signal, setting) in &file.risk {
+        if ![
+            "opaque_command",
+            "secret_path",
+            "outside_workspace",
+            "bulk_delete",
+            "destructive_vcs",
+            "privilege_escalation",
+        ]
+        .contains(&signal.as_str())
+        {
+            return Err(PolicyError::Syntax {
+                message: format!("unknown risk signal `{signal}`"),
+            });
+        }
+        if setting.threshold() == Some(0) {
+            return Err(PolicyError::Syntax {
+                message: "risk threshold must be positive".to_owned(),
+            });
+        }
+    }
 
     let digest = format!("sha256:{:x}", Sha256::digest(text.as_bytes()));
     Ok(Policy {

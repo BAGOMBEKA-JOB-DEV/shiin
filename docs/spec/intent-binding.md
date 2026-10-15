@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.2 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.2 reviewed=2026-10-15 -->
 
 # Intent binding
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
 > Version: `shiin.intent-binding/v1-draft.1`.
 

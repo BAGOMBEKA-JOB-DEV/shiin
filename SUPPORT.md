@@ -1,7 +1,7 @@
 # Support
 
-Shiin is pre-alpha and in its specification phase.
-There is nothing to install yet, so most questions are about the design.
+Shiin is pre-alpha and available from source, with no published release.
+Questions and reports about the implementation, integrations, and design are welcome.
 
 ## Where to go
 

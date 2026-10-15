@@ -2,16 +2,18 @@
 //!
 //! Codex runs a `PreToolUse` hook and reads a decision back in the same shape Claude Code
 //! uses, including `hookSpecificOutput.permissionDecision`
-//! (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-09-14).
+//! (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-10-15).
 //!
 //! Enforcement level L1, cooperative, and weaker than it first appears: Codex requires a
 //! hook to be trusted before it runs, it does not intercept hosted tools such as its web
 //! search, and its own documentation calls hooks "a useful guardrail, not a complete
 //! enforcement boundary".
 //!
-//! The payload field names were not verified, so this adapter accepts the names Claude
-//! Code uses and the aliases Codex is likely to use, and refuses to guess beyond that: an
-//! unrecognized tool becomes a vendor extension action type that no rule can match.
+//! The documented fields are `session_id`, `cwd`, `tool_name`, and `tool_input`.
+//! Legacy aliases remain compatibility inputs rather than verified host contracts.
+//! Patch text is not parsed into paths: patches without a readable path remain opaque.
+//! Live host behavior has not been validated; an unrecognized tool becomes a vendor
+//! extension action type, and its effect remains opaque.
 
 use serde::Deserialize;
 use serde_json::Value;

@@ -1,12 +1,13 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.1 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Policy syntax
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> The source build implements the format below.
+> Capabilities and session/task rule matchers remain unimplemented.
 >
-> Version: `shiin.policy-syntax/v1-draft.1`.
+> Version: `shiin.policy-syntax/v1-draft.2`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -15,15 +16,17 @@ This page defines the TOML front-end.
 
 ## Top level
 
-**[SYN-001]** A policy file MUST be a TOML document with a top-level `default` key.
+**[SYN-001]** A policy file MUST be a TOML document with top-level `version = 1`.
 
-**[SYN-002]** `default` MUST be `deny` or `pending`.
+**[SYN-002]** `[defaults].decision` MUST be `deny` or `pending`, and MUST default to `deny` when the table is omitted.
 
 **[SYN-003]** A policy file MAY contain a top-level `capabilities` table.
 
+Capability declarations are planned and are currently rejected rather than ignored.
+
 ## Rules
 
-**[SYN-004]** Rules MUST be array elements of a top-level `rules` array.
+**[SYN-004]** Rules MUST be array elements of a top-level `rule` array, written as `[[rule]]` in TOML.
 
 **[SYN-005]** Each rule MUST be a table with `id` and `effect` keys.
 
@@ -33,7 +36,12 @@ This page defines the TOML front-end.
 
 **[SYN-008]** A rule MAY match on `action_types`, `resources`, `commands`, `agents`, `sessions`, and `tasks`.
 
-**[SYN-009]** `resources` MUST be glob patterns relative to the workspace root.
+`sessions` and `tasks` matchers are planned and are currently rejected.
+The current matchers are `action_types`, `resources`, `commands`, and `agents`.
+
+**[SYN-009]** Resource globs beginning with `./` MUST resolve against the canonical workspace root.
+
+Absolute globs and operator-home globs beginning with `~/` are also supported.
 
 **[SYN-010]** `commands` MUST be exact command strings or glob patterns.
 
@@ -49,14 +57,20 @@ This page defines the TOML front-end.
 
 **[SYN-014]** Each signal MAY be set to `allow`, `deny`, or `pending`.
 
+`allow` means the risk gate passes; it never authorizes an action.
+A signal may instead be a table with `decision` and an optional positive `threshold`.
+The `bulk_delete` default threshold is 20.
+
+**[SYN-015]** Unknown policy keys, unknown risk signal names, and unknown detailed risk settings MUST be rejected.
+
 ## Example
 
 <!-- validate: spec/schemas/policy-syntax.v1.schema.json -->
 ```json
 {
-  "schema": "shiin.policy-syntax/v1-draft.1",
-  "default": "deny",
-  "rules": [
+  "version": 1,
+  "defaults": { "decision": "deny" },
+  "rule": [
     {
       "id": "edit-source",
       "effect": "allow",
@@ -72,7 +86,7 @@ This page defines the TOML front-end.
     }
   ],
   "risk": {
-    "bulk_delete": "pending",
+    "bulk_delete": { "decision": "pending", "threshold": 20 },
     "secret_path": "deny"
   }
 }
@@ -80,4 +94,5 @@ This page defines the TOML front-end.
 
 ## Revision history
 
+- v1-draft.2 (2026-10-15): Reconciled the draft with the implemented TOML front-end and its JSON representation; documented unsupported keys and fail-closed risk configuration.
 - v1-draft.1 (2026-10-01): Initial draft.

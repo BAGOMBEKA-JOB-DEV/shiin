@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-15 -->
 
 # Testing policies
 
@@ -25,7 +25,7 @@ evaluated against your workspace's policy, which is what makes it a regression t
   "name": "No agent reads .env, however it asks",
   "action_request": {
     "schema": "shiin.action-request/v1-draft.1",
-    "id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
+    "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
     "session": "manual",
     "agent": { "id": "claude-code", "assurance": "asserted" },
     "action_type": "shell.exec",

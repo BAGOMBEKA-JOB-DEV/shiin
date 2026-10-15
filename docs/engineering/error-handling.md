@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Error handling
 
 > [!NOTE]
 > **Project policy: draft.**
 > How Shiin's crates represent, report, and recover from failures.
-> No product crate exists yet; these rules apply from the first one.
+> Product crates implement fail-closed hook handling; some diagnostics and error-boundary details below remain design requirements.
 
 Shiin guards actions for an untrusted [agent](../glossary.md#agent).
 Its error handling therefore has one overriding goal: a failure must never let an action through.
@@ -132,7 +132,7 @@ A fault-injection test that makes the hook panic and time out is an exit criteri
 ## Illustrative example
 
 The following Rust is illustrative only.
-The crates do not exist yet, and every name and error code in it is a placeholder.
+It illustrates the design and is not a copy of the current source API.
 
 ```rust
 // Illustrative only: not real Shiin code. Names and codes are placeholders.

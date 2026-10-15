@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.2 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-15 -->
 
 # Tasks and intent
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.2. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The source build implements the current behavior below; remaining design work is marked explicitly.
 
 A [task declaration](../glossary.md#task-declaration) is a structured, human-confirmed statement of what an agent is working on: a description, [constraints](../glossary.md#constraint), and an expiry.
 

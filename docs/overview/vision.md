@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-15 -->
 
 # Vision
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes the intended design. No implementation exists yet.
+> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
 
 ## The problem
 

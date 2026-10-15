@@ -26,5 +26,9 @@ shiin-hooks = { workspace = true }
 shiin-policy = { workspace = true }
 shiin-schema = { workspace = true }
 
+[dev-dependencies]
+jsonschema = { workspace = true }
+toml = { workspace = true }
+
 [lints]
 workspace = true

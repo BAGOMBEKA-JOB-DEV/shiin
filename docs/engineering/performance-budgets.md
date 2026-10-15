@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Performance budgets
 
@@ -23,8 +23,19 @@
 
 ## Measurement
 
-These budgets are measured in CI on every Tier 1 platform.
-A regression opens a bug, not an exception.
+Cross-platform CI measurement remains a release requirement and is not yet configured.
+The following command provides a repeatable local latency sample:
+
+```console
+$ cargo build --release --workspace --locked
+$ cargo run --release --locked -p xtask -- performance target/release/shiin
+```
+
+The command checks every observed latency against the existing budgets and reports median, p95, and maximum.
+Hook samples include process start, policy loading, evaluation, and durable audit writes against a small growing log.
+They exercise the real hook executable without launching a host.
+The reported Linux process peak RSS includes the harness and dependencies; it does not establish the separate engine and policy memory budgets.
+Large-policy/log measurements, component memory profiling, and results on other platforms remain open.
 
 ## Read next
 

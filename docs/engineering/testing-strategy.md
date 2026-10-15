@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Testing strategy
 
@@ -10,10 +10,10 @@
 
 | Level | What it covers | Where |
 |---|---|---|
-| Unit | Single functions and types | Each crate's `tests/`. |
+| Unit | Single functions and types | In-module `tests` modules. |
 | Integration | Crate boundaries and the engine | `crates/*/tests/`. |
 | Conformance | The test vectors | `docs/spec/test-vectors/`. |
-| Fault injection | Crashes and timeouts in the hook | `fuzz/`. |
+| Fault injection | Crashes, timeouts, damaged state, and failed audit writes | CLI unit and integration tests. |
 | Platform | One supported platform each | CI jobs. |
 
 ## Test vectors
@@ -22,16 +22,16 @@ Every test vector in `docs/spec/test-vectors/` must pass before a milestone is c
 
 ## Fuzzing
 
-Fuzz targets live in `fuzz/`, a separate nightly workspace.
-They run in CI on every pull request from v0.1.
+Fuzz targets are planned in `fuzz/`, a separate nightly workspace.
+That workspace and its CI jobs do not exist yet; ordinary fault-injection tests do not establish fuzzing coverage.
 
 ## Miri
 
-Miri runs the engine crates' tests on a nightly toolchain in CI.
+Miri coverage on a dated nightly is planned and is not currently configured in CI.
 
 ## Property tests
 
-The approval state machine is property-tested from v0.3.
+The planned approval state machine will have property tests in v0.3.
 
 ## Read next
 

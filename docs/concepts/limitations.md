@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=m0 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
 
 # Limitations
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes the intended design. No implementation exists yet.
+> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
 
 Shiin decides whether an action should happen before it runs.
 These limits follow from where Shiin sits in the system.

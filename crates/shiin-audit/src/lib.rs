@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use shiin_schema::clock;
 use thiserror::Error;
 
 /// The genesis value for the first event's `prev_hash`.
@@ -40,6 +41,23 @@ pub enum AuditError {
         #[source]
         source: serde_json::Error,
     },
+    /// A record cannot be encoded without losing audit data.
+    #[error("cannot encode audit event: {source}")]
+    Encode {
+        /// The serialization failure.
+        #[from]
+        source: serde_json::Error,
+    },
+    /// An existing log is unsupported or has been altered.
+    #[error("{path}: event {seq}: {detail}")]
+    Invalid {
+        /// The log involved.
+        path: PathBuf,
+        /// Position at which validation failed.
+        seq: u64,
+        /// Operator-facing explanation.
+        detail: String,
+    },
 }
 
 impl AuditError {
@@ -47,29 +65,35 @@ impl AuditError {
     #[must_use]
     pub fn code(&self) -> &'static str {
         match *self {
-            Self::Io { .. } => "SHIIN-AUD-0001",
-            Self::Malformed { .. } => "SHIIN-AUD-0002",
+            Self::Io { .. } | Self::Encode { .. } => "SHIIN-AUD-0001",
+            Self::Malformed { .. } | Self::Invalid { .. } => "SHIIN-AUD-0002",
         }
     }
 }
 
 /// One record in the audit log.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AuditEvent {
     /// Specification version of this event.
     pub schema: String,
+    /// Unique event identifier (`AUD-005`).
+    pub id: String,
     /// Position in the log, starting at 1.
     pub seq: u64,
     /// What happened, such as `decision.made`.
-    #[serde(rename = "type")]
+    #[serde(rename = "kind")]
     pub event_type: String,
     /// When it happened, as an RFC 3339 timestamp.
+    #[serde(rename = "timestamp")]
     pub time: String,
     /// Hash of the previous event.
+    #[serde(rename = "prev")]
     pub prev_hash: String,
     /// Hash of this event's contents and `prev_hash`.
+    #[serde(rename = "self")]
     pub hash: String,
-    /// The event's body.
+    /// An allowlisted summary; command and URL values are replaced with digests.
     pub payload: serde_json::Value,
 }
 
@@ -113,25 +137,41 @@ impl AuditLog {
         &self,
         event_type: &str,
         time: &str,
-        payload: serde_json::Value,
+        payload: &serde_json::Value,
     ) -> Result<AuditEvent, AuditError> {
+        let id = clock::new_id();
+        if id.is_empty() {
+            return Err(AuditError::Invalid {
+                path: self.path.clone(),
+                seq: 0,
+                detail: "OS randomness failed; refusing to create an event".to_owned(),
+            });
+        }
         let events = self.read()?;
+        if let Some(problem) = verify_events(&events)?.first() {
+            return Err(AuditError::Invalid {
+                path: self.path.clone(),
+                seq: problem.seq,
+                detail: problem.detail.clone(),
+            });
+        }
         let (seq, prev_hash) = events.last().map_or((1, GENESIS.to_owned()), |last| {
             (last.seq.saturating_add(1), last.hash.clone())
         });
 
         let mut event = AuditEvent {
-            schema: "shiin.audit-event/v1-draft.1".to_owned(),
+            schema: "shiin.audit-event/v1-draft.2".to_owned(),
+            id,
             seq,
             event_type: event_type.to_owned(),
             time: time.to_owned(),
             prev_hash,
             hash: String::new(),
-            payload,
+            payload: redacted_summary(payload)?,
         };
-        event.hash = hash_of(&event);
+        event.hash = hash_of(&event)?;
 
-        let line = serde_json::to_string(&event).unwrap_or_default();
+        let line = serde_json::to_string(&event)?;
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
@@ -195,50 +235,134 @@ impl AuditLog {
     /// Returns an error if the log cannot be read.
     pub fn verify(&self) -> Result<Vec<ChainBreak>, AuditError> {
         let events = self.read()?;
-        let mut breaks = Vec::new();
-        let mut expected_prev = GENESIS.to_owned();
-        let mut expected_seq = 1_u64;
-
-        for event in &events {
-            if event.seq != expected_seq {
-                breaks.push(ChainBreak {
-                    seq: event.seq,
-                    detail: format!("expected sequence {expected_seq}"),
-                });
-            }
-            if event.prev_hash != expected_prev {
-                breaks.push(ChainBreak {
-                    seq: event.seq,
-                    detail: "previous hash does not match the event before it".to_owned(),
-                });
-            }
-            if hash_of(event) != event.hash {
-                breaks.push(ChainBreak {
-                    seq: event.seq,
-                    detail: "contents do not match the recorded hash".to_owned(),
-                });
-            }
-            expected_prev.clone_from(&event.hash);
-            expected_seq = event.seq.saturating_add(1);
-        }
-        Ok(breaks)
+        verify_events(&events)
     }
 }
 
-/// Computes an event's hash over its contents and the previous hash.
-fn hash_of(event: &AuditEvent) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(event.schema.as_bytes());
-    hasher.update(event.seq.to_string().as_bytes());
-    hasher.update(event.event_type.as_bytes());
-    hasher.update(event.time.as_bytes());
-    hasher.update(event.prev_hash.as_bytes());
-    hasher.update(
-        serde_json::to_string(&event.payload)
-            .unwrap_or_default()
-            .as_bytes(),
+/// Validates every link, including the schema, before a new event can extend it.
+fn verify_events(events: &[AuditEvent]) -> Result<Vec<ChainBreak>, AuditError> {
+    let mut breaks = Vec::new();
+    let mut expected_prev = GENESIS.to_owned();
+    let mut expected_seq = 1_u64;
+
+    for event in events {
+        if event.schema != "shiin.audit-event/v1-draft.2" {
+            breaks.push(ChainBreak {
+                seq: event.seq,
+                detail: "unsupported audit schema; preserve the old log separately".to_owned(),
+            });
+        }
+        if event.seq != expected_seq {
+            breaks.push(ChainBreak {
+                seq: event.seq,
+                detail: format!("expected sequence {expected_seq}"),
+            });
+        }
+        if event.prev_hash != expected_prev {
+            breaks.push(ChainBreak {
+                seq: event.seq,
+                detail: "previous hash does not match the event before it".to_owned(),
+            });
+        }
+        if hash_of(event)? != event.hash {
+            breaks.push(ChainBreak {
+                seq: event.seq,
+                detail: "contents do not match the recorded hash".to_owned(),
+            });
+        }
+        expected_prev.clone_from(&event.hash);
+        expected_seq = event.seq.saturating_add(1);
+    }
+    Ok(breaks)
+}
+
+/// Hashes the compact JSON object, with lexicographically ordered keys and no `self`.
+fn hash_of(event: &AuditEvent) -> Result<String, serde_json::Error> {
+    let mut unsigned = serde_json::to_value(event)?;
+    if let Some(object) = unsigned.as_object_mut() {
+        object.remove("self");
+    }
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(&unsigned)?)
+    ))
+}
+
+/// Retains identifiers and paths, never raw commands, URLs, file contents, or host payloads.
+fn redacted_summary(payload: &serde_json::Value) -> Result<serde_json::Value, serde_json::Error> {
+    use serde_json::{Map, Value};
+
+    let mut summary = Map::new();
+    for key in [
+        "schema",
+        "id",
+        "request_id",
+        "session",
+        "action_type",
+        "task",
+        "policy_snapshot",
+        "decision",
+        "reason",
+    ] {
+        if let Some(value) = payload
+            .get(key)
+            .filter(|value| value.is_string() || value.is_null())
+        {
+            summary.insert(key.to_owned(), value.clone());
+        }
+    }
+    for (key, fields) in [
+        ("agent", &["id", "assurance"][..]),
+        ("workspace", &["root", "vcs"][..]),
+        ("host", &["name", "tool"][..]),
+    ] {
+        if let Some(value) = payload.get(key).and_then(Value::as_object) {
+            let selected = fields
+                .iter()
+                .filter_map(|field| {
+                    value
+                        .get(*field)
+                        .filter(|value| value.is_string())
+                        .map(|value| ((*field).to_owned(), value.clone()))
+                })
+                .collect();
+            summary.insert(key.to_owned(), Value::Object(selected));
+        }
+    }
+    if let Some(effects) = payload.get("effects").and_then(Value::as_array) {
+        let mut selected = Vec::new();
+        for effect in effects {
+            let mut entry = Map::new();
+            for key in ["kind", "confidence", "action_type"] {
+                if let Some(value) = effect.get(key).filter(|value| value.is_string()) {
+                    entry.insert(key.to_owned(), value.clone());
+                }
+            }
+            if let Some(value) = effect.get("value").and_then(Value::as_str) {
+                if matches!(
+                    effect.get("kind").and_then(Value::as_str),
+                    Some("path" | "count")
+                ) {
+                    entry.insert("value".to_owned(), Value::String(value.to_owned()));
+                } else {
+                    entry.insert(
+                        "value_digest".to_owned(),
+                        Value::String(format!("sha256:{:x}", Sha256::digest(value.as_bytes()))),
+                    );
+                }
+            }
+            selected.push(Value::Object(entry));
+        }
+        summary.insert("effects".to_owned(), Value::Array(selected));
+    }
+    summary.insert(
+        "digest".to_owned(),
+        Value::String(format!(
+            "sha256:{:x}",
+            Sha256::digest(serde_json::to_vec(payload)?)
+        )),
     );
-    format!("sha256:{:x}", hasher.finalize())
+    Ok(Value::Object(summary))
 }
 
 #[cfg(test)]
@@ -259,13 +383,13 @@ mod tests {
         log.append(
             "request.received",
             "2026-10-12T10:00:00Z",
-            serde_json::json!({"id": "a"}),
+            &serde_json::json!({"id": "a"}),
         )
         .unwrap();
         log.append(
             "decision.made",
             "2026-10-12T10:00:01Z",
-            serde_json::json!({"decision": "allow"}),
+            &serde_json::json!({"decision": "allow"}),
         )
         .unwrap();
 
@@ -283,13 +407,13 @@ mod tests {
         log.append(
             "decision.made",
             "2026-10-12T10:00:00Z",
-            serde_json::json!({"decision": "deny"}),
+            &serde_json::json!({"decision": "deny"}),
         )
         .unwrap();
         log.append(
             "decision.made",
             "2026-10-12T10:00:01Z",
-            serde_json::json!({"decision": "deny"}),
+            &serde_json::json!({"decision": "deny"}),
         )
         .unwrap();
 

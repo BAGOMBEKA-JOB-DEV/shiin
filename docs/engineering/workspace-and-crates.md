@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Workspace and crates
 
 > [!NOTE]
 > **Project policy: draft.**
 > This page is the only home of Shiin's crate list.
-> Today the workspace has one member, `xtask`; every other crate on this page is planned.
+> The workspace has seven product crates and `xtask`; later milestone crates remain planned.
 
 Shiin is built as a single Cargo workspace.
 This page describes the repository layout, the crates the workspace will contain, what each crate is responsible for,
@@ -21,7 +21,7 @@ The decision behind the layout is [ADR-0035](../adr/0035-workspace-layout.md).
 | `rustfmt.toml`, `.editorconfig` | exist | Formatting rules; see [Coding standards](coding-standards.md) |
 | `.cargo/config.toml` | exists | Defines the `cargo xtask` alias |
 | `xtask/` | exists | Repository tooling; today it provides `cargo xtask docs-check` |
-| `crates/` | planned | Product crates, each created in the milestone that needs it |
+| `crates/` | exists | Product crates, each created in the milestone that needs it |
 | `fuzz/` | planned: v0.1 | Fuzz targets in a separate workspace |
 
 The workspace section of today's `Cargo.toml` is:
@@ -29,7 +29,16 @@ The workspace section of today's `Cargo.toml` is:
 ```toml
 [workspace]
 resolver = "3"
-members = ["xtask"]
+members = [
+  "crates/shiin-audit",
+  "crates/shiin-classify",
+  "crates/shiin-cli",
+  "crates/shiin-engine",
+  "crates/shiin-hooks",
+  "crates/shiin-policy",
+  "crates/shiin-schema",
+  "xtask",
+]
 ```
 
 The alias in `.cargo/config.toml` is:
@@ -47,7 +56,7 @@ rust-toolchain.toml    pinned toolchain
 rustfmt.toml           formatter settings
 .editorconfig          editor settings
 .cargo/config.toml     cargo aliases, including `cargo xtask`
-crates/<name>/         one directory per product crate (planned)
+crates/<name>/         seven implemented product crates
 xtask/                 repository tooling, never published
 fuzz/                  fuzz targets, a separate nightly workspace (planned: v0.1)
 docs/                  this documentation
@@ -59,7 +68,7 @@ docs/                  this documentation
 - `xtask/` follows the `cargo xtask` convention for repository automation written in Rust.
   It sets `publish = false`.
   Product crates never depend on it.
-- `fuzz/` has its own `[workspace]` table and lockfile.
+- The planned `fuzz/` directory will have its own `[workspace]` table and lockfile.
   Its nightly-only dependencies never enter the main workspace, its lockfile, or its MSRV check.
   See [Testing strategy](testing-strategy.md).
 - Every member inherits `edition`, `rust-version`, `license`, `repository`, and `authors` from `[workspace.package]`.
@@ -122,7 +131,8 @@ Several rules on this page and on [Async and concurrency](async-and-concurrency.
 
 Today's `Cargo.toml` does not fully follow this rule yet.
 `jsonschema` sets `default-features = false`, but the `regex`, `serde_json`, and `walkdir` entries do not.
-Those entries are used only by `xtask`, and they are to be brought in line in a follow-up pull request.
+Several product dependencies also retain default features.
+Reviewing and disabling unnecessary defaults remains open supply-chain work.
 
 ### No networking in the engine crates
 

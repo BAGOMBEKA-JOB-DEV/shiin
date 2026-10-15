@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.4 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.4 reviewed=2026-10-15 -->
 
 # Receipts
 
@@ -41,7 +41,7 @@ A [receipt](../glossary.md#receipt) is a signed statement that attests a [decisi
 {
   "schema": "shiin.receipt/v1-draft.1",
   "key_id": "key-001",
-  "request_id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
+  "request_id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
   "decision": "allow",
   "reason": "allow.policy",
   "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",

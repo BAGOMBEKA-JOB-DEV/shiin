@@ -46,15 +46,5 @@ pub fn some_or(value: &str, fallback: &str) -> String {
 /// errors, so it cannot be used to probe for a bypass (`DEC-009`).
 #[must_use]
 pub fn agent_message(decision: &Decision) -> String {
-    match decision.decision {
-        shiin_schema::DecisionValue::Allow => "Allowed by policy.".to_owned(),
-        shiin_schema::DecisionValue::Deny => format!(
-            "Denied by Shiin ({}). This action is outside what the current policy or task allows.",
-            decision.reason
-        ),
-        shiin_schema::DecisionValue::Pending => format!(
-            "Shiin needs a person to approve this action ({}).",
-            decision.reason
-        ),
-    }
+    decision.decision.message().to_owned()
 }

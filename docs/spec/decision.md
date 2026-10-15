@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Decision
 
 > [!NOTE]
 > **Specification: accepted.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
 > Version: `shiin.decision/v1-draft.1`.
 
@@ -76,7 +76,7 @@ A [decision](../glossary.md#decision) is the [engine](../glossary.md#engine)'s a
 ```json
 {
   "schema": "shiin.decision/v1-draft.1",
-  "request_id": "0190f3a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b",
+  "request_id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
   "decision": "deny",
   "reason": "deny.policy",
   "message": "Reading secret files is not allowed.",

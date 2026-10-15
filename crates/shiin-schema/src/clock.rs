@@ -63,24 +63,18 @@ fn civil_from_days(days: i64) -> (i64, u64, u64) {
     (if month <= 2 { year + 1 } else { year }, month, day)
 }
 
-/// A new `UUIDv7` identifier: a millisecond timestamp followed by random bits.
+/// A random version 4 UUID, as required by `AR-002`.
 ///
-/// Sorting by identifier therefore sorts by creation time, which makes an audit log
-/// readable in order even when its timestamps are coarse.
+/// Returns an empty identifier if OS randomness fails. Action validation and state
+/// writers reject that sentinel rather than authorizing with a fabricated identifier.
 #[must_use]
 pub fn new_id() -> String {
-    let milliseconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |elapsed| elapsed.as_millis());
     let mut bytes = [0_u8; 16];
-    let timestamp = u64::try_from(milliseconds & 0xFFFF_FFFF_FFFF).unwrap_or(0);
-    bytes[0..6].copy_from_slice(&timestamp.to_be_bytes()[2..8]);
-    let mut random = [0_u8; 10];
-    if getrandom::fill(&mut random).is_ok() {
-        bytes[6..16].copy_from_slice(&random);
+    if getrandom::fill(&mut bytes).is_err() {
+        return String::new();
     }
-    // Version 7 in the high nibble of byte 6, variant 2 in the high bits of byte 8.
-    bytes[6] = (bytes[6] & 0x0F) | 0x70;
+    // Version 4 in the high nibble of byte 6, RFC variant in byte 8.
+    bytes[6] = (bytes[6] & 0x0F) | 0x40;
     bytes[8] = (bytes[8] & 0x3F) | 0x80;
 
     let hex = bytes
@@ -113,10 +107,10 @@ mod tests {
     }
 
     #[test]
-    fn identifiers_look_like_uuid_v7() {
+    fn identifiers_look_like_uuid_v4() {
         let id = new_id();
         assert_eq!(id.len(), 36);
-        assert_eq!(id.as_bytes()[14], b'7', "version nibble is 7: {id}");
+        assert_eq!(id.as_bytes()[14], b'4', "version nibble is 4: {id}");
         assert!(matches!(id.as_bytes()[19], b'8' | b'9' | b'a' | b'b'));
         assert_ne!(new_id(), new_id(), "identifiers are not repeated");
     }

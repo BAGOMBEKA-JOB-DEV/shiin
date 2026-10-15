@@ -1,16 +1,20 @@
-<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Policy model
 
 > [!NOTE]
 > **Specification: accepted.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
 > Version: `shiin.policy-model/v1-draft.1`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
 A [policy](../glossary.md#policy) is the complete set of [rules](../glossary.md#rule), [capabilities](../glossary.md#capability), defaults, and risk configuration that applies to an evaluation ([ADR-0015](../adr/0015-policy-layering-and-trust.md)).
+
+The source build implements rules, defaults, built-in protections, and configured risk signals.
+Capabilities, separately loaded trusted layers, grants, and complete snapshot persistence are not implemented.
+The CLI currently loads one operator-controlled `.shiin/policy.toml` file; it does not implement workspace trust-by-hash.
 
 ## Rules
 

@@ -1,10 +1,11 @@
-<!-- shiin-doc: kind=reference status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=reference status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
 
 # Platform support
 
 > [!NOTE]
 > **Reference: draft.**
-> Facts to look up. No implementation exists yet.
+> Source builds and CI configurations exist; no release has shipped.
+> See the limitations below before relying on path matching on Windows.
 
 ## Tiers
 

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=none milestone=m0 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
 
 # FAQ
 
 > [!NOTE]
 > **Design document: draft.**
-> Describes the intended design. No implementation exists yet.
+> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
 
 ## What is Shiin?
 
@@ -13,8 +13,9 @@ It sits between agents and the files, commands, networks, and services they act 
 
 ## Is Shiin ready to use?
 
-No. Shiin is in its specification phase.
-This repository contains the design: documentation, specifications, architecture decision records, and a small Rust tool that checks the documentation.
+Shiin is pre-alpha and available from source, with no published releases.
+The engine, CLI, audit log, and experimental tasks exist; live-host validation and milestone exit criteria remain open.
+See [installation](../getting-started/installation.md) and the [roadmap](../project/roadmap.md).
 
 ## What makes Shiin different?
 

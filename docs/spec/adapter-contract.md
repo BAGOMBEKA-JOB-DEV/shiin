@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=spec status=accepted implementation=none milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
 
 # Adapter contract
 
 > [!NOTE]
 > **Specification: accepted.**
-> Normative design. No implementation exists yet.
+> Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
 > Version: `shiin.adapter-contract/v1-draft.1`.
 

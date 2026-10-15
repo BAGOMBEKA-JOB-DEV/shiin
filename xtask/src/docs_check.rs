@@ -115,6 +115,7 @@ pub(crate) fn print_usage() {
     eprintln!();
     eprintln!("commands:");
     eprintln!("  docs-check    validate docs/ against the documentation style guide");
+    eprintln!("  performance [binary]    measure local latency against the performance budgets");
 }
 
 /// Runs every documentation check and reports the result.
