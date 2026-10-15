@@ -101,7 +101,7 @@ The [M0 external-review criterion](../project/roadmap.md#m0-specification) remai
 | ST-D-01 | Existing timeout, panic, contention, and budget tests remain required; the performance command measures local latency. | Large-input/log bounds and cross-platform memory measurements remain incomplete. |
 | ST-S-01 | Hook identities remain asserted and the identity stage passes through. | Review the lack of assurance enforcement before claiming identity protection. |
 | ST-T-02 | Built-in protections cannot be granted by operator rules. | Review single-file policy loading against the designed trust layers. |
-| ST-E-02 | Cursor pending decisions are denied until live-host holding behavior is established. | Check host configuration, disabling controls, and every supported host version. |
+| ST-E-02 | Cursor and Codex pending decisions are denied rather than relying on unsupported or unverified holding behavior. | Check host configuration, disabling controls, and every supported host version. |
 
 Additional topics for the reviewer are shell classification coverage, path-error and Unicode/case handling, task timestamp parsing, and policy matching for multiple effects.
 Approval self-authorization, grant consumption, receipt signatures, and replay cannot be reviewed as working features because they are not implemented.

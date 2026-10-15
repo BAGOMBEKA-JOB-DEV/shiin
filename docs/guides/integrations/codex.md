@@ -12,8 +12,8 @@ See [enforcement levels](../../security/enforcement-levels.md).
 
 ## Configure the hook
 
-Codex runs a `PreToolUse` hook and reads a decision back in the same shape Claude Code
-uses (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-09-14). Put this in
+Codex runs a `PreToolUse` hook and accepts explicit allow and deny responses
+(verified against <https://learn.chatgpt.com/docs/hooks#pretooluse> on 2026-10-15). Put this in
 `.codex/hooks.json` in the project, or in `~/.codex/hooks.json`:
 
 ```json
@@ -31,6 +31,14 @@ uses (verified against <https://learn.chatgpt.com/docs/hooks> on 2026-09-14). Pu
 
 Codex requires a hook to be trusted before it runs. Run `/hooks` inside Codex and trust
 this one, or it will not be consulted at all.
+
+## Pending decisions
+
+The adapter maps `pending` to `deny`.
+Codex documents `permissionDecision: "ask"` as unsupported: it reports a hook failure and continues the tool call
+(verified against [official hooks documentation](https://learn.chatgpt.com/docs/hooks#pretooluse) on 2026-10-15).
+A supported explicit denial is required to hold the action safely.
+There is no approval ticket or grant workflow yet; those belong to v0.3.
 
 ## What it maps
 

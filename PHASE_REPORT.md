@@ -21,7 +21,7 @@ No crates for those future milestones were added.
 - Corrected UUID examples and generated request identifiers to the accepted UUIDv4 requirement.
 - Added validation of required request values at CLI boundaries and rejection of unknown risk configuration.
 - Made serialized decisions conform to their schema, with generic messages and a five-stage operator trace.
-- Removed internal rule/error details from hook responses and conservatively mapped Cursor pending decisions to denial.
+- Removed internal rule/error details from hook responses and conservatively mapped Cursor and Codex pending decisions to denial.
 - Redacted command and URL effect values in audit summaries, retained a digest of the original normalized body, and rejected extension of corrupted or unsupported logs.
 - Added wire-schema, policy-example, and hook regression tests, plus a Rust performance command.
 
@@ -69,10 +69,31 @@ For commit `052fbe5`, [CI run 38798096421](https://github.com/BAGOMBEKA-JOB-DEV/
 The documentation workflow also passed.
 The nonblocking Windows job failed because CRLF Markdown fences prevented the policy-example test from finding its three examples.
 The test now normalizes line endings without skipping examples or weakening its assertions.
-That fix awaits the next Windows run.
+The fix passed the subsequent hosted Windows run for commit `f4e5a1d`.
 
 Hosted Linux and macOS release-latency jobs have been added to measure the existing budgets without rebuilding on the laptop.
-Their results will be recorded after execution; component memory profiling and large-policy/log measurements remain open.
+For commit `f4e5a1d`, [CI run 38799111580](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/38799111580) passed all seven jobs: Linux, macOS, and Windows tests; Rust 1.96; dependency checks; and optimized latency on Linux and macOS.
+The documentation workflow also passed.
+Component memory profiling and large-policy/log measurements remain open.
+
+Maximum observed latency for that commit, in milliseconds:
+
+| Path | Samples per platform | Linux x86_64 | macOS arm64 | Budget |
+|---|---:|---:|---:|---:|
+| Engine evaluation | 250 | 0.783 | 3.673 | 50 |
+| Policy parse and compilation | 25 | 0.405 | 1.501 | 1000 |
+| Claude Code hook process, policy, and audit | 20 | 5.499 | 109.968 | 200 |
+| Codex hook process, policy, and audit | 20 | 4.779 | 14.103 | 200 |
+| Cursor hook process, policy, and audit | 20 | 5.370 | 14.891 | 200 |
+
+These are protocol fixtures with a small policy and a log growing to 120 events, not running host sessions.
+Linux harness peak RSS was 8,656 KiB; this is not isolated component memory profiling.
+
+The follow-up Codex response fix maps pending actions to a supported explicit denial.
+The vendor documents the native ask response as unsupported and continuing execution, verified against [official hooks documentation](https://learn.chatgpt.com/docs/hooks#pretooluse) on 2026-10-15.
+The maintainer explicitly directed inclusion in public PR #12 after the repository's private-disclosure rule was explained.
+The targeted hook suite passed all 15 tests and workspace Clippy passed locally with memory capped at 256 MiB.
+CI will validate the updated real-CLI integration assertion after this fix is pushed.
 
 ## Security review and milestone status
 
@@ -83,7 +104,7 @@ No outside reviewer or human sign-off has been obtained, so M0 remains open.
 
 The hook tests execute the real Shiin binary with protocol payloads; they do not launch Claude Code, Codex, or Cursor.
 Live host configuration, timeout/crash handling, pending behavior, and host-version coverage still need validation before claiming the v0.1/v0.2 exit criteria are complete.
-Cross-platform latency, component memory limits, large audit histories, and the intent-binding evaluation plan also remain open.
+Latency coverage beyond the measured platform samples, component memory limits, large audit histories, and the intent-binding evaluation plan also remain open.
 
 Maintainer review should cover asserted identity, incomplete trust-layer loading, shell classification, path-error and Unicode/case handling, task timestamps, multi-effect policy matching, audit redaction, and old-log handling.
 The platform support page and ADR-0040 also need a maintainer decision about their differing support tiers.

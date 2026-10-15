@@ -649,9 +649,16 @@ fn serve(kind: HostKind) -> ExitCode {
 /// Renders a decision, or a failure, in a host's own protocol.
 fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, serde_json::Error> {
     match kind {
-        HostKind::ClaudeCode | HostKind::Codex => {
+        HostKind::ClaudeCode => {
             let response = match decision {
                 Ok(decision) => HookResponse::from_decision(decision),
+                Err(detail) => HookResponse::fail_closed(detail),
+            };
+            serde_json::to_string(&response)
+        }
+        HostKind::Codex => {
+            let response = match decision {
+                Ok(decision) => codex::response_from_decision(decision),
                 Err(detail) => HookResponse::fail_closed(detail),
             };
             serde_json::to_string(&response)

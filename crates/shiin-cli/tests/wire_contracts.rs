@@ -272,7 +272,11 @@ fn pending_is_held_or_denied_by_each_adapter() -> Result<(), Box<dyn std::error:
         if host == "cursor" {
             assert_eq!(response["permission"], "deny");
         } else {
-            assert_eq!(response["hookSpecificOutput"]["permissionDecision"], "ask");
+            let expected = if host == "claude-code" { "ask" } else { "deny" };
+            assert_eq!(
+                response["hookSpecificOutput"]["permissionDecision"],
+                expected
+            );
         }
         assert!(!response.to_string().contains("pending.opaque"));
     }

@@ -30,7 +30,7 @@ Shiin has not been released yet, so every entry below is unreleased.
 - Requests use the required random UUIDv4 identifiers and reject malformed required values before CLI evaluation; unknown risk names and settings fail closed.
 - Serialized decisions match their schema and include a generic message and an operator-facing five-stage trace; hook responses omit internal errors and rule identifiers.
 - Draft policy and audit wire contracts advance to `v1-draft.2`. Audit records contain allowlisted summaries, digest command and URL values, verify the existing chain before appending, and refuse unsupported or corrupted logs. Existing pre-alpha logs need to be preserved separately; no migration is supplied.
-- Cursor maps `pending` to a denial until its approval behavior is validated in a running host.
+- Cursor and Codex map `pending` to a denial when their native holding behavior is unverified or unsupported.
 - The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`, and ADR-0014 and ADR-0019 are decided. The only remaining M0 criterion is an outside review of the threat model.
 - `cargo xtask docs-check` now rejects a reason code or action type that is not in its registry, including in test vectors.
 - Effects may name their own action type, so a rule written for `fs.read` also covers a read performed by a shell command (AR-010, AR-011, TV-009). Found while implementing use case UC-02.
