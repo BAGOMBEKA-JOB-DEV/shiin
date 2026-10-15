@@ -354,7 +354,7 @@ impl Service {
             &keys.signing,
             RECEIPT_TYPE,
             &json!({
-                "schema":"shiin.receipt/v1-draft.2", "key_id":keys.id(), "request_id":request.id,
+                "schema":"shiin.receipt/v1-draft.3", "key_id":keys.id(), "request_id":request.id,
                 "decision":decision.decision, "reason":decision.reason, "policy_snapshot":request.policy_snapshot,
                 "request_digest":request_digest, "signed_at":now_text
             }),

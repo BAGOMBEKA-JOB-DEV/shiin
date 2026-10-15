@@ -5,9 +5,9 @@
   "type": "object",
   "required": ["schema", "key_id", "request_id", "decision", "reason", "policy_snapshot", "request_digest", "signed_at"],
   "properties": {
-    "schema": { "type": "string", "const": "shiin.receipt/v1-draft.2" },
-    "key_id": { "type": "string", "minLength": 1 },
-    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid" },
+    "schema": { "type": "string", "const": "shiin.receipt/v1-draft.3" },
+    "key_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
+    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid_v4" },
     "decision": { "type": "string", "enum": ["allow", "deny", "pending"] },
     "reason": { "type": "string", "minLength": 1 },
     "policy_snapshot": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },

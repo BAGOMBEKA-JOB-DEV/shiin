@@ -154,7 +154,7 @@ pub fn verify(
 
 fn validate_payload(value: &Value, kind: &str) -> Result<(), String> {
     let schema = match kind {
-        RECEIPT_TYPE => "shiin.receipt/v1-draft.2",
+        RECEIPT_TYPE => "shiin.receipt/v1-draft.3",
         CHECKPOINT_TYPE => "shiin.checkpoint/v1-draft.1",
         _ => "shiin.replay-encrypted/v1-draft.1",
     };
@@ -162,23 +162,87 @@ fn validate_payload(value: &Value, kind: &str) -> Result<(), String> {
         return Err("unsupported signed payload schema".to_owned());
     }
     if kind == RECEIPT_TYPE {
+        if !has_only_fields(
+            value,
+            &[
+                "schema",
+                "key_id",
+                "request_id",
+                "decision",
+                "reason",
+                "policy_snapshot",
+                "request_digest",
+                "signed_at",
+            ],
+        ) {
+            return Err("unexpected receipt claim".to_owned());
+        }
         if !matches!(
             value["decision"].as_str(),
             Some("allow" | "deny" | "pending")
-        ) || value["request_id"].as_str().is_none_or(str::is_empty)
+        ) || !is_uuid_v4(&value["request_id"])
             || value["reason"].as_str().is_none_or(str::is_empty)
             || !is_digest(&value["policy_snapshot"])
             || !is_digest(&value["request_digest"])
-            || value["signed_at"].as_str().is_none_or(str::is_empty)
+            || !is_rfc3339(&value["signed_at"])
         {
             return Err("incomplete receipt claims".to_owned());
         }
-    } else if kind == CHECKPOINT_TYPE
-        && (value["seq"].as_u64().is_none() || !is_digest(&value["head"]))
-    {
-        return Err("incomplete checkpoint claims".to_owned());
+    } else if kind == CHECKPOINT_TYPE {
+        if !has_only_fields(value, &["schema", "key_id", "seq", "head", "signed_at"])
+            || value["seq"].as_u64().is_none()
+            || !is_digest(&value["head"])
+            || !is_rfc3339(&value["signed_at"])
+        {
+            return Err("incomplete checkpoint claims".to_owned());
+        }
+    } else {
+        let artifact: EncryptedReplay =
+            serde_json::from_value(value.clone()).map_err(|_| "invalid replay claims")?;
+        let nonce = STANDARD
+            .decode(&artifact.nonce)
+            .map_err(|_| "invalid replay nonce")?;
+        let ciphertext = STANDARD
+            .decode(&artifact.ciphertext)
+            .map_err(|_| "invalid replay ciphertext")?;
+        if !is_digest(&Value::String(artifact.key_id))
+            || !is_uuid_v4(&Value::String(artifact.request_id))
+            || nonce.len() != 24
+            || !(16..=MAX_BYTES + 16).contains(&ciphertext.len())
+        {
+            return Err("invalid replay claims".to_owned());
+        }
     }
     Ok(())
+}
+
+fn has_only_fields(value: &Value, fields: &[&str]) -> bool {
+    value
+        .as_object()
+        .is_some_and(|object| object.keys().all(|key| fields.contains(&key.as_str())))
+}
+
+fn is_uuid_v4(value: &Value) -> bool {
+    let Some(id) = value.as_str() else {
+        return false;
+    };
+    let bytes = id.as_bytes();
+    bytes.len() == 36
+        && bytes.iter().enumerate().all(|(index, byte)| {
+            if [8, 13, 18, 23].contains(&index) {
+                *byte == b'-'
+            } else {
+                byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()
+            }
+        })
+        && bytes.get(14) == Some(&b'4')
+        && bytes.get(19).is_some_and(|byte| b"89ab".contains(byte))
+}
+
+fn is_rfc3339(value: &Value) -> bool {
+    value
+        .as_str()
+        .is_some_and(|text| chrono::DateTime::parse_from_rfc3339(text).is_ok())
 }
 
 fn is_digest(value: &Value) -> bool {

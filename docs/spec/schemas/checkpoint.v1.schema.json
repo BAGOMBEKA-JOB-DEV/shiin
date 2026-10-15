@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:checkpoint:v1",
+  "title": "Shiin signed audit checkpoint payload",
+  "type": "object",
+  "required": ["schema", "key_id", "seq", "head", "signed_at"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.checkpoint/v1-draft.1" },
+    "key_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
+    "seq": { "type": "integer", "minimum": 0 },
+    "head": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
+    "signed_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
