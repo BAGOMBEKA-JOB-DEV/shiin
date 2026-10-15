@@ -1,6 +1,6 @@
 //! State-machine invariants, including bounded exhaustive operation sequences.
 
-#![expect(
+#![allow(
     clippy::unwrap_used,
     clippy::expect_used,
     reason = "tests use self-contained valid fixtures"
