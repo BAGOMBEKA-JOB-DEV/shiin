@@ -24,7 +24,7 @@ getrandom = "0.3"
 globset = "0.4"
 jsonschema = { version = "0.56", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
-sha2 = "0.10"
+sha2 = "0.11"
 shiin-audit = { path = "crates/shiin-audit" }
 shiin-classify = { path = "crates/shiin-classify" }
 shiin-engine = { path = "crates/shiin-engine" }
