@@ -151,6 +151,7 @@
   - [0042 Language bindings](adr/0042-language-bindings.md)
   - [ADR template](adr/template.md)
 - [RFC process](rfcs/README.md)
+  - [RFC-0001 Remote approver transport](rfcs/0001-remote-approver-transport.md)
   - [RFC template](rfcs/0000-template.md)
 
 ## Project

@@ -31,6 +31,10 @@ An RFC is required when a change:
 | `rejected` | The proposal is not accepted. |
 | `superseded` | Replaced by a later RFC. |
 
+## Current proposals
+
+- [RFC-0001: Remote approver transport](0001-remote-approver-transport.md) proposes opt-in signed polling over outbound HTTPS.
+
 ## Read next
 
 - [Architecture decision records](../adr/README.md)
