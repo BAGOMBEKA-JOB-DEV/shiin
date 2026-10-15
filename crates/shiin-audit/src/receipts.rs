@@ -60,7 +60,7 @@ pub struct EncryptedReplay {
     pub key_id: String,
     /// Correlation identifier, also bound as AEAD associated data.
     pub request_id: String,
-    /// Random 192-bit XChaCha nonce.
+    /// Random 192-bit `XChaCha` nonce.
     pub nonce: String,
     /// Authenticated ciphertext, encoded as base64.
     pub ciphertext: String,

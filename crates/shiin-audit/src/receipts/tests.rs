@@ -1,6 +1,6 @@
 //! Offline cryptographic and domain-binding regressions; no keyring is needed.
 
-#![expect(
+#![allow(
     clippy::unwrap_used,
     clippy::expect_used,
     reason = "tests use explicit non-production fixtures"
