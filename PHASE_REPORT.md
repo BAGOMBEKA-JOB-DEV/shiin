@@ -33,21 +33,24 @@ Audit summaries cannot support exact replay, and unsigned hash chains cannot pro
 
 Validation ran on a local Linux x86_64 laptop with approximately 3.6 GiB RAM and Rust 1.98.1.
 Native build dependencies and the required Rust documentation tools were installed.
-Editor closures interrupted earlier builds; subsequent work used one build process, lower scheduling priority, and reduced command-binary debug information.
+Ubuntu's `systemd-oomd` log confirms that memory pressure killed the VS Code application group, which also contained the build processes.
+Reducing build concurrency and debug information was insufficient to prevent a recurrence, so compilation was stopped.
+Remaining cached tests ran sequentially in separate systemd scopes limited to 256 MiB, with no swap allowance.
 No repository build profile was changed.
 
-Final results are recorded below before this report is submitted.
+Final results are recorded below.
 
 | Check | Result |
 |---|---|
-| Formatting | Pending final run |
+| Formatting | Passed |
 | Workspace Clippy, all targets, warnings denied | Passed |
-| Workspace tests, one test thread | Pending final run |
-| Documentation contract check | Pending final run |
-| Markdown lint | Pending final run |
-| Spelling | Pending final run |
-| Links | Passed: 1,581 checked references, zero errors |
-| Book build | Pending final run |
+| Cached test executables, one test thread | Passed: 74 tests, including the 19-vector conformance corpus |
+| Full `cargo test --workspace` command and doctests | Interrupted during builds; not completed end to end |
+| Documentation contract check | Passed: cached checker, 130 pages |
+| Markdown lint | Passed |
+| Spelling | Passed |
+| Links | Passed; zero errors |
+| Book build | Passed; Mermaid preprocessor reports a version mismatch warning |
 | Dependency audit | Interrupted; not established |
 | Rust 1.96 minimum-version check | Toolchain installed; not established locally |
 | Optimized performance and component memory budgets | Not established locally |
@@ -55,7 +58,10 @@ Final results are recorded below before this report is submitted.
 
 The initial parallel test run failed a timing assertion under load and exposed a Cursor fixture missing its required conversation identifier.
 The fixture was corrected; the timing limit and fail-closed deadline were preserved.
-The final test result above supersedes that run only for the stated local environment.
+All 27 hook tests, seven wire-contract tests, 39 unit tests, and the one conformance test passed from cached executables.
+The conformance test checks all 19 vectors.
+These results do not claim that the interrupted Cargo command or unexecuted doctests passed.
+The performance command passed compilation lint checks, but was not executed; the hook timing smoke test is not a substitute for milestone performance measurements.
 
 ## Security review and milestone status
 
