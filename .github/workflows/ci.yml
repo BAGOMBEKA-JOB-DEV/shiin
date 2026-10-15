@@ -50,6 +50,36 @@ jobs:
       - name: Test, including the specification conformance corpus
         run: cargo test --workspace --locked
 
+  performance:
+    name: release latency (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+
+      - name: Cache Cargo build output
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: performance
+
+      - name: Build the optimized CLI and measurement tool
+        run: cargo build --release --workspace --locked
+
+      - name: Check engine, compilation, and hook latency budgets
+        run: cargo run --release --locked -p xtask -- performance target/release/shiin
+
   msrv:
     name: minimum supported Rust version
     runs-on: ubuntu-24.04

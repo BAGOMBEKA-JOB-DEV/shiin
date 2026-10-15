@@ -139,7 +139,7 @@ fn documented_full_policies_match_the_parser_and_schema() -> Result<(), Box<dyn 
         "guides/writing-policies.md",
         "concepts/how-shiin-works.md",
     ] {
-        let text = fs::read_to_string(root.join(page))?;
+        let text = fs::read_to_string(root.join(page))?.replace("\r\n", "\n");
         for block in text.split("```toml\n").skip(1) {
             let body = block
                 .split("```")

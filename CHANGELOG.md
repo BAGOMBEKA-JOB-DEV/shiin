@@ -10,6 +10,7 @@ Shiin has not been released yet, so every entry below is unreleased.
 
 ### Added
 
+- Hosted Linux and macOS CI jobs measure optimized engine, policy compilation, and daemonless-hook latency against the existing budgets.
 - Wire-contract regression tests for serialized engine decisions, hook audit events, malformed requests, unknown risk settings, and documented policy examples.
 - `cargo xtask performance`, which measures local engine, policy-compilation, and daemonless-hook latency against the existing budgets.
 - The documentation set under `docs/`, including the vision, concepts, architecture, and project policies.
@@ -24,6 +25,7 @@ Shiin has not been released yet, so every entry below is unreleased.
 
 ### Changed
 
+- Policy-example tests normalize CRLF line endings so Windows checks the same complete TOML examples as Unix.
 - Documentation distinguishes the implemented authorization and task paths from future approvals, grants, signed evidence, replay, and MCP/API/client integration.
 - Requests use the required random UUIDv4 identifiers and reject malformed required values before CLI evaluation; unknown risk names and settings fail closed.
 - Serialized decisions match their schema and include a generic message and an operator-facing five-stage trace; hook responses omit internal errors and rule identifiers.

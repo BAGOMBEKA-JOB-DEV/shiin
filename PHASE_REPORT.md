@@ -63,10 +63,22 @@ The conformance test checks all 19 vectors.
 These results do not claim that the interrupted Cargo command or unexecuted doctests passed.
 The performance command passed compilation lint checks, but was not executed; the hook timing smoke test is not a substitute for milestone performance measurements.
 
+## Hosted validation follow-up
+
+For commit `052fbe5`, [CI run 38798096421](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/38798096421) completed the full Linux and macOS test jobs, Rust 1.96 check, and dependency audit successfully.
+The documentation workflow also passed.
+The nonblocking Windows job failed because CRLF Markdown fences prevented the policy-example test from finding its three examples.
+The test now normalizes line endings without skipping examples or weakening its assertions.
+That fix awaits the next Windows run.
+
+Hosted Linux and macOS release-latency jobs have been added to measure the existing budgets without rebuilding on the laptop.
+Their results will be recorded after execution; component memory profiling and large-policy/log measurements remain open.
+
 ## Security review and milestone status
 
 The [threat-model review packet](docs/security/threat-model.md#current-changes-and-independent-review) maps changes and tests to existing threat identifiers.
 An outside reviewer still needs to record their identity, reviewed commit, findings, and resolutions.
+The suggested account, `BAGOMBEKA-JOB-DEV`, authored PR #12 and therefore does not meet the outside-project criterion.
 No outside reviewer or human sign-off has been obtained, so M0 remains open.
 
 The hook tests execute the real Shiin binary with protocol payloads; they do not launch Claude Code, Codex, or Cursor.

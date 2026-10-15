@@ -23,8 +23,8 @@
 
 ## Measurement
 
-Cross-platform CI measurement remains a release requirement and is not yet configured.
-The following command provides a repeatable local latency sample:
+The `ci.yml` release-latency jobs run the following measurements on hosted Linux and macOS runners.
+The same commands provide a repeatable local latency sample:
 
 ```console
 $ cargo build --release --workspace --locked
@@ -35,7 +35,7 @@ The command checks every observed latency against the existing budgets and repor
 Hook samples include process start, policy loading, evaluation, and durable audit writes against a small growing log.
 They exercise the real hook executable without launching a host.
 The reported Linux process peak RSS includes the harness and dependencies; it does not establish the separate engine and policy memory budgets.
-Large-policy/log measurements, component memory profiling, and results on other platforms remain open.
+Large-policy/log measurements, component memory profiling, and results on other platform architectures remain open.
 
 ## Read next
 
