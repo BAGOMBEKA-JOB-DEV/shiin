@@ -68,7 +68,7 @@ Current summaries retain request, agent, session, task, host, workspace, decisio
 Command, URL, and other effect values are replaced with `value_digest`.
 File contents, raw host payloads, free-text messages, and unknown fields are omitted.
 The resulting summary is not a complete action request.
-Exact replay of redacted requests is not implemented; its storage design remains v0.4 work.
+An audit summary alone cannot support exact replay because sensitive effect values are redacted. The daemon stores replay inputs separately in encrypted evidence; replay and its key path have a source implementation, with platform and external review still open.
 
 ## Durability
 

@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=adr status=accepted implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # ADR-0023: JSON-RPC local API
 
@@ -70,4 +70,4 @@ Chosen option: "JSON-RPC 2.0 over a Unix domain socket", because it is language-
 
 ## More information
 
-The [`shiin-ipc` crate](https://github.com/BAGOMBEKA-JOB-DEV/shiin) (planned: v0.3) implements the transport layer. The [deployment models](../architecture/deployment-models.md) page describes when the daemon is needed.
+The [`shiin-ipc` crate](https://github.com/BAGOMBEKA-JOB-DEV/shiin) implements the Unix transport in source; Windows named-pipe validation remains open. The [deployment models](../architecture/deployment-models.md) page describes when the daemon is needed.

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # Deployment models
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core and Unix approval services exist in source; signed evidence and mediated integrations remain planned.
+> Authorization, Unix approvals, signed evidence, and early client/integration code exist in source; platform and milestone validation remain incomplete.
 
 Shiin is designed to run in several configurations.
 The early design preserves the constraints those features will need.

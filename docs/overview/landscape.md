@@ -276,12 +276,12 @@ Until Shiin ships, the projects above are the ones you can use.
 
 | If you need | Consider | Relationship to Shiin |
 |---|---|---|
-| A tool you can use today | One of the [open-source agent action gates](#open-source-agent-action-gates) | Instead, for now: Shiin has no implementation |
+| A tool you can use today | One of the [open-source agent action gates](#open-source-agent-action-gates) | Instead, for now: Shiin has a pre-alpha source implementation, but no release or package |
 | Controls for one host, where its built-in settings meet your needs | [Host-native controls](#host-native-controls) | Instead or alongside: keep them enabled even if you adopt Shiin |
 | To limit what an allowed command, or the code it runs, can reach | [An OS sandbox, container, or virtual machine](#os-sandboxes-and-isolation) | Alongside: Shiin does not isolate processes |
 | To restrict where an agent's traffic can go, or to inspect that traffic | [Network egress controls](#network-egress-controls) | Alongside: Shiin does not inspect traffic and cannot see data leaving through an allowed action |
 | Access control for MCP or A2A traffic shared across many agents | [MCP and agent gateways](#mcp-and-agent-gateways) | Instead or alongside, depending on whether you also want per-action policy and task binding on the developer's machine |
-| A desktop approval app with diffs and command previews | [mikepenz/agent-belay](https://github.com/mikepenz/agent-belay) (verified 2026-09-14) | Instead or alongside: Shiin's approval protocol is planned for v0.3, and its first approver is a command-line tool |
+| A desktop approval app with diffs and command previews | [mikepenz/agent-belay](https://github.com/mikepenz/agent-belay) (verified 2026-09-14) | Instead or alongside: Shiin's Unix approval protocol and command-line approver exist in source; desktop approvers remain future work |
 | To check tool-call arguments against live systems of record | [ToolJet/ActionRail](https://github.com/ToolJet/ActionRail) (verified 2026-09-14) | Alongside: Shiin's engine performs no I/O and decides from the action request and local policy alone |
 | Policies written in Rego | [eqtylab/cupcake](https://github.com/eqtylab/cupcake), or [microsoft/regorus](https://github.com/microsoft/regorus) to build your own (verified 2026-09-14) | Instead: Shiin proposes Cedar |
 | A broad agent-governance toolkit in Python | [microsoft/agent-governance-toolkit](https://github.com/microsoft/agent-governance-toolkit) (verified 2026-09-14) | Instead or alongside |
