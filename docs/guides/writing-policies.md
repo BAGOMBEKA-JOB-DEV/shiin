@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Writing policies
 
@@ -14,6 +14,11 @@ workspace, and nothing it does not mention is allowed.
 
 ```toml
 version = 1                 # the format version; only 1 is understood
+
+[capabilities.workspace]
+id = "workspace"
+allow = true
+action_types = ["fs.*", "shell.exec"]
 
 [defaults]
 decision = "deny"           # what happens when no rule matches; "pending" is allowed, "allow" is not
@@ -49,6 +54,13 @@ constraint, so a rule with only `action_types` applies to every resource.
 - **Commands** are globs against the command as a whole, so `cargo test*` covers
   `cargo test --all`. They are not regular expressions.
 - **Agents** are identifiers such as `claude-code`.
+- **Sessions** and **tasks** are exact identifier lists; a task selector cannot match when no task is active.
+
+Capabilities are separate from rules.
+Every action/effect class needs an explicit capability grant, and a matching capability denial wins over a grant.
+The starter policy includes grants for file operations and shell commands; an older policy without declarations now produces `deny.capability`.
+Add only the classes the agent needs before validating and testing a migration.
+Agent selectors remain asserted identifiers, not proof of identity.
 
 A rule also matches an action whose *effects* are of the type it names, not only an action
 whose own type matches. This is what makes one rule cover both ways of reading a file:
@@ -110,8 +122,7 @@ Recorded policy cases run through `shiin policy test`; see [testing policies](te
 
 | Feature | Arrives |
 |---|---|
-| Agent capabilities, as a coarse permission separate from rules | v0.2 |
-| Grants, so an approval can cover later actions | v0.3 |
+| Separately trusted user/workspace layers and attested identity | still open |
 | Writing rules directly in Cedar | after the policy language is stable |
 
 ## Read next

@@ -53,6 +53,11 @@ static DAEMON_RUNTIME: std::sync::OnceLock<shiin_ipc::Runtime> = std::sync::Once
 const STARTER_POLICY: &str = r#"# Shiin policy. See docs/guides/writing-policies.md
 version = 1
 
+[capabilities.workspace]
+id = "workspace"
+allow = true
+action_types = ["fs.*", "shell.exec"]
+
 # Anything no rule allows is denied.
 [defaults]
 decision = "deny"

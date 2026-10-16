@@ -6,6 +6,7 @@
   "required": ["version"],
   "properties": {
     "version": { "const": 1 },
+    "capabilities": {"type": "object", "additionalProperties": {"$ref": "urn:shiin:schema:capability:v1"}},
     "defaults": {
       "type": "object",
       "required": ["decision"],
@@ -24,6 +25,8 @@
           "resources": { "type": "array", "items": { "type": "string" } },
           "commands": { "type": "array", "items": { "type": "string" } },
           "agents": { "type": "array", "items": { "type": "string" } },
+          "sessions": { "type": "array", "items": { "type": "string" } },
+          "tasks": { "type": "array", "items": { "type": "string" } },
           "reason": { "type": "string" }
         },
         "additionalProperties": false

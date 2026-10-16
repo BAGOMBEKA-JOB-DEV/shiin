@@ -249,6 +249,12 @@ pub struct Rule {
     /// Agent identifiers the rule applies to. Empty means every agent.
     #[serde(default)]
     pub agents: Vec<String>,
+    /// Sessions selected by the operator; empty means every session.
+    #[serde(default)]
+    pub sessions: Vec<String>,
+    /// Active task identifiers selected by the operator; empty means every task.
+    #[serde(default)]
+    pub tasks: Vec<String>,
     /// Operator-facing explanation, shown when the rule decides.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
@@ -302,6 +308,52 @@ impl RiskSetting {
     }
 }
 
+/// A coarse action-class grant or refusal, separate from authorization rules.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Capability {
+    /// Operator-selected unique identifier, equal to its table key.
+    pub id: String,
+    /// Explicit grant; exactly one of allow or deny is true and present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allow: Option<bool>,
+    /// Explicit refusal; exactly one of allow or deny is true and present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deny: Option<bool>,
+    /// Action classes covered by the capability; empty never grants a class.
+    #[serde(default)]
+    pub action_types: Vec<String>,
+    /// Asserted agent identifiers matched by this declaration.
+    #[serde(default)]
+    pub agents: Vec<String>,
+}
+
+impl Capability {
+    /// Validates explicit capability declarations before compilation.
+    ///
+    /// # Errors
+    /// Missing/ambiguous effects, empty classes, and invalid patterns are refused.
+    pub fn validate(&self, key: &str) -> Result<(), &'static str> {
+        if self.id.is_empty()
+            || self.id != key
+            || !matches!(
+                (self.allow, self.deny),
+                (Some(true), None) | (None, Some(true))
+            )
+            || self.action_types.is_empty()
+            || self.action_types.iter().any(|pattern| {
+                pattern.is_empty() || pattern.strip_suffix('*').unwrap_or(pattern).contains('*')
+            })
+            || self.agents.iter().any(String::is_empty)
+        {
+            return Err(
+                "capability requires a matching id, explicit allow or deny, and valid action types",
+            );
+        }
+        Ok(())
+    }
+}
+
 /// A complete policy snapshot's source form.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -312,6 +364,9 @@ pub struct Policy {
     pub layers: Vec<Layer>,
     /// The decision when no rule matches. Never `allow`.
     pub default: DecisionValue,
+    /// Explicit coarse action-class grants and refusals, keyed by capability id.
+    #[serde(default)]
+    pub capabilities: BTreeMap<String, Capability>,
     /// Risk signal configuration, keyed by signal name.
     #[serde(default)]
     pub risk: BTreeMap<String, RiskSetting>,
@@ -547,11 +602,13 @@ pub mod versions {
     /// Decision version.
     pub const DECISION: &str = "shiin.decision/v1-draft.1";
     /// Policy version.
-    pub const POLICY: &str = "shiin.policy/v1-draft.1";
+    pub const POLICY: &str = "shiin.policy/v1-draft.2";
 }
 
 /// Reason codes, as registered in `docs/spec/decision.md`.
 pub mod reasons {
+    /// A required action class has no explicit capability, or is explicitly denied.
+    pub const DENY_CAPABILITY: &str = "deny.capability";
     /// A policy rule allowed the action.
     pub const ALLOW_POLICY: &str = "allow.policy";
     /// A policy rule denied the action.

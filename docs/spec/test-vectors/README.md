@@ -46,6 +46,13 @@ Optional fields carry the remaining engine inputs, so that every vector can be d
 | TV-017 | A spent task budget wins over required approval | `tv-017-task-budget-before-pending.v1.json` |
 | TV-018 | Outside-workspace risk denies an otherwise allowed write | `tv-018-outside-workspace-risk.v1.json` |
 | TV-019 | Secret-path risk denies an otherwise allowed read | `tv-019-secret-path-risk.v1.json` |
+| TV-020 | Missing capability denies an otherwise allowed action | `tv-020-missing-capability.v1.json` |
+| TV-021 | Capability denial wins over a broad capability grant | `tv-021-capability-deny-wins.v1.json` |
+| TV-022 | Every effect class requires an explicit capability | `tv-022-capability-effect.v1.json` |
+| TV-023 | A capability does not replace policy authorization | `tv-023-capability-not-authority.v1.json` |
+| TV-024 | Session and task rule selectors match together | `tv-024-rule-session-task.v1.json` |
+| TV-025 | A different session cannot match a scoped rule | `tv-025-rule-session-mismatch.v1.json` |
+| TV-026 | An absent task cannot match a task-scoped rule | `tv-026-rule-task-missing.v1.json` |
 
 ## Running
 
@@ -63,6 +70,7 @@ The report covers core engine behavior; it is unsigned and does not establish ho
 
 ## Revision history
 
+- v1-draft.6 (2026-10-16): Migrated existing policy snapshots to explicit capabilities and added capability denial/precedence/effect coverage and session/task selector cases.
 - v1-draft.5 (2026-10-12): Added TV-014 to TV-019 for task denial precedence, forbidden effects, workspace-relative scope boundaries, and configured path risk signals.
 - v1-draft.4 (2026-10-12): Added TV-010 to TV-013 for task limits, expiry, ask-for, and host constraints, and the `usage` and `now` fields they need.
 - v1-draft.3 (2026-10-12): Added TV-009, which pins UC-02: a rule written for `fs.read` must also cover a read performed by a shell command.

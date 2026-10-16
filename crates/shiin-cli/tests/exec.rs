@@ -6,7 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-const ALLOW: &str = "version = 1\n[[rule]]\nid = 'EXAMPLE-command'\neffect = 'allow'\naction_types = ['shell.exec']\n";
+const ALLOW: &str = "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = 'EXAMPLE-command'\neffect = 'allow'\naction_types = ['shell.exec']\n";
 const LITERAL: &str = "EXAMPLE spaces; 'quotes' $literal";
 
 struct Workspace(PathBuf);
@@ -94,8 +94,14 @@ fn allow_is_durable_and_arguments_and_exit_status_are_preserved()
 fn nonallow_and_failed_authorization_never_start_a_child() -> Result<(), Box<dyn std::error::Error>>
 {
     for (policy, expected) in [
-        ("version = 1\n[defaults]\ndecision = 'deny'\n", 1),
-        ("version = 1\n[defaults]\ndecision = 'pending'\n", 2),
+        (
+            "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = 'deny'\n",
+            1,
+        ),
+        (
+            "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = 'pending'\n",
+            2,
+        ),
         ("invalid policy", 1),
     ] {
         let workspace = Workspace::new(policy)?;

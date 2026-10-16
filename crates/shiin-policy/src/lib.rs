@@ -92,6 +92,8 @@ struct CompiledRule {
     id: String,
     action_types: Vec<String>,
     agents: Vec<String>,
+    sessions: Vec<String>,
+    tasks: Vec<String>,
     resources: Vec<GlobMatcher>,
     commands: Vec<GlobMatcher>,
 }
@@ -130,6 +132,17 @@ impl CompiledRule {
             return false;
         }
         if !self.agents.is_empty() && !self.agents.contains(&request.agent.id) {
+            return false;
+        }
+        if !self.sessions.is_empty() && !self.sessions.contains(&request.session) {
+            return false;
+        }
+        if !self.tasks.is_empty()
+            && !request
+                .task
+                .as_ref()
+                .is_some_and(|task| self.tasks.contains(task))
+        {
             return false;
         }
         if !self.resources.is_empty() && !self.matches_paths(request, effect) {
@@ -180,6 +193,19 @@ impl CompiledPolicy {
     /// Returns an error if a rule has a duplicate identifier, an invalid glob, or
     /// cannot be expressed in Cedar.
     pub fn compile(policy: &Policy, workspace_root: &str) -> Result<Self, PolicyError> {
+        if policy.schema != shiin_schema::versions::POLICY || policy.default == DecisionValue::Allow
+        {
+            return Err(PolicyError::Syntax {
+                message: "unsupported policy snapshot or permissive default".to_owned(),
+            });
+        }
+        for (key, capability) in &policy.capabilities {
+            capability
+                .validate(key)
+                .map_err(|message| PolicyError::Syntax {
+                    message: message.to_owned(),
+                })?;
+        }
         let mut rules = Vec::new();
         let mut pending = BTreeSet::new();
         let mut identifiers = BTreeSet::new();
@@ -204,6 +230,8 @@ impl CompiledPolicy {
             .collect(),
             commands: Vec::new(),
             agents: Vec::new(),
+            sessions: Vec::new(),
+            tasks: Vec::new(),
             reason: None,
         };
         let task_commands = Rule {
@@ -231,6 +259,8 @@ impl CompiledPolicy {
             .map(str::to_owned)
             .collect(),
             agents: Vec::new(),
+            sessions: Vec::new(),
+            tasks: Vec::new(),
             reason: None,
         };
         for rule in [&protected, &task_commands]
@@ -252,6 +282,8 @@ impl CompiledPolicy {
                 id: rule.id.clone(),
                 action_types: rule.action_types.clone(),
                 agents: rule.agents.clone(),
+                sessions: rule.sessions.clone(),
+                tasks: rule.tasks.clone(),
                 resources: compile_globs(rule, &rule.resources, workspace_root)?,
                 commands: compile_globs(rule, &rule.commands, workspace_root)?,
             });

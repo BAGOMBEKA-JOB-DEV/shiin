@@ -175,7 +175,10 @@ fn what_if_replay_compares_a_different_policy() -> Result<(), Box<dyn std::error
         "shiin-replay-{}.toml",
         shiin_schema::clock::new_id()
     ));
-    fs::write(&path, "version = 1\n[defaults]\ndecision = 'deny'\n")?;
+    fs::write(
+        &path,
+        "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = 'deny'\n",
+    )?;
     let result = replay_record(original.clone(), &original.request.id, path.to_str());
     fs::remove_file(path)?;
     let result = result?;

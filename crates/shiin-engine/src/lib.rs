@@ -17,7 +17,7 @@ use shiin_schema::{
 };
 
 /// Version reported in decisions.
-pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const ENGINE_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "+capabilities.1");
 
 /// Default threshold for `bulk_delete`, used when policy configures none (`RISK-007a`).
 pub const DEFAULT_BULK_DELETE_THRESHOLD: u64 = 20;
@@ -60,7 +60,7 @@ pub struct Inputs<'a> {
 #[must_use]
 pub fn decide(inputs: &Inputs<'_>) -> Decision {
     let identity = identity_stage(inputs.request);
-    let capability = capability_stage();
+    let capability = capability_stage(inputs.request, inputs.source);
     let policy = match inputs.policy.evaluate(inputs.request) {
         Ok(outcome) => policy_stage(&outcome),
         // Fail closed: an engine error is never an allow.
@@ -171,8 +171,41 @@ fn identity_stage(_request: &ActionRequest) -> Stage {
     Stage::Pass
 }
 
-/// Capability gate. The v0.1 policy model has no capability element yet.
-fn capability_stage() -> Stage {
+/// Every action/effect class needs an explicit grant; any matching refusal wins.
+fn capability_stage(request: &ActionRequest, policy: &Policy) -> Stage {
+    if policy
+        .capabilities
+        .iter()
+        .any(|(key, capability)| capability.validate(key).is_err())
+    {
+        return Stage::Deny(reasons::DENY_FAILURE, Vec::new());
+    }
+    for action_type in std::iter::once(request.action_type.as_str()).chain(
+        request
+            .effects
+            .iter()
+            .filter_map(|effect| effect.action_type.as_deref()),
+    ) {
+        let mut granted = false;
+        for capability in policy.capabilities.values().filter(|capability| {
+            (capability.agents.is_empty() || capability.agents.contains(&request.agent.id))
+                && capability.action_types.iter().any(|pattern| {
+                    pattern
+                        .strip_suffix('*')
+                        .map_or(pattern == action_type, |prefix| {
+                            action_type.starts_with(prefix)
+                        })
+                })
+        }) {
+            if capability.deny == Some(true) {
+                return Stage::Deny(reasons::DENY_CAPABILITY, vec![capability.id.clone()]);
+            }
+            granted |= capability.allow == Some(true);
+        }
+        if !granted {
+            return Stage::Deny(reasons::DENY_CAPABILITY, Vec::new());
+        }
+    }
     Stage::Pass
 }
 
@@ -490,6 +523,41 @@ mod tests {
             confidence: Confidence::Exact,
             action_type: action_type.map(ToOwned::to_owned),
         }
+    }
+
+    #[test]
+    fn capability_selectors_restrict_and_malformed_snapshots_fail_closed() {
+        let case: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../docs/spec/test-vectors/tv-001-allowed-edit.v1.json"
+        ))
+        .expect("corpus fixture");
+        let mut policy: shiin_schema::Policy =
+            serde_json::from_value(case["policy"].clone()).expect("valid policy");
+        let action: ActionRequest =
+            serde_json::from_value(case["action_request"].clone()).expect("valid action");
+        assert_eq!(
+            super::capability_stage(&action, &policy),
+            super::Stage::Pass
+        );
+        let capability = policy
+            .capabilities
+            .get_mut("EXAMPLE-corpus")
+            .expect("explicit fixture grant");
+        capability.agents = vec!["OTHER-EXAMPLE-agent".to_owned()];
+        assert!(matches!(
+            super::capability_stage(&action, &policy),
+            super::Stage::Deny("deny.capability", _)
+        ));
+        let capability = policy
+            .capabilities
+            .get_mut("EXAMPLE-corpus")
+            .expect("explicit fixture grant");
+        capability.agents = vec![action.agent.id.clone()];
+        capability.allow = Some(false);
+        assert!(matches!(
+            super::capability_stage(&action, &policy),
+            super::Stage::Deny("deny.failure", _)
+        ));
     }
 
     #[test]

@@ -124,7 +124,7 @@ fn risk_configuration_typos_fail_closed() {
         "[risk]\nbulk_delete = { decision = 'pending', unknown_threshold = 20 }",
         "[risk]\nbulk_delete = { decision = 'pending', threshold = 0 }",
     ] {
-        assert!(toml_front_end::parse(&format!("version = 1\n{suffix}\n")).is_err());
+        assert!(toml_front_end::parse(&format!("version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n{suffix}\n")).is_err());
     }
 }
 
@@ -170,7 +170,7 @@ impl Workspace {
         fs::create_dir_all(path.join(".shiin"))?;
         fs::write(
             path.join(".shiin/policy.toml"),
-            "version = 1\n[[rule]]\nid = 'commands'\neffect = 'allow'\naction_types = ['shell.exec']\n[risk]\nopaque_command = 'pending'\n",
+            "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = 'commands'\neffect = 'allow'\naction_types = ['shell.exec']\n[risk]\nopaque_command = 'pending'\n",
         )?;
         Ok(Self(path))
     }

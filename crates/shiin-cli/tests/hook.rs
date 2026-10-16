@@ -12,6 +12,10 @@ use std::process::{Child, Command, Stdio};
 
 const POLICY: &str = r#"
 version = 1
+[capabilities.EXAMPLE]
+id = 'EXAMPLE'
+allow = true
+action_types = ['*']
 
 [defaults]
 decision = "deny"
@@ -248,7 +252,7 @@ fn every_adapter_enforces_task_denials() {
 #[cfg(unix)]
 fn operator_policy_cannot_allow_shiin_state_or_hook_configuration() {
     let root = workspace("protected-resources");
-    fs::write(root.join(".shiin/policy.toml"), "version = 1\n[[rule]]\nid = \"allow-everything\"\neffect = \"allow\"\naction_types = [\"*\"]\n").expect("a permissive policy is written");
+    fs::write(root.join(".shiin/policy.toml"), "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = \"allow-everything\"\neffect = \"allow\"\naction_types = [\"*\"]\n").expect("a permissive policy is written");
     for path in [
         ".shiin/audit.jsonl",
         ".shiin/tasks/active.usage.json",
@@ -402,7 +406,7 @@ fn validate_and_doctor_report_the_workspace() {
 #[test]
 fn an_unparsable_policy_denies_and_names_its_code() {
     let root = workspace("badtoml");
-    fs::write(root.join(".shiin/policy.toml"), "version = 1\n[[rule\n").expect("written");
+    fs::write(root.join(".shiin/policy.toml"), "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule\n").expect("written");
     let (response, errors) = run_hook_full(
         &root,
         &payload(&root, "Write", r#"{"file_path":"src/x.rs"}"#),
@@ -423,7 +427,7 @@ fn an_unknown_policy_key_denies_rather_than_being_ignored() {
     let root = workspace("unknownkey");
     fs::write(
         root.join(".shiin/policy.toml"),
-        "version = 1\n[[rule]]\nid = \"r\"\neffect = \"allow\"\nsuprise = true\n",
+        "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = \"r\"\neffect = \"allow\"\nsuprise = true\n",
     )
     .expect("written");
     let (response, errors) = run_hook_full(
@@ -523,7 +527,7 @@ fn a_task_scopes_and_budgets_an_agent_then_releases_it() {
     // The policy allows writes anywhere in the workspace, so only the task narrows it.
     fs::write(
         root.join(".shiin/policy.toml"),
-        "version = 1\n[defaults]\ndecision = \"deny\"\n\n[[rule]]\nid = \"writes\"\neffect = \"allow\"\naction_types = [\"fs.write\"]\nresources = [\"./**\"]\n",
+        "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = \"deny\"\n\n[[rule]]\nid = \"writes\"\neffect = \"allow\"\naction_types = [\"fs.write\"]\nresources = [\"./**\"]\n",
     )
     .expect("the policy is written");
 
@@ -586,7 +590,7 @@ fn a_task_refuses_work_outside_its_scope() {
     let root = workspace("taskscope");
     fs::write(
         root.join(".shiin/policy.toml"),
-        "version = 1\n[defaults]\ndecision = \"deny\"\n\n[[rule]]\nid = \"writes\"\neffect = \"allow\"\naction_types = [\"fs.write\"]\nresources = [\"./**\"]\n",
+        "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = \"deny\"\n\n[[rule]]\nid = \"writes\"\neffect = \"allow\"\naction_types = [\"fs.write\"]\nresources = [\"./**\"]\n",
     )
     .expect("the policy is written");
     run(

@@ -1,0 +1,71 @@
+{
+  "schema": "shiin.test-vector/v1-draft.1",
+  "id": "TV-022",
+  "name": "Every effect class requires a capability",
+  "action_request": {
+    "schema": "shiin.action-request/v1-draft.1",
+    "id": "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b",
+    "session": "sess-001",
+    "agent": {
+      "id": "agent-001",
+      "assurance": "asserted"
+    },
+    "action_type": "shell.exec",
+    "effects": [
+      {
+        "kind": "path",
+        "value": "/home/dev/project/src/login.rs",
+        "confidence": "exact",
+        "action_type": "fs.read"
+      }
+    ],
+    "task": null,
+    "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "host": {
+      "name": "claude-code",
+      "tool": "Write"
+    },
+    "workspace": {
+      "root": "/home/dev/project",
+      "vcs": "git"
+    }
+  },
+  "policy": {
+    "capabilities": {
+      "EXAMPLE-shell": {
+        "id": "EXAMPLE-shell",
+        "allow": true,
+        "action_types": [
+          "shell.exec"
+        ]
+      }
+    },
+    "schema": "shiin.policy/v1-draft.2",
+    "layers": [
+      {
+        "name": "user",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rules": [
+          {
+            "id": "edit-source",
+            "effect": "allow",
+            "action_types": [
+              "fs.read",
+              "fs.write",
+              "fs.create"
+            ],
+            "resources": [
+              "./src/**",
+              "./tests/**"
+            ]
+          }
+        ]
+      }
+    ],
+    "default": "deny"
+  },
+  "expected": {
+    "decision": "deny",
+    "reason": "deny.capability"
+  }
+}

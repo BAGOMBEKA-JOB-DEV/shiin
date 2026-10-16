@@ -83,6 +83,11 @@ The syntax shown here is illustrative until that specification is accepted.
 # .shiin/policy.toml
 version = 1
 
+[capabilities.workspace]
+id = "workspace"
+allow = true
+action_types = ["fs.*", "shell.exec"]
+
 [defaults]
 decision = "deny"
 
@@ -180,7 +185,7 @@ flowchart LR
 ## What exists today
 
 The engine, policy, hooks, audit log, experimental task constraints, Unix approvals, grants, receipts, replay, a Rust client, and an early MCP proxy exist in source.
-Identity and capability gates currently pass through. SQL classification remains experimental and is not wired into host adapters.
+The identity gate currently passes through; capabilities require explicit action/effect-class grants. SQL classification remains experimental and is not wired into host adapters.
 The [roadmap](../project/roadmap.md) lists validation still required for each part.
 
 | Part | Milestone |

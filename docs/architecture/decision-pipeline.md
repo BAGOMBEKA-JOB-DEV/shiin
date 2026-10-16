@@ -31,7 +31,7 @@ Any failure produces `deny` ([ADR-0013](../adr/0013-fail-closed-failure-semantic
 
 This diagram shows the Unix daemon path when approval handling is enabled.
 The daemon evaluates and audits the request, creates a ticket for `pending`, and lets a separate operator terminal resolve it.
-Identity and capability gates currently pass through.
+The identity gate currently passes through; the capability gate denies missing or explicitly refused action/effect classes.
 
 ```mermaid
 sequenceDiagram

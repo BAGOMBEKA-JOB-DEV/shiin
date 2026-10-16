@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Your first policy
 
@@ -13,6 +13,11 @@ with confidence.
 
 ```toml
 version = 1
+
+[capabilities.workspace]
+id = "workspace"
+allow = true
+action_types = ["fs.*", "shell.exec"]
 
 # Anything no rule allows is denied.
 [defaults]

@@ -137,7 +137,7 @@ mod unix {
         let workspace = Workspace(fs::canonicalize(root)?);
         fs::write(
             workspace.0.join(".shiin/policy.toml"),
-            "version = 1\n[defaults]\ndecision = 'pending'\n[[rule]]\nid = 'echo'\neffect = 'allow'\naction_types = ['mcp.tool.echo']\n[[rule]]\nid = 'denied'\neffect = 'deny'\naction_types = ['mcp.tool.denied']\n",
+            "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = 'pending'\n[[rule]]\nid = 'echo'\neffect = 'allow'\naction_types = ['mcp.tool.echo']\n[[rule]]\nid = 'denied'\neffect = 'deny'\naction_types = ['mcp.tool.denied']\n",
         )?;
         let socket = workspace.0.join("s");
         let listener = tokio::net::UnixListener::bind(&socket)?;

@@ -12,7 +12,7 @@ use std::os::unix::net::UnixListener;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-const POLICY: &str = "version = 1\n[defaults]\ndecision = 'pending'\n[[rule]]\nid = 'source'\neffect = 'allow'\naction_types = ['fs.write']\nresources = ['./src/**']\n";
+const POLICY: &str = "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[defaults]\ndecision = 'pending'\n[[rule]]\nid = 'source'\neffect = 'allow'\naction_types = ['fs.write']\nresources = ['./src/**']\n";
 
 struct Workspace(PathBuf);
 
@@ -251,5 +251,44 @@ async fn approve_once(
     let mut authenticated = resolve;
     authenticated["proof"] = json!(proof);
     shiin_ipc::call_at_async(socket, "shiin.approve.resolve", authenticated).await?;
+    Ok(())
+}
+
+#[test]
+fn caller_task_claims_cannot_replace_the_daemons_active_task()
+-> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::new()?;
+    let policy = POLICY.replace("resources =", "tasks = ['EXAMPLE-task']\nresources =");
+    fs::write(workspace.0.join(".shiin/policy.toml"), &policy)?;
+    let socket = workspace.0.join("s");
+    let listener = UnixListener::bind(&socket)?;
+    let service = Service::open(&workspace.0.join("daemon"), OperatorKey::generate()?)?;
+    let server = std::thread::spawn(move || serve_requests(service, &listener, 2));
+    let client = Client::at(&socket)?;
+    let mut action = workspace.action("src/EXAMPLE.rs")?;
+    action.policy_snapshot = shiin_policy::toml_front_end::digest(&policy);
+    action.task = Some("EXAMPLE-task".to_owned());
+    let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+        .enable_all()
+        .build()?;
+    let claimed = runtime.block_on(client.evaluate(&action))?;
+    assert_eq!(claimed.decision, DecisionValue::Pending);
+    fs::create_dir_all(workspace.0.join(".shiin/tasks"))?;
+    fs::write(
+        workspace.0.join(".shiin/tasks/active.json"),
+        serde_json::to_vec(&json!({"id":"EXAMPLE-task"}))?,
+    )?;
+    fs::write(
+        workspace.0.join(".shiin/tasks/active.usage.json"),
+        serde_json::to_vec(&json!({"files_written":0,"files_deleted":0,"commands":0}))?,
+    )?;
+    action.id = clock::new_id();
+    let active = runtime.block_on(client.evaluate(&action))?;
+    assert_eq!(active.decision, DecisionValue::Allow);
+    server.join().map_err(|_| "test service panicked")??;
+    let usage: Value = serde_json::from_slice(&fs::read(
+        workspace.0.join(".shiin/tasks/active.usage.json"),
+    )?)?;
+    assert_eq!(usage["files_written"], 1);
     Ok(())
 }

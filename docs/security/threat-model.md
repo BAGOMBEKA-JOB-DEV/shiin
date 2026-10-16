@@ -124,6 +124,13 @@ No reviewer has supplied that record yet.
 
 ## Local approval service changes
 
+The capability gate now requires explicit grants for the request class and every effect class, and any matching capability refusal wins.
+Missing, invalid, or ambiguous declarations cannot produce allow; capability grants alone do not authorize an action ([ADR-0011](../adr/0011-decision-values-and-combining.md), [ADR-0012](../adr/0012-evaluation-stage-order.md)).
+Seven new golden cases cover capability enforcement and session/task rule selectors, and the signed replay suite exercises them as well.
+The snapshot/engine version changes prevent older replay inputs from silently receiving new capability semantics.
+Session and agent identifiers remain asserted; they are selectors, not attestation (ST-S-01, ST-E-01).
+The daemon continues to replace a caller's task reference with its authoritative active task before matching rules.
+
 The Rust client now exercises the real daemon contract over a local socket, including policy validation, non-allow decisions, and stale snapshots.
 Unsupported decision versions are rejected before an integration can act on them; this tightens failure handling without changing policy decisions ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md)).
 Replay regression tests now exercise the signed/encrypted conformance corpus through the CLI's evaluation routine, plus input bindings, grant coverage, deny precedence, and what-if comparisons.

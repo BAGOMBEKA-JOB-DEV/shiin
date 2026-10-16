@@ -39,7 +39,7 @@ Shiin's task constraints narrow the actions standing policy would otherwise allo
 | CLI | Initialization, policy validation and tests, request evaluation, explanations, tasks, hooks, approvals, evidence, execution, and diagnostics |
 | Validation | Engine and replay corpus, client/daemon and MCP process integration, fault injection, hosted latency checks, parser fuzzing, Miri, and engine WebAssembly/dependency checks |
 
-The five-stage engine currently accepts asserted identity, and the capability stage is a pass-through.
+The five-stage engine currently accepts asserted identity, and the capability gate requires explicit grants for every action/effect class.
 The policy, intent, and risk stages perform the current authorization checks.
 Hook adapters are cooperative: actions outside the interception point are outside their coverage.
 Creating a policy with `shiin init` does not connect a host to Shiin; configure the host separately.

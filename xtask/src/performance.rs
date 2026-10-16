@@ -18,7 +18,7 @@ use shiin_engine::{Inputs, decide};
 use shiin_policy::{CompiledPolicy, toml_front_end};
 use shiin_schema::{ActionRequest, Mode, TaskUsage, clock};
 
-const POLICY: &str = "version = 1\n[[rule]]\nid = 'read-source'\neffect = 'allow'\naction_types = ['fs.read']\nresources = ['./src/**']\n[risk]\nopaque_command = 'pending'\nsecret_path = 'deny'\n";
+const POLICY: &str = "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = 'read-source'\neffect = 'allow'\naction_types = ['fs.read']\nresources = ['./src/**']\n[risk]\nopaque_command = 'pending'\nsecret_path = 'deny'\n";
 
 struct Workspace(PathBuf);
 
