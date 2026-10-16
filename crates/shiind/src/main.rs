@@ -39,7 +39,6 @@ async fn serve() -> Result<(), String> {
     use std::io::IsTerminal;
     use std::os::unix::fs::{DirBuilderExt, FileTypeExt, MetadataExt, PermissionsExt};
     use std::sync::{Arc, Mutex};
-    use tokio::io::AsyncWriteExt;
     use tokio::sync::Semaphore;
 
     let path = shiin_ipc::endpoint()?;
