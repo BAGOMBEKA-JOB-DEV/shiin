@@ -152,17 +152,7 @@ impl AuditLog {
                 detail: "OS randomness failed; refusing to create an event".to_owned(),
             });
         }
-        let events = self.read()?;
-        if let Some(problem) = verify_events(&events)?.first() {
-            return Err(AuditError::Invalid {
-                path: self.path.clone(),
-                seq: problem.seq,
-                detail: problem.detail.clone(),
-            });
-        }
-        let (seq, prev_hash) = events.last().map_or((1, GENESIS.to_owned()), |last| {
-            (last.seq.saturating_add(1), last.hash.clone())
-        });
+        let (seq, prev_hash) = self.verified_head()?;
 
         let mut event = AuditEvent {
             schema: "shiin.audit-event/v1-draft.2".to_owned(),
@@ -206,14 +196,25 @@ impl AuditLog {
     ///
     /// Returns an error if the log cannot be read or holds a malformed line.
     pub fn read(&self) -> Result<Vec<AuditEvent>, AuditError> {
+        let mut events = Vec::new();
+        self.for_each_event(|event| {
+            events.push(event);
+            Ok(())
+        })?;
+        Ok(events)
+    }
+
+    fn for_each_event(
+        &self,
+        mut visit: impl FnMut(AuditEvent) -> Result<(), AuditError>,
+    ) -> Result<(), AuditError> {
         if !self.path.exists() {
-            return Ok(Vec::new());
+            return Ok(());
         }
         let file = File::open(&self.path).map_err(|source| AuditError::Io {
             path: self.path.clone(),
             source,
         })?;
-        let mut events = Vec::new();
         for (index, line) in BufReader::new(file).lines().enumerate() {
             let line = line.map_err(|source| AuditError::Io {
                 path: self.path.clone(),
@@ -228,9 +229,9 @@ impl AuditLog {
                     line: index.saturating_add(1),
                     source,
                 })?;
-            events.push(event);
+            visit(event)?;
         }
-        Ok(events)
+        Ok(())
     }
 
     /// Verifies the chain, returning every break found.
@@ -239,44 +240,71 @@ impl AuditLog {
     ///
     /// Returns an error if the log cannot be read.
     pub fn verify(&self) -> Result<Vec<ChainBreak>, AuditError> {
-        let events = self.read()?;
-        verify_events(&events)
+        let mut breaks = Vec::new();
+        let mut expected_prev = GENESIS.to_owned();
+        let mut expected_seq = 1_u64;
+        self.for_each_event(|event| {
+            breaks.extend(verify_event(&event, &expected_prev, expected_seq)?);
+            expected_prev = event.hash;
+            expected_seq = event.seq.saturating_add(1);
+            Ok(())
+        })?;
+        Ok(breaks)
+    }
+
+    /// Checks every existing record while retaining only the current head.
+    fn verified_head(&self) -> Result<(u64, String), AuditError> {
+        let mut expected_prev = GENESIS.to_owned();
+        let mut expected_seq = 1_u64;
+        self.for_each_event(|event| {
+            if let Some(problem) = verify_event(&event, &expected_prev, expected_seq)?
+                .into_iter()
+                .next()
+            {
+                return Err(AuditError::Invalid {
+                    path: self.path.clone(),
+                    seq: problem.seq,
+                    detail: problem.detail,
+                });
+            }
+            expected_prev = event.hash;
+            expected_seq = event.seq.saturating_add(1);
+            Ok(())
+        })?;
+        Ok((expected_seq, expected_prev))
     }
 }
 
-/// Validates every link, including the schema, before a new event can extend it.
-fn verify_events(events: &[AuditEvent]) -> Result<Vec<ChainBreak>, AuditError> {
+/// Validates one link without retaining earlier payloads.
+fn verify_event(
+    event: &AuditEvent,
+    expected_prev: &str,
+    expected_seq: u64,
+) -> Result<Vec<ChainBreak>, AuditError> {
     let mut breaks = Vec::new();
-    let mut expected_prev = GENESIS.to_owned();
-    let mut expected_seq = 1_u64;
-
-    for event in events {
-        if event.schema != "shiin.audit-event/v1-draft.2" {
-            breaks.push(ChainBreak {
-                seq: event.seq,
-                detail: "unsupported audit schema; preserve the old log separately".to_owned(),
-            });
-        }
-        if event.seq != expected_seq {
-            breaks.push(ChainBreak {
-                seq: event.seq,
-                detail: format!("expected sequence {expected_seq}"),
-            });
-        }
-        if event.prev_hash != expected_prev {
-            breaks.push(ChainBreak {
-                seq: event.seq,
-                detail: "previous hash does not match the event before it".to_owned(),
-            });
-        }
-        if hash_of(event)? != event.hash {
-            breaks.push(ChainBreak {
-                seq: event.seq,
-                detail: "contents do not match the recorded hash".to_owned(),
-            });
-        }
-        expected_prev.clone_from(&event.hash);
-        expected_seq = event.seq.saturating_add(1);
+    if event.schema != "shiin.audit-event/v1-draft.2" {
+        breaks.push(ChainBreak {
+            seq: event.seq,
+            detail: "unsupported audit schema; preserve the old log separately".to_owned(),
+        });
+    }
+    if event.seq != expected_seq {
+        breaks.push(ChainBreak {
+            seq: event.seq,
+            detail: format!("expected sequence {expected_seq}"),
+        });
+    }
+    if event.prev_hash != expected_prev {
+        breaks.push(ChainBreak {
+            seq: event.seq,
+            detail: "previous hash does not match the event before it".to_owned(),
+        });
+    }
+    if hash_of(event)? != event.hash {
+        breaks.push(ChainBreak {
+            seq: event.seq,
+            detail: "contents do not match the recorded hash".to_owned(),
+        });
     }
     Ok(breaks)
 }
@@ -452,5 +480,99 @@ mod tests {
         let breaks = log.verify().unwrap();
         assert!(!breaks.is_empty(), "tampering must be detected");
         let _ = std::fs::remove_file(path);
+    }
+
+    fn seed_chain(path: &Path, count: u64) -> Result<Vec<AuditEvent>, Box<dyn std::error::Error>> {
+        let mut file = File::create(path)?;
+        let mut previous = GENESIS.to_owned();
+        let mut events = Vec::new();
+        for seq in 1..=count {
+            let mut event = AuditEvent {
+                schema: "shiin.audit-event/v1-draft.2".to_owned(),
+                id: clock::new_id(),
+                seq,
+                event_type: "decision.made".to_owned(),
+                time: "2026-10-16T00:00:00Z".to_owned(),
+                prev_hash: previous,
+                hash: String::new(),
+                payload: serde_json::json!({"decision":"deny","id":format!("EXAMPLE-{seq}")}),
+            };
+            event.hash = hash_of(&event)?;
+            previous = event.hash.clone();
+            writeln!(file, "{}", serde_json::to_string(&event)?)?;
+            events.push(event);
+        }
+        Ok(events)
+    }
+
+    #[test]
+    fn append_checks_the_entire_chain_without_retaining_payloads()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let (log, path) = temporary_log("streaming-head");
+        let seed = seed_chain(&path, 1000)?;
+        let appended = log.append(
+            "decision.made",
+            "2026-10-16T00:00:00Z",
+            &serde_json::json!({"decision":"allow"}),
+        )?;
+        assert_eq!(appended.seq, 1001);
+        assert_eq!(appended.prev_hash, seed[999].hash);
+        assert!(log.verify()?.is_empty());
+        // Corruption far from the tail still prevents append, without changing the file.
+        for damaged_index in [0, 499, 999] {
+            for field in ["schema", "seq", "prev", "self", "payload"] {
+                let mut values = seed
+                    .iter()
+                    .map(serde_json::to_value)
+                    .collect::<Result<Vec<_>, _>>()?;
+                values[damaged_index][field] = match field {
+                    "seq" => serde_json::json!(9000),
+                    "payload" => serde_json::json!({"decision":"allow"}),
+                    _ => serde_json::json!("EXAMPLE-damaged"),
+                };
+                let mut bytes = Vec::new();
+                for value in values {
+                    serde_json::to_writer(&mut bytes, &value)?;
+                    bytes.push(b'\n');
+                }
+                std::fs::write(&path, &bytes)?;
+                assert!(
+                    matches!(
+                        log.append(
+                            "decision.made",
+                            "2026-10-16T00:00:00Z",
+                            &serde_json::json!({})
+                        ),
+                        Err(AuditError::Invalid { .. })
+                    ),
+                    "{field} corruption was accepted"
+                );
+                assert_eq!(std::fs::read(&path)?, bytes);
+            }
+        }
+        std::fs::remove_file(path)?;
+        Ok(())
+    }
+
+    #[test]
+    fn malformed_trailing_record_prevents_append() -> Result<(), Box<dyn std::error::Error>> {
+        let (log, path) = temporary_log("malformed-tail");
+        seed_chain(&path, 20)?;
+        writeln!(
+            OpenOptions::new().append(true).open(&path)?,
+            "EXAMPLE-malformed"
+        )?;
+        let before = std::fs::read(&path)?;
+        assert!(matches!(
+            log.append(
+                "decision.made",
+                "2026-10-16T00:00:00Z",
+                &serde_json::json!({})
+            ),
+            Err(AuditError::Malformed { .. })
+        ));
+        assert_eq!(std::fs::read(&path)?, before);
+        std::fs::remove_file(path)?;
+        Ok(())
     }
 }

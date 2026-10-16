@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Performance budgets
 
@@ -35,6 +35,9 @@ The command checks every observed latency against the existing budgets and repor
 Hook samples include process start, policy loading, evaluation, and durable audit writes against a small growing log.
 They exercise the real hook executable without launching a host.
 The reported Linux process peak RSS includes the harness and dependencies; it does not establish the separate engine and policy memory budgets.
+Audit append and verification now stream existing records, retaining the current chain head instead of all prior event payloads.
+Append still checks the entire chain and syncs the new record before success; tests seed a thousand-event chain and reject early, middle, and late corruption without changing the file.
+Reading the log for display still collects its records, and individual-record bounds and component peak-memory measurements remain open.
 Large-policy/log measurements, component memory profiling, and results on other platform architectures remain open.
 
 ## Read next

@@ -66,6 +66,9 @@ The audit log is a built-in protected resource.
 **[ST-D-01]** An agent floods Shiin with requests.
 The engine is synchronous and bounded; the adapter enforces timeouts that produce `deny`.
 The daemon rejects noncanonical workspace roots and oversized normalized actions before policy evaluation; focused tests cover both bounds.
+Audit append verifies the full existing chain with a streaming reader, so prior event payloads no longer accumulate in memory before an authorization can complete.
+Regression tests reject early, middle, late, and malformed-tail corruption without appending; this preserves ST-T-01 while reducing aggregate-log memory usage.
+Individual oversized audit records and total verification latency still require bounds.
 
 **[ST-D-02]** A malicious policy file hangs Shiin.
 Policy compilation is bounded and fails closed.
@@ -136,6 +139,8 @@ The local transport authenticates the peer's Unix user identity; an asserted age
 Tests reject missing or incorrect credentials and generated transition sequences check that a single-use grant cannot authorize twice.
 The Rust client's socket integration also exercises missing/forged operator proof, changed-action retries, single-use consumption, reusable scopes, built-in denial precedence, and revocation through the real service.
 It checks that those transitions are audited and operator credentials are absent from the log.
+After a single-use grant is spent, a new pending retry now receives a fresh unresolved ticket instead of reusing the already resolved ticket.
+The client lifecycle test exercises reapproval while retaining exact-action binding and denial precedence (ST-E-01).
 Grant bindings include the session, task, workspace, policy snapshot, action type, and effects; only the fresh request correlation UUID is excluded.
 Explicit denials are re-evaluated before grants and cannot be overridden.
 Audit and state writes finish before an allow response.

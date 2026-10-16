@@ -72,6 +72,21 @@ fn a_single_use_grant_cannot_be_replayed_or_override_a_denial() {
     let mut second = held(&request);
     store.apply(&request, &mut second, 103, None).unwrap();
     assert_eq!(second.decision, DecisionValue::Pending);
+    let retry_ticket = second.approval.as_ref().unwrap().ticket.clone();
+    assert_ne!(
+        retry_ticket, ticket,
+        "spent grant must issue an unresolved ticket"
+    );
+    // Reapproval authorizes only one more exact retry.
+    store
+        .resolve(&retry_ticket, Resolution::AllowOnce, None, 60, 104)
+        .unwrap();
+    let mut reapproved = held(&request);
+    store.apply(&request, &mut reapproved, 105, None).unwrap();
+    assert_eq!(reapproved.decision, DecisionValue::Allow);
+    let mut spent_again = held(&request);
+    store.apply(&request, &mut spent_again, 106, None).unwrap();
+    assert_eq!(spent_again.decision, DecisionValue::Pending);
 }
 
 #[test]

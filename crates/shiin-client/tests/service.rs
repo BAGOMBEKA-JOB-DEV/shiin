@@ -221,7 +221,7 @@ fn custom_agent_grants_require_operator_proof_and_preserve_deny()
     for event in [
         "approval.resolved",
         "grant.created",
-        "grant.consumed",
+        "grant.used",
         "grant.revoked",
     ] {
         assert!(audit.contains(event), "{event} audit event missing");

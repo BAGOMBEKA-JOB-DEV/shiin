@@ -233,6 +233,7 @@ impl Store {
         }
         if let Some(pending) = self.requests.iter().find(|item| {
             item.binding == digest
+                && item.approval.resolution.is_none()
                 && deadline(&item.approval.expires_at).is_ok_and(|expires| expires > now)
         }) {
             decision.approval = Some(pending.approval.clone());
