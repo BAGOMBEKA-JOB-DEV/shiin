@@ -63,7 +63,7 @@ mod unix {
             _: RequestContext<RoleServer>,
         ) -> impl std::future::Future<Output = Result<CallToolResponse, ErrorData>> + Send + '_
         {
-            std::future::ready((|| {
+            let result = (|| -> Result<CallToolResponse, ErrorData> {
                 let mut log = OpenOptions::new()
                     .create(true)
                     .append(true)
@@ -75,12 +75,13 @@ mod unix {
                     serde_json::to_string(&request)
                         .map_err(|_| ErrorData::internal_error("fixture encoding failed", None))?
                 )
-            })())
-            .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
-            Ok(
-                CallToolResult::success(vec![ContentBlock::text("EXAMPLE downstream result")])
-                    .into(),
-            )
+                .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
+                Ok(
+                    CallToolResult::success(vec![ContentBlock::text("EXAMPLE downstream result")])
+                        .into(),
+                )
+            })();
+            std::future::ready(result)
         }
     }
 
