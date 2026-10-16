@@ -561,6 +561,50 @@ mod tests {
     }
 
     #[test]
+    fn multiple_matching_rules_produce_identical_decision_bytes() {
+        let case: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../docs/spec/test-vectors/tv-001-allowed-edit.v1.json"
+        ))
+        .expect("corpus fixture");
+        let action: ActionRequest =
+            serde_json::from_value(case["action_request"].clone()).expect("valid action");
+        for effect in ["allow", "deny", "pending"] {
+            let mut text =
+                "version=1\n[capabilities.EXAMPLE]\nid='EXAMPLE'\nallow=true\naction_types=['*']\n"
+                    .to_owned();
+            for id in ["EXAMPLE-z", "EXAMPLE-a", "EXAMPLE-m"] {
+                use std::fmt::Write as _;
+                writeln!(
+                    text,
+                    "[[rule]]\nid='{id}'\neffect='{effect}'\naction_types=['*']"
+                )
+                .expect("append rule");
+            }
+            let source = shiin_policy::toml_front_end::parse(&text).expect("valid policy");
+            let compiled = shiin_policy::CompiledPolicy::compile(&source, &action.workspace.root)
+                .expect("compiled policy");
+            let inputs = super::Inputs {
+                request: &action,
+                policy: &compiled,
+                source: &source,
+                task: None,
+                usage: shiin_schema::TaskUsage::default(),
+                now: "2026-10-16T00:00:00Z",
+                mode: shiin_schema::Mode::Attended,
+            };
+            let first = super::decide(&inputs);
+            assert_eq!(first.matched_rules, ["EXAMPLE-a", "EXAMPLE-m", "EXAMPLE-z"]);
+            let bytes = serde_json::to_vec(&first).expect("serialize decision");
+            for _ in 0..50 {
+                assert_eq!(
+                    serde_json::to_vec(&super::decide(&inputs)).expect("serialize decision"),
+                    bytes
+                );
+            }
+        }
+    }
+
+    #[test]
     fn a_host_wildcard_matches_only_subdomains() {
         assert!(host_matches("docs.example.com", "docs.example.com"));
         assert!(host_matches("*.example.org", "api.example.org"));

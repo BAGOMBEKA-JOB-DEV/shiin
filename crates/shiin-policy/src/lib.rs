@@ -325,11 +325,14 @@ impl CompiledPolicy {
         let cedar_request = build_request(request, &matched)?;
         let response =
             Authorizer::new().is_authorized(&cedar_request, &self.set, &Entities::empty());
-        let determining: Vec<String> = response
+        let mut determining: Vec<String> = response
             .diagnostics()
             .reason()
             .map(ToString::to_string)
             .collect();
+        // Cedar's reason iterator is unordered. Canonical ordering keeps both the
+        // matched-rule list and the engine's trace stable for signed evidence/replay.
+        determining.sort_unstable();
 
         Ok(match response.decision() {
             // Cedar's forbid overrides permit, which is "deny always wins".

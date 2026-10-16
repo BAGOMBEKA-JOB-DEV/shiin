@@ -148,6 +148,9 @@ Adapters explicitly retain the runtime feature and its fail-closed randomness be
 The WebAssembly check and dependency guard check this separation without changing an authorization outcome (ST-T-01, ST-D-01).
 The separate fuzz workspace exercises action-request parsing/validation and shell/SQL classification with bounded inputs and memory.
 Its authorization target also checks determinism, unattended behavior, and capability refusal invariants against arbitrary validated requests (ST-E-01).
+The determinism check exposed unordered determining-rule identifiers in otherwise identical decision traces.
+The compiler now sorts those identifiers before returning any policy outcome; a regression compares serialized decisions repeatedly for multiple matching allow, deny, and pending rules (ST-R-01).
+This canonicalizes evidence without changing which rules match, denial precedence, or an authorization outcome ([ADR-0010](../adr/0010-pure-synchronous-engine.md)).
 Miri interprets pure schema tests; these robustness checks supplement the existing fault-injection tests and do not constitute independent review (ST-T-02, ST-D-01).
 
 The v0.3 source implementation addresses ST-E-01 and ST-E-02 by requiring an out-of-band operator credential for resolution, listing, and revocation.
