@@ -45,7 +45,9 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Lint
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: |
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo clippy -p xtask --features memory-profile --all-targets -- -D warnings
 
       - name: Test, including the specification conformance corpus
         run: cargo test --workspace --locked
@@ -82,6 +84,9 @@ jobs:
 
       - name: Check budgets with larger policies and audit logs
         run: cargo run --release --locked -p xtask -- performance-scaling target/release/shiin
+
+      - name: Check bounded component heap allocation
+        run: cargo run --release --locked -p xtask --features memory-profile -- memory
 
   engine-purity:
     name: engine WebAssembly purity

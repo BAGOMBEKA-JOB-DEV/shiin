@@ -60,7 +60,7 @@ fn fixture() -> Result<(Workspace, ActionRequest), Box<dyn std::error::Error>> {
     Ok((workspace, action))
 }
 
-fn policy(rules: usize) -> String {
+pub(super) fn policy(rules: usize) -> String {
     let mut source = "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = 'source'\neffect = 'allow'\naction_types = ['fs.read']\nresources = ['./src/**']\n".to_owned();
     for index in 1..rules {
         use std::fmt::Write as _;

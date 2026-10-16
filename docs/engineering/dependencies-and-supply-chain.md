@@ -27,12 +27,19 @@ Transitive HTTP/TLS dependencies still require supply-chain review before a rele
 Development-only `rcgen`, `rustls`, `tokio-rustls`, and `hyper-util` generate a temporary certificate and serve the authenticated TLS MCP fixture.
 Private fixture keys are generated at runtime and are never committed.
 
+`allocation-counter` is admitted only for the optional `xtask/memory-profile` feature.
+It measures allocations made by synchronous component calls through a safe API; no product binary or engine dependency graph includes the counter.
+The [measurement contract](https://docs.rs/allocation-counter/0.8.1/allocation_counter/fn.measure.html) counts only the current thread (verified 2026-10-16).
+Its allocator wrapper contains the unsafe system-allocator calls; Shiin adds no unsafe allocator implementation.
+The ordinary latency jobs keep the default allocator, so instrumentation does not change the reported latency samples.
+This admission is for measurement tooling and does not replace dependency review before release.
+
 Every dependency is declared in `[workspace.dependencies]` with a version requirement and `default-features = false`.
 Members reference it with `workspace = true` and enable only the features they use.
 
 ## Supply chain
 
-- `cargo vet` is enforced in CI from v0.4.
+- `cargo deny` is enforced in CI, following [ADR-0038](../adr/0038-supply-chain-policy.md); `cargo vet` is not configured.
 - Dependencies are updated through ordinary pull requests.
 - A dependency that gains a soundness advisory is treated as a potential vulnerability.
 

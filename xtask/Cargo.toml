@@ -9,7 +9,11 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
+[features]
+memory-profile = ["dep:allocation-counter"]
+
 [dependencies]
+allocation-counter = { workspace = true, optional = true }
 jsonschema = { workspace = true }
 regex = { workspace = true }
 serde_json = { workspace = true }

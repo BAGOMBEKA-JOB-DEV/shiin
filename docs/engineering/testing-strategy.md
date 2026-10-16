@@ -26,6 +26,7 @@ Client integration tests connect to the actual Unix daemon service over a local 
 `cargo xtask dependency-check` rejects known network stacks and async runtimes in the normal transitive dependency graph of the four engine crates.
 CI separately checks the isolated engine for WebAssembly and tests the schema crate without OS clock/randomness functions.
 The hosted release measurements also exercise 100/500-rule policies and hook calls against a thousand-event audit log, checking every observed latency against the existing budgets.
+The separate optional heap measurement checks parsing/compilation and engine allocations with 1/100/500 rules; its instrumentation is confined to `xtask`, and latency samples retain their ordinary allocator.
 
 ## Fuzzing
 
