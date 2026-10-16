@@ -45,10 +45,14 @@ impl Drop for Workspace {
     }
 }
 
-fn serve_requests(mut service: Service, listener: &UnixListener) -> Result<(), String> {
+fn serve_requests(
+    mut service: Service,
+    listener: &UnixListener,
+    calls: usize,
+) -> Result<(), String> {
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
     let deadline = Instant::now() + Duration::from_secs(15);
-    for _ in 0..7 {
+    for _ in 0..calls {
         let stream = loop {
             match listener.accept() {
                 Ok((stream, _)) => break stream,
@@ -84,7 +88,7 @@ fn custom_agent_and_service_obey_the_local_contract() -> Result<(), Box<dyn std:
     let socket = workspace.0.join("s");
     let listener = UnixListener::bind(&socket)?;
     let service = Service::open(&workspace.0.join("daemon"), OperatorKey::generate()?)?;
-    let server = std::thread::spawn(move || serve_requests(service, &listener));
+    let server = std::thread::spawn(move || serve_requests(service, &listener, 7));
     let client = Client::at(&socket)?;
     let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
         .enable_all()
@@ -135,5 +139,117 @@ fn custom_agent_and_service_obey_the_local_contract() -> Result<(), Box<dyn std:
             .count(),
         4
     );
+    Ok(())
+}
+
+#[test]
+fn custom_agent_grants_require_operator_proof_and_preserve_deny()
+-> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::new()?;
+    let socket = workspace.0.join("s");
+    let listener = UnixListener::bind(&socket)?;
+    let operator = OperatorKey::generate()?;
+    let proof = operator.for_operator_terminal().to_owned();
+    let service = Service::open(&workspace.0.join("daemon"), operator)?;
+    let server = std::thread::spawn(move || serve_requests(service, &listener, 14));
+    let client = Client::at(&socket)?;
+    let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+        .enable_all()
+        .build()?;
+    runtime.block_on(async {
+        let mut action = workspace.action("migrations/EXAMPLE.sql")?;
+        let pending = client.evaluate(&action).await?;
+        assert_eq!(pending.decision, DecisionValue::Pending);
+        let ticket = pending.approval.ok_or("approval ticket missing")?.ticket;
+        approve_once(&socket, &proof, &ticket).await?;
+        // A changed action cannot spend the exact grant.
+        let changed = client
+            .evaluate(&workspace.action("migrations/OTHER-EXAMPLE.sql")?)
+            .await?;
+        assert_eq!(changed.decision, DecisionValue::Pending);
+        action.id = clock::new_id();
+        assert_eq!(client.evaluate(&action).await?.reason, "allow.grant");
+        action.id = clock::new_id();
+        let spent = client.evaluate(&action).await?;
+        assert_eq!(spent.decision, DecisionValue::Pending);
+        let ticket = spent.approval.ok_or("retry ticket missing")?.ticket;
+        shiin_ipc::call_at_async(
+            &socket,
+            "shiin.approve.resolve",
+            json!({
+                "proof":proof,"ticket":ticket,"resolution":"allow_always","lifetime":60,
+                "scope":{"agent":action.agent.id,"workspace":workspace.0,
+                    "action_types":["fs.write"],"resource":format!("{}/**",workspace.0.display())}
+            }),
+        )
+        .await?;
+        action.id = clock::new_id();
+        assert_eq!(client.evaluate(&action).await?.reason, "allow.grant");
+        let protected = client
+            .evaluate(&workspace.action(".shiin/policy.toml")?)
+            .await?;
+        assert_eq!(protected.decision, DecisionValue::Deny);
+        assert_eq!(protected.reason, "deny.policy");
+        let other = workspace.action("migrations/OTHER-EXAMPLE.sql")?;
+        assert_eq!(client.evaluate(&other).await?.reason, "allow.grant");
+        let grants =
+            shiin_ipc::call_at_async(&socket, "shiin.grants", json!({"proof":proof})).await?;
+        let scoped = grants
+            .as_array()
+            .ok_or("grants must be an array")?
+            .iter()
+            .find(|grant| grant["scope"].is_object())
+            .ok_or("scoped grant missing")?;
+        shiin_ipc::call_at_async(
+            &socket,
+            "shiin.revoke",
+            json!({"proof":proof,"id":scoped["id"]}),
+        )
+        .await?;
+        assert_eq!(
+            client.evaluate(&other).await?.decision,
+            DecisionValue::Pending
+        );
+        Ok::<(), Box<dyn std::error::Error>>(())
+    })?;
+    server.join().map_err(|_| "test service panicked")??;
+    let audit = fs::read_to_string(workspace.0.join(".shiin/audit.jsonl"))?;
+    assert!(
+        !audit.contains(&proof),
+        "operator proof entered the audit log"
+    );
+    for event in [
+        "approval.resolved",
+        "grant.created",
+        "grant.consumed",
+        "grant.revoked",
+    ] {
+        assert!(audit.contains(event), "{event} audit event missing");
+    }
+    Ok(())
+}
+
+async fn approve_once(
+    socket: &std::path::Path,
+    proof: &str,
+    ticket: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let resolve = json!({"ticket":ticket,"resolution":"allow_once","lifetime":60,"scope":null});
+    assert!(
+        shiin_ipc::call_at_async(socket, "shiin.approve.resolve", resolve.clone())
+            .await
+            .is_err()
+    );
+    let mut forged = resolve.clone();
+    forged["proof"] = json!("EXAMPLE-invalid-operator-proof");
+    forged["role"] = json!("operator");
+    assert!(
+        shiin_ipc::call_at_async(socket, "shiin.approve.resolve", forged)
+            .await
+            .is_err()
+    );
+    let mut authenticated = resolve;
+    authenticated["proof"] = json!(proof);
+    shiin_ipc::call_at_async(socket, "shiin.approve.resolve", authenticated).await?;
     Ok(())
 }

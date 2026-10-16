@@ -134,6 +134,8 @@ Miri interprets pure schema tests; these robustness checks supplement the existi
 The v0.3 source implementation addresses ST-E-01 and ST-E-02 by requiring an out-of-band operator credential for resolution, listing, and revocation.
 The local transport authenticates the peer's Unix user identity; an asserted agent role is insufficient to administer approvals.
 Tests reject missing or incorrect credentials and generated transition sequences check that a single-use grant cannot authorize twice.
+The Rust client's socket integration also exercises missing/forged operator proof, changed-action retries, single-use consumption, reusable scopes, built-in denial precedence, and revocation through the real service.
+It checks that those transitions are audited and operator credentials are absent from the log.
 Grant bindings include the session, task, workspace, policy snapshot, action type, and effects; only the fresh request correlation UUID is excluded.
 Explicit denials are re-evaluated before grants and cannot be overridden.
 Audit and state writes finish before an allow response.

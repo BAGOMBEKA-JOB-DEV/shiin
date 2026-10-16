@@ -29,6 +29,10 @@ if decision.decision != DecisionValue::Allow {
 
 ## What it cannot see
 
+The client/service integration tests exercise real Unix RPCs for policy validation, allow/deny/pending, unattended mode, stale snapshots, operator proof, single-use and scoped grants, revocation, and built-in denial precedence.
+They verify grant transition events and that operator credentials do not enter the audit log.
+This source conformance coverage does not establish interception or identity binding in an external agent.
+
 - Agent identity assurance: the daemon authenticates the local Unix user but does not yet bind that identity to the request's agent id.
 - Windows named-pipe transport.
 
