@@ -3,7 +3,7 @@
 use rmcp::service::{ClientLifecycleMode, ClientServiceExt};
 use rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig;
 use rmcp::transport::{StreamableHttpClientTransport, TokioChildProcess};
-use std::{ffi::OsString, net::IpAddr, path::PathBuf, time::Duration};
+use std::{ffi::OsString, io::Read as _, net::IpAddr, path::PathBuf, time::Duration};
 
 pub(super) enum Endpoint {
     Stdio {
@@ -56,7 +56,6 @@ impl Endpoint {
         if url.scheme() != "https" || !path.is_absolute() {
             return Err("custom CA requires HTTPS and an absolute certificate path".to_owned());
         }
-        use std::io::Read as _;
         let file = std::fs::File::open(path).map_err(|_| "custom CA file is unavailable")?;
         let mut bytes = Vec::new();
         file.take(65_537)

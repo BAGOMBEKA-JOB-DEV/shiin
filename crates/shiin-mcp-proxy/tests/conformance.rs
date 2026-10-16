@@ -242,7 +242,7 @@ mod unix {
         let router = axum::Router::new().nest_service("/mcp", service);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         if authenticated {
-            return tls_fixture(command, listener, router, &directory).await;
+            return tls_fixture(command, listener, router, &directory);
         }
         command
             .arg("--http")
@@ -252,7 +252,7 @@ mod unix {
         ))
     }
 
-    async fn tls_fixture(
+    fn tls_fixture(
         command: &mut tokio::process::Command,
         listener: tokio::net::TcpListener,
         router: axum::Router,
