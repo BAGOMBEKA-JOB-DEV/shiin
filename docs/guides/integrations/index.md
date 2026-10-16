@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # Integrations
 
@@ -19,7 +19,7 @@ Integration pages only describe the host-specific wiring, not the contract.
 | [Claude Code](claude-code.md) | L1 cooperative | Implemented in source |
 | [Codex CLI](codex.md) | L1 cooperative | Implemented; live-host validation open |
 | [Cursor](cursor.md) | L1 cooperative | Implemented; live-host validation open |
-| [MCP proxy](mcp-proxy.md) | L2 mediated | Partial; one stdio server and tool calls |
+| [MCP proxy](mcp-proxy.md) | L2 mediated | Partial; one downstream stdio or Streamable HTTP server and tool calls |
 | [Custom agents](custom-agents.md) | L1/L2 via API | Partial; Unix API and Rust client exist |
 | [Aider in a sandbox](aider-sandboxed.md) | L1 cooperative | Planned v0.6 |
 

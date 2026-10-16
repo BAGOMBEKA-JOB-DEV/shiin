@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Policy model
 
@@ -13,7 +13,8 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RE
 A [policy](../glossary.md#policy) is the complete set of [rules](../glossary.md#rule), [capabilities](../glossary.md#capability), defaults, and risk configuration that applies to an evaluation ([ADR-0015](../adr/0015-policy-layering-and-trust.md)).
 
 The source build implements rules, defaults, built-in protections, and configured risk signals.
-Capabilities, separately loaded trusted layers, grants, and complete snapshot persistence are not implemented.
+Capabilities, separately loaded trusted layers, and complete snapshot persistence are not implemented.
+The Unix approval service applies grants after fresh evaluation; a grant cannot override a denial.
 The CLI currently loads one operator-controlled `.shiin/policy.toml` file; it does not implement workspace trust-by-hash.
 
 ## Rules

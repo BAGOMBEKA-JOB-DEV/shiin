@@ -2,7 +2,7 @@
 
 Shiin is an agent-agnostic authorization layer for AI agent actions.
 It evaluates proposed actions against explicit policy and structured task constraints, returning `allow`, `deny`, or `pending`.
-The current implementation runs locally without a daemon and includes hook adapters, a command-line interface, and a hash-chained audit log.
+The source implementation supports local hook evaluation, a Unix approval daemon, signed evidence and replay, a Rust client, an MCP proxy, and a cooperative command wrapper.
 Decisions are deterministic and never depend on the output of a language model.
 
 > [!IMPORTANT]
@@ -10,7 +10,8 @@ Decisions are deterministic and never depend on the output of a language model.
 > The policy engine, CLI, audit log, and experimental task constraints work from a source build.
 > Shiin has no releases and is not available from a package manager.
 > Codex CLI and Cursor adapters exist and have automated tests, but have not been validated against running hosts.
-> The daemon, approval protocol, grants, signed receipts, replay, and MCP proxy are still planned.
+> Approval, evidence, client, MCP, and command-wrapper implementations exist in source, with partial platform and integration coverage.
+> Remote approvals, Windows daemon transport, attested agent identity, and independent security review remain open.
 
 ## The problem in 30 seconds
 
@@ -32,9 +33,11 @@ Shiin's task constraints narrow the actions standing policy would otherwise allo
 | Classification | Path canonicalization, shell-command classification, and opaque effects for behavior the classifier cannot determine |
 | Tasks (experimental) | Path scope, forbidden action types, allowed hosts, write/delete/command budgets, required approval, and expiry |
 | Hooks | Claude Code adapter, plus Codex CLI and Cursor adapters awaiting live-host validation |
-| Audit | Requests and decisions recorded in JSON Lines with a hash chain; log inspection and chain verification |
-| CLI | Initialization, policy validation and tests, request evaluation, explanations, tasks, hooks, diagnostics, and version reporting |
-| Validation | Unit and integration tests, specification conformance vectors, and Rust documentation tooling |
+| Approvals | Unix daemon with operator-authenticated resolution, single-use/scoped grants, revocation, and deny-with-ticket |
+| Evidence | Hash-chained audit events, signed receipts/checkpoints, offline signature verification, encrypted replay inputs, and what-if replay |
+| Integrations | Rust client and local API; MCP upstream stdio with downstream stdio or Streamable HTTP; Unix `shiin exec` command wrapper |
+| CLI | Initialization, policy validation and tests, request evaluation, explanations, tasks, hooks, approvals, evidence, execution, and diagnostics |
+| Validation | Engine and replay corpus, client/daemon and MCP process integration, fault injection, hosted latency checks, parser fuzzing, Miri, and engine WebAssembly/dependency checks |
 
 The five-stage engine currently accepts asserted identity, and the capability stage is a pass-through.
 The policy, intent, and risk stages perform the current authorization checks.
@@ -65,9 +68,9 @@ flowchart LR
    Operational failures handled by the hook service produce a denial response.
 4. **Handle pending.** The adapters translate `pending` into a host-facing response.
    In unattended mode, `pending` becomes `deny`.
-   Persistent approval requests and grants are planned for v0.3.
+   With the Unix daemon configured, pending actions receive a ticket for separate operator approval and retry.
 5. **Record.** The hook service records each request and decision in the audit log before returning its response.
-   The hash chain is tamper-evident, not tamper-proof; signed receipts are planned for v0.4.
+   The hash chain is tamper-evident; signed receipts and encrypted replay records are available through the evidence commands and configured daemon evidence storage.
 
 Shiin decides whether an action should happen.
 A sandbox limits the damage if something runs anyway, so the two are meant to be used together.
@@ -81,13 +84,13 @@ Shiin combines four design choices:
    Actions are checked against the constraints of the task the developer confirmed, not only against standing policy.
 2. **An open, agent-neutral contract.**
    The [action request](docs/spec/action-request.md) and [decision](docs/spec/decision.md) have versioned specifications, schemas, and conformance vectors.
-   The [approval protocol](docs/spec/approval-protocol.md) is specified for the planned v0.3 implementation.
+   The [approval protocol](docs/spec/approval-protocol.md) has a Unix source implementation and an operator-authenticated command-line approver.
 3. **Analyzable policy.**
    TOML policies compile to Cedar today.
    The policy-engine spike passed the conformance corpus, and [ADR-0014](docs/adr/0014-cedar-policy-engine-with-toml-front-end.md) is accepted.
 4. **Explicit enforcement levels.**
    Current hook adapters are L1 cooperative.
-   Mediated enforcement through an MCP proxy is planned for v0.5; OS-enforced integration is future work.
+   The MCP proxy mediates configured traffic; OS-enforced integration remains future work.
 
 ## Build and run from source
 
@@ -215,7 +218,19 @@ For a local smoke check, save the following as `claude-code-payload.json`; it ex
 
 For host setup and limitations, see [Claude Code](docs/guides/integrations/claude-code.md), [Codex CLI](docs/guides/integrations/codex.md), and [Cursor](docs/guides/integrations/cursor.md).
 Some documentation still describes design intent; the implementation status above and the [CLI reference](docs/reference/cli.md) identify what currently runs.
-`verify` checks the local hash chain; signed receipt verification and replay are not implemented.
+`verify` without an argument checks the local hash chain.
+Signed receipt verification, encrypted replay, and what-if replay are described in [Audit, replay, and receipts](docs/guides/audit-replay-and-receipts.md).
+
+### Use approvals and other integrations
+
+On Unix, start `shiind --operator` in a dedicated operator terminal and enable `SHIIN_DAEMON=1` for hook invocations.
+Keep the displayed credential out of agent input, command arguments, environment variables, and workspace files.
+[Handling approvals](docs/guides/handling-approvals.md) documents inspection, confirmation, retry, scopes, and revocation.
+
+For custom agents, use [the Rust client](docs/guides/integrations/custom-agents.md).
+For MCP tools, configure [the proxy](docs/guides/integrations/mcp-proxy.md) with one subprocess or an explicit HTTP endpoint.
+For a directly launched command, use `shiin exec --session EXAMPLE-session -- /ABSOLUTE/PROGRAM [ARG ...]`.
+The wrapper launches the child only after a durable allow and passes arguments directly without shell interpretation; commands outside it remain outside its coverage.
 
 ### Test policies and run unattended
 
@@ -253,6 +268,9 @@ $ cargo fmt --all --check
 $ cargo clippy --workspace --all-targets -- -D warnings
 $ cargo test --workspace --locked
 $ cargo xtask docs-check
+$ cargo xtask conformance
+$ cargo xtask intent-evaluation
+$ cargo xtask dependency-check
 $ rumdl check .
 $ typos
 $ lychee --config lychee.toml './*.md' docs
@@ -283,8 +301,8 @@ It reads well on GitHub and also builds as a book with mdBook.
 ## Roadmap
 
 Milestones are defined by capability, not by date.
-The source implements substantial v0.1 and v0.2 functionality, while milestone exit criteria remain open.
-M0 still needs an independent threat-model reviewer; v0.1/v0.2 still need the remaining hardening and validation evidence.
+The source implements capabilities through v0.5 and parts of v0.6, while milestone exit criteria remain open.
+Independent review, live-host validation, identity assurance, remote approval design, Windows support, and release qualification prevent a completed-project claim.
 The [roadmap](docs/project/roadmap.md) lists the scope and exit criteria of each milestone.
 
 | Milestone | Current state |
@@ -292,11 +310,11 @@ The [roadmap](docs/project/roadmap.md) lists the scope and exit criteria of each
 | M0: Specification | Core specifications and Cedar decision accepted; independent threat-model review open |
 | v0.1: Gate | Engine, policy, Claude Code adapter, CLI, and audit implemented in source; release and validation work remains |
 | v0.2: Tasks | Experimental task constraints, counters, policy tests, Codex CLI and Cursor adapters implemented; live-host validation remains |
-| v0.3: Approve | Planned: daemon, approval protocol, and grants |
-| v0.4: Evidence | Planned: signed receipts, receipt verification, and replay; local hash-chain verification already exists |
-| v0.5: MCP and SDK | Planned: MCP proxy, local API, and the Rust client library |
-| v0.6: Reach | Planned: remote approvals, streamable-HTTP MCP, shell wrapper, and expanded Windows support |
-| v1.0: Stable | Planned: frozen specifications, an independent security audit, and a published conformance suite |
+| v0.3: Approve | Unix daemon, operator approvals, grants, and lifecycle tests exist; independent review remains |
+| v0.4: Evidence | Signed receipts/checkpoints and encrypted replay exist; replay reproduces all 19 golden cases; OS key-store validation remains |
+| v0.5: MCP and SDK | Local API, Rust client, and MCP source integration tests exist; attested identity and external conformance remain |
+| v0.6: Reach | Unix command wrapper and downstream Streamable HTTP exist; remote approvals and expanded Windows support remain planned |
+| v1.0: Stable | Core conformance bundle is generated in CI; specification freeze, independent audit, and full release qualification remain open |
 | After 1.0 | Planned: team policy server, more approver apps, and language bindings |
 
 ## Contributing
