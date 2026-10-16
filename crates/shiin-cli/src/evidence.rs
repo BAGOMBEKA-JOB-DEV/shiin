@@ -112,12 +112,9 @@ pub(super) fn replay_evidence(
     let mut request = record.request;
     let source = if let Some(path) = alternate_policy {
         let (source, _) = super::load_policy(Path::new(path), &request.workspace.root)?;
-        request.policy_snapshot = source
-            .layers
-            .first()
-            .ok_or("snapshot missing")?
-            .digest
-            .clone();
+        request
+            .policy_snapshot
+            .clone_from(&source.layers.first().ok_or("snapshot missing")?.digest);
         source
     } else {
         record.policy

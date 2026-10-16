@@ -65,6 +65,7 @@ The audit log is a built-in protected resource.
 
 **[ST-D-01]** An agent floods Shiin with requests.
 The engine is synchronous and bounded; the adapter enforces timeouts that produce `deny`.
+The daemon rejects noncanonical workspace roots and oversized normalized actions before policy evaluation; focused tests cover both bounds.
 
 **[ST-D-02]** A malicious policy file hangs Shiin.
 Policy compilation is bounded and fails closed.

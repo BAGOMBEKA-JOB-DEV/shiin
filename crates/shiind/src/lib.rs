@@ -210,18 +210,8 @@ impl Service {
     }
 
     fn evaluate(&mut self, mut request: ActionRequest, mode: Mode) -> Result<Value, String> {
-        request.validate().map_err(str::to_owned)?;
-        if serde_json::to_vec(&request)
-            .map_err(|error| error.to_string())?
-            .len()
-            > shiin_ipc::MAX_FRAME / 4
-        {
-            return Err("normalized action exceeds service limit".to_owned());
-        }
+        validate_evaluation_request(&request)?;
         let root = Path::new(&request.workspace.root);
-        if shiin_classify::canonical_root(&request.workspace.root) != request.workspace.root {
-            return Err("workspace must be canonical".to_owned());
-        }
         let _workspace_lock = workspace_lock(root)?;
         let policy_path = root.join(".shiin/policy.toml");
         let policy_bytes = fs::read(&policy_path).map_err(|error| error.to_string())?;
@@ -400,6 +390,85 @@ impl Service {
                 .map_err(|error| error.to_string())?,
         )?;
         Ok(())
+    }
+}
+
+fn validate_evaluation_request(request: &ActionRequest) -> Result<(), String> {
+    request.validate().map_err(str::to_owned)?;
+    if serde_json::to_vec(request)
+        .map_err(|error| error.to_string())?
+        .len()
+        > shiin_ipc::MAX_FRAME / 4
+    {
+        return Err("normalized action exceeds service limit".to_owned());
+    }
+    if shiin_classify::canonical_root(&request.workspace.root) != request.workspace.root {
+        return Err("workspace must be canonical".to_owned());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_evaluation_request;
+    use shiin_schema::{
+        ActionRequest, Agent, Assurance, Confidence, Effect, Host, Workspace, versions,
+    };
+
+    fn request(workspace: String) -> ActionRequest {
+        ActionRequest {
+            schema: versions::ACTION_REQUEST.to_owned(),
+            id: "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b".to_owned(),
+            session: "EXAMPLE-session".to_owned(),
+            agent: Agent {
+                id: "EXAMPLE-agent".to_owned(),
+                assurance: Assurance::Asserted,
+            },
+            action_type: "fs.write".to_owned(),
+            effects: vec![Effect {
+                kind: "path".to_owned(),
+                value: "EXAMPLE.txt".to_owned(),
+                confidence: Confidence::Exact,
+                action_type: None,
+            }],
+            task: None,
+            workspace: Workspace {
+                root: workspace,
+                vcs: None,
+            },
+            policy_snapshot: format!("sha256:{}", "0".repeat(64)),
+            host: Host {
+                name: "EXAMPLE-host".to_owned(),
+                tool: None,
+            },
+        }
+    }
+
+    #[test]
+    fn evaluation_rejects_noncanonical_workspace_roots() {
+        let root = shiin_classify::canonical_root(
+            std::env::temp_dir()
+                .to_str()
+                .expect("the temporary directory is UTF-8"),
+        );
+        let noncanonical = format!("{root}/../{}", root.trim_start_matches('/'));
+        let error = validate_evaluation_request(&request(noncanonical))
+            .expect_err("a parent segment cannot reach policy evaluation");
+        assert_eq!(error, "workspace must be canonical");
+    }
+
+    #[test]
+    fn evaluation_rejects_oversized_normalized_actions() {
+        let root = shiin_classify::canonical_root(
+            std::env::temp_dir()
+                .to_str()
+                .expect("the temporary directory is UTF-8"),
+        );
+        let mut oversized = request(root);
+        oversized.effects[0].value = "x".repeat(shiin_ipc::MAX_FRAME / 4);
+        let error = validate_evaluation_request(&oversized)
+            .expect_err("an oversized action cannot consume daemon resources");
+        assert_eq!(error, "normalized action exceeds service limit");
     }
 }
 
