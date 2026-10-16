@@ -29,6 +29,7 @@ $ shiin <command>
 | `shiin policy test [dir]` | Runs policy cases from `.shiin/tests`, using the same runner as the conformance corpus | works today |
 | `shiin task start \| show \| end` | Declares what the agent is working on, shows it with its usage, or ends it | works today |
 | `shiin hook codex`, `shiin hook cursor` | The same hook service for those hosts | works today, untested against a running host |
+| `shiin exec --session ID -- /ABSOLUTE/PROGRAM [ARG ...]` | Authorizes and audits one command, then starts it only after allow | source implementation on Unix; host routing remains unvalidated |
 | `shiin pending`, `shiin approve` | Lists and resolves approval requests using a separate operator credential and terminal confirmation | implemented in source on Unix; validation in progress |
 | `shiin grants`, `shiin revoke` | Inspects and revokes grants or unresolved tickets | implemented in source on Unix; validation in progress |
 | `shiind --operator` | Runs the local approval daemon and displays its in-memory operator credential in a dedicated terminal | implemented in source on Unix; validation in progress |
@@ -48,6 +49,11 @@ $ shiin <command>
 `shiin hook claude-code` exits 0 whenever it produced a response, including a denial,
 because the host reads the decision from the response rather than from the exit code.
 It exits 2 only when it could not produce a response at all, which the host treats as blocking.
+
+`shiin exec` returns 1 on denial, failure, or an unavailable daemon, and 2 for pending.
+After allow it returns the child's exit code when that code is in 0–255, or 1 when no such code is available.
+The executable path must be absolute, and the session id must stay the same when retrying an approved ticket.
+Arguments are passed directly to the executable; the wrapper does not interpret them through a shell.
 
 ## Files it uses
 

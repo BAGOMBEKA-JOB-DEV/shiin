@@ -147,7 +147,7 @@
 
 - Remote approvers through signed webhooks ([ADR-0041](../adr/0041-remote-approver-transport.md) must be decided first).
 - Streamable-HTTP MCP transport.
-- Shell wrapper for hosts without hooks.
+- Shell wrapper for hosts without hooks. `shiin exec` now has a Unix source implementation; live host routing and platform validation remain open.
 - Windows promoted toward Tier 1.
 - Additional hosts, each with its hook behavior verified and documented.
 

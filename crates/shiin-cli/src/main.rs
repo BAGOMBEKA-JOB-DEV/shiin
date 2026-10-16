@@ -18,6 +18,7 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::Duration;
 
 mod evidence;
+mod exec;
 use evidence::{key_command, key_public, replay_evidence, verify_evidence};
 
 use shiin_audit::AuditLog;
@@ -85,6 +86,12 @@ privilege_escalation = "pending"
 "#;
 
 fn main() -> ExitCode {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|argument| argument == "exec")
+    {
+        return exec::run(&std::env::args_os().skip(2).collect::<Vec<_>>());
+    }
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     let words: Vec<&str> = arguments.iter().map(String::as_str).collect();
     let panic_host = if words.as_slice() == ["hook", "cursor"] {
@@ -213,6 +220,7 @@ fn usage() {
     eprintln!("  hook claude-code          serve a Claude Code PreToolUse hook on stdin");
     eprintln!("  hook codex                serve an OpenAI Codex CLI hook on stdin");
     eprintln!("  hook cursor               serve a Cursor hook on stdin");
+    eprintln!("  exec --session ID -- /PROGRAM [ARG ...]   authorize and execute one command");
     eprintln!("  log [count]               show recent audit events");
     eprintln!("  verify                    check the audit log's hash chain");
     eprintln!("  verify <evidence.json> <public.json>   verify signed evidence offline");
@@ -783,7 +791,7 @@ fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, 
 fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
     let workspace_lock = lock_workspace()?;
     let fallback = workspace_root();
-    let (mut request, root) = match kind {
+    let (request, root) = match kind {
         HostKind::ClaudeCode => {
             let payload: PreToolUse = serde_json::from_str(input)
                 .map_err(|error| format!("the hook payload is not valid: {error}"))?;
@@ -812,7 +820,16 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
         }
     };
 
-    let (source, compiled) = load_policy(Path::new(POLICY_PATH), &root)?;
+    decide_normalized(request, &root, workspace_lock)
+}
+
+/// Evaluates one normalized request while holding the workspace transaction lock.
+fn decide_normalized(
+    mut request: ActionRequest,
+    root: &str,
+    workspace_lock: File,
+) -> Result<Decision, String> {
+    let (source, compiled) = load_policy(Path::new(POLICY_PATH), root)?;
     request.policy_snapshot = source
         .layers
         .first()
@@ -831,7 +848,13 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
             method,
             serde_json::to_value(&request).map_err(|error| error.to_string())?,
         )?;
-        return serde_json::from_value(value).map_err(|error| error.to_string());
+        let decision: Decision =
+            serde_json::from_value(value).map_err(|error| error.to_string())?;
+        if decision.schema != shiin_schema::versions::DECISION || decision.request_id != request.id
+        {
+            return Err("local service returned an invalid decision".to_owned());
+        }
+        return Ok(decision);
     }
 
     let task = load_task()?;
