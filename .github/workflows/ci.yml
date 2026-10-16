@@ -80,6 +80,9 @@ jobs:
       - name: Check engine, compilation, and hook latency budgets
         run: cargo run --release --locked -p xtask -- performance target/release/shiin
 
+      - name: Check budgets with larger policies and audit logs
+        run: cargo run --release --locked -p xtask -- performance-scaling target/release/shiin
+
   engine-purity:
     name: engine WebAssembly purity
     runs-on: ubuntu-24.04

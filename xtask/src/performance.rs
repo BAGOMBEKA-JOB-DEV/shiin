@@ -163,7 +163,7 @@ fn measure() -> Result<bool, Box<dyn std::error::Error>> {
     Ok(passed)
 }
 
-fn report(label: &str, samples: &mut [Duration], budget: Duration) -> bool {
+pub(super) fn report(label: &str, samples: &mut [Duration], budget: Duration) -> bool {
     samples.sort_unstable();
     let max = samples.last().copied().unwrap_or_default();
     let median = samples.get(samples.len() / 2).copied().unwrap_or_default();

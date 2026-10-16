@@ -118,6 +118,7 @@ pub(crate) fn print_usage() {
     eprintln!("  dependency-check        reject engine network and async dependencies");
     eprintln!("  fuzz-smoke              run bounded parser fuzzing on the pinned nightly");
     eprintln!("  performance [binary]    measure local latency against the performance budgets");
+    eprintln!("  performance-scaling [binary]    check larger policies and audit logs");
     eprintln!(
         "  intent-evaluation       compare task constraints against labelled conformance cases"
     );

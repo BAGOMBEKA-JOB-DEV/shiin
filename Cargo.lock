@@ -4213,6 +4213,7 @@ dependencies = [
  "jsonschema",
  "regex",
  "serde_json",
+ "shiin-audit",
  "shiin-engine",
  "shiin-policy",
  "shiin-schema",

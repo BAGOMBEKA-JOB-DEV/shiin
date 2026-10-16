@@ -12,10 +12,14 @@ mod docs_check;
 mod fuzz_smoke;
 mod intent_evaluation;
 mod performance;
+mod performance_scaling;
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("performance-scaling") {
+        return performance_scaling::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("fuzz-smoke") {
         return fuzz_smoke::run();
     }

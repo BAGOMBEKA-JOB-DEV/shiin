@@ -24,6 +24,7 @@ Client integration tests connect to the actual Unix daemon service over a local 
 `cargo xtask intent-evaluation` reports the task-labelled corpus against a policy-only baseline and fails if a decision or reason disagrees with its label.
 `cargo xtask dependency-check` rejects known network stacks and async runtimes in the normal transitive dependency graph of the four engine crates.
 CI separately checks the isolated engine for WebAssembly and tests the schema crate without OS clock/randomness functions.
+The hosted release measurements also exercise 100/500-rule policies and hook calls against a thousand-event audit log, checking every observed latency against the existing budgets.
 
 ## Fuzzing
 
