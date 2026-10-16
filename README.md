@@ -311,9 +311,9 @@ The [roadmap](docs/project/roadmap.md) lists the scope and exit criteria of each
 | v0.1: Gate | Engine, policy, Claude Code adapter, CLI, and audit implemented in source; release and validation work remains |
 | v0.2: Tasks | Experimental task constraints, counters, policy tests, Codex CLI and Cursor adapters implemented; live-host validation remains |
 | v0.3: Approve | Unix daemon, operator approvals, grants, and lifecycle tests exist; independent review remains |
-| v0.4: Evidence | Signed receipts/checkpoints and encrypted replay exist; replay reproduces all 19 golden cases; OS key-store validation remains |
+| v0.4: Evidence | Signed receipts/checkpoints and encrypted replay exist; replay reproduces all 26 golden cases; native key-store CI validation added |
 | v0.5: MCP and SDK | Local API, Rust client, and MCP source integration tests exist; attested identity and external conformance remain |
-| v0.6: Reach | Unix command wrapper and downstream Streamable HTTP exist; remote approvals and expanded Windows support remain planned |
+| v0.6: Reach | Unix command wrapper and downstream HTTP/HTTPS with provisioned bearer tokens exist; remote approvals and expanded Windows support remain planned |
 | v1.0: Stable | Core conformance bundle is generated in CI; specification freeze, independent audit, and full release qualification remain open |
 | After 1.0 | Planned: team policy server, more approver apps, and language bindings |
 

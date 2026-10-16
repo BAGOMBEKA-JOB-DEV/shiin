@@ -87,7 +87,7 @@ fn corpus_requests_and_engine_decisions_match_their_wire_schemas()
         );
         count += 1;
     }
-    assert!(count >= 19, "all current corpus cases were exercised");
+    assert!(count >= 26, "all current corpus cases were exercised");
     Ok(())
 }
 

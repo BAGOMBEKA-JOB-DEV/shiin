@@ -43,7 +43,7 @@
 
 - The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`. Done on 2026-10-12.
 - The threat model has been reviewed by at least one person outside the project. **Open: this is the last M0 criterion, and it needs a reviewer who is not the author.**
-- The core golden use cases have test vectors. The original eight-case corpus has grown to 19 cases, each decidable from its own inputs and checked in continuous integration.
+- The core golden use cases have test vectors. The original eight-case corpus has grown to 26 cases, each decidable from its own inputs and checked in continuous integration.
 - ADR-0014 is `accepted`. Done on 2026-10-12.
 
 ## v0.1: Gate
@@ -120,7 +120,7 @@
 **Exit criteria.**
 
 - Receipts verify offline on every Tier 1 platform. Unit tests pass on Linux, macOS, and Windows; platform key-store interactions still need validation.
-- Replay reproduces every decision in the conformance corpus. Done for the 19-case signed/encrypted corpus through the CLI evaluation routine, including what-if and grant regression tests.
+- Replay reproduces every decision in the conformance corpus. Done for the 26-case signed/encrypted corpus through the CLI evaluation routine, including capability, session/task, what-if, and grant regression tests.
 
 ## v0.5: MCP and SDK
 
@@ -146,7 +146,7 @@
 **Scope.**
 
 - Remote approvers through signed webhooks ([ADR-0041](../adr/0041-remote-approver-transport.md) must be decided first).
-- Streamable-HTTP MCP transport. A downstream HTTP source implementation exists; the upstream connection remains stdio, and authenticated remote endpoints and external conformance remain open.
+- Streamable-HTTP MCP transport. Downstream HTTP and HTTPS with a provisioned bearer token have process-fixture coverage; the upstream connection remains stdio, and OAuth token acquisition/refresh and external conformance remain open.
 - Shell wrapper for hosts without hooks. `shiin exec` now has a Unix source implementation; live host routing and platform validation remain open.
 - Windows promoted toward Tier 1.
 - Additional hosts, each with its hook behavior verified and documented.

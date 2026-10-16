@@ -6,18 +6,23 @@
 //! - `intent-evaluation`: measure task constraints against the labelled corpus.
 //! - `dependency-check`: refuse network stacks and async runtimes in engine crates.
 //! - `fuzz-smoke`: seed and run bounded parser fuzzing on the pinned nightly.
+//! - `native-keyring-check`: validate native key-store persistence and rotation in CI.
 
 mod conformance;
 mod dependency_check;
 mod docs_check;
 mod fuzz_smoke;
 mod intent_evaluation;
+mod native_keyring;
 mod performance;
 mod performance_scaling;
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("native-keyring-check") {
+        return native_keyring::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("conformance") {
         return conformance::run();
     }

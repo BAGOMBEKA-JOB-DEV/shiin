@@ -135,8 +135,8 @@
           }
         ]
       }
-    }
-    ,"capabilities": {"type": "object", "additionalProperties": {"$ref": "urn:shiin:schema:capability:v1"}}
+    },
+    "capabilities": {"type": "object", "additionalProperties": {"$ref": "urn:shiin:schema:capability:v1"}}
   },
   "additionalProperties": false
 }

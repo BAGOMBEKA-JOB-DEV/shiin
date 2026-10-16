@@ -105,7 +105,7 @@ fn signed_encrypted_replay_reproduces_every_conformance_case()
         assert!(result.ends_with("[unchanged]"), "{}: {result}", case["id"]);
         count += 1;
     }
-    assert!(count >= 19, "the entire published corpus is replayed");
+    assert!(count >= 26, "the entire published corpus is replayed");
     Ok(())
 }
 

@@ -139,6 +139,10 @@ The Rust client now exercises the real daemon contract over a local socket, incl
 Unsupported decision versions are rejected before an integration can act on them; this tightens failure handling without changing policy decisions ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md)).
 Replay regression tests now exercise the signed/encrypted conformance corpus through the CLI's evaluation routine, plus input bindings, grant coverage, deny precedence, and what-if comparisons.
 These tests use explicit fixture keys without accessing or replacing the operator's OS keyring.
+The separate native key-store lifecycle test uses the same storage methods under a random test-only service namespace on hosted runners ([ADR-0032](../adr/0032-signing-key-storage.md)).
+It checks key persistence, rotation and retained-key replay, plus refusal of corrupt, deleted, or mismatched entries without regenerating a selected key (ST-T-01, ST-I-02).
+The production service name remains fixed, and ordinary tests never access an operator's key store.
+This validates storage behavior, not isolation from unmediated same-user processes or independent security review.
 The schema runtime feature now separates OS clock/randomness functions from pure wire types and deterministic timestamp formatting.
 Adapters explicitly retain the runtime feature and its fail-closed randomness behavior; isolated engine builds omit it.
 The WebAssembly check and dependency guard check this separation without changing an authorization outcome (ST-T-01, ST-D-01).

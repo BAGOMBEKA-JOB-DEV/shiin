@@ -41,6 +41,21 @@ These bounded smoke runs do not establish exhaustive parser or engine security c
 The hosted robustness workflow interprets the schema tests without runtime clocks or randomness on `nightly-2026-10-15`.
 This covers pure wire validation and timestamp formatting, not native Cedar, TLS, OS key stores, or IPC.
 
+## Native key stores
+
+`cargo xtask native-keyring-check` runs an explicitly opted-in lifecycle test on ephemeral CI runners.
+It exercises the actual platform backend through the same private store implementation as production, using a random `shiin-EXAMPLE-native-test-` service namespace.
+The production service remains fixed at `shiin`; no environment setting or public API changes its namespace.
+The test checks persistence, signing and verification, rotation, retained-key replay, wrong-key rejection, deleted keys, and corrupt selected entries without implicit replacement.
+Cleanup deletes only entries created in the isolated namespace.
+Ordinary workspace tests skip this test, so they do not access an operator's key store.
+
+The Linux job starts a temporary D-Bus session and unlocks an isolated runner's Secret Service with an explicit `EXAMPLE` fixture password through stdin.
+The daemon's foreground and unlock behavior follows its [manual](https://manpages.debian.org/unstable/gnome-keyring/gnome-keyring-daemon.1.en.html) (verified 2026-10-16).
+The Rust task owns and stops the test daemon.
+macOS and Windows jobs use their runner's native backend.
+These tests do not establish protection against arbitrary unmediated code running as the same operating-system user.
+
 ## Property tests
 
 The Unix approval state machine has transition-sequence tests for expiry, revocation, binding, and single-use grant consumption.
