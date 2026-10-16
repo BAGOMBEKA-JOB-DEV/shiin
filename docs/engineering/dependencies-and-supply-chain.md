@@ -24,6 +24,8 @@ The SDK transport uses its asynchronous client with redirects, automatic retries
 `axum` is admitted only as a development dependency to run the HTTP MCP fixture; it adds no product listener.
 Both dependencies disable default features and are checked by the existing dependency-policy CI job.
 Transitive HTTP/TLS dependencies still require supply-chain review before a release.
+Development-only `rcgen`, `rustls`, `tokio-rustls`, and `hyper-util` generate a temporary certificate and serve the authenticated TLS MCP fixture.
+Private fixture keys are generated at runtime and are never committed.
 
 Every dependency is declared in `[workspace.dependencies]` with a version requirement and `default-features = false`.
 Members reference it with `workspace = true` and enable only the features they use.

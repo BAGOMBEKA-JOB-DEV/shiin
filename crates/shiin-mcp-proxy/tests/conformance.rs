@@ -125,12 +125,20 @@ mod unix {
     }
 
     pub(super) async fn exercise() -> Result<(), Box<dyn std::error::Error>> {
-        exercise_transport(false).await?;
-        exercise_transport(true).await?;
+        exercise_transport(Transport::Stdio).await?;
+        exercise_transport(Transport::Http).await?;
+        exercise_transport(Transport::HttpsBearer).await?;
+        configuration_errors_do_not_disclose_credentials().await?;
         redirects_are_not_followed().await
     }
 
-    async fn exercise_transport(http: bool) -> Result<(), Box<dyn std::error::Error>> {
+    enum Transport {
+        Stdio,
+        Http,
+        HttpsBearer,
+    }
+
+    async fn exercise_transport(transport: Transport) -> Result<(), Box<dyn std::error::Error>> {
         let root = std::env::temp_dir().join(format!("sm-{}", shiin_schema::clock::new_id()));
         fs::create_dir_all(root.join(".shiin"))?;
         fs::create_dir_all(root.join("daemon"))?;
@@ -152,15 +160,22 @@ mod unix {
             .arg("--workspace")
             .arg(&workspace.0)
             .env("SHIIN_SOCKET", &socket);
-        let http_server = if http {
-            Some(http_fixture(&mut command, forwarded.clone()).await?)
-        } else {
+        let http_server = if matches!(transport, Transport::Stdio) {
             command
                 .arg("--")
                 .arg(std::env::current_exe()?)
                 .arg("--reference-server")
                 .arg(&forwarded);
             None
+        } else {
+            Some(
+                http_fixture(
+                    &mut command,
+                    forwarded.clone(),
+                    matches!(transport, Transport::HttpsBearer),
+                )
+                .await?,
+            )
         };
         let transport = TokioChildProcess::new(command)?;
         let client = ()
@@ -215,7 +230,9 @@ mod unix {
     async fn http_fixture(
         command: &mut tokio::process::Command,
         log: PathBuf,
+        authenticated: bool,
     ) -> Result<tokio::task::JoinHandle<std::io::Result<()>>, Box<dyn std::error::Error>> {
+        let directory = log.parent().ok_or("fixture directory missing")?.to_owned();
         let service: StreamableHttpService<ReferenceServer, LocalSessionManager> =
             StreamableHttpService::new(
                 move || Ok(ReferenceServer(log.clone())),
@@ -224,12 +241,74 @@ mod unix {
             );
         let router = axum::Router::new().nest_service("/mcp", service);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+        if authenticated {
+            return tls_fixture(command, listener, router, &directory).await;
+        }
         command
             .arg("--http")
             .arg(format!("http://{}/mcp", listener.local_addr()?));
         Ok(tokio::spawn(
             async move { axum::serve(listener, router).await },
         ))
+    }
+
+    async fn tls_fixture(
+        command: &mut tokio::process::Command,
+        listener: tokio::net::TcpListener,
+        router: axum::Router,
+        directory: &std::path::Path,
+    ) -> Result<tokio::task::JoinHandle<std::io::Result<()>>, Box<dyn std::error::Error>> {
+        let certificate = rcgen::generate_simple_self_signed(vec!["localhost".to_owned()])?;
+        let ca = directory.join("EXAMPLE-ca.pem");
+        fs::write(&ca, certificate.cert.pem())?;
+        let key =
+            rustls::pki_types::PrivatePkcs8KeyDer::from(certificate.signing_key.serialize_der());
+        let config = rustls::ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(vec![certificate.cert.der().clone()], key.into())?;
+        let acceptor = tokio_rustls::TlsAcceptor::from(std::sync::Arc::new(config));
+        let router = router.layer(axum::middleware::from_fn(
+            |request: axum::extract::Request, next: axum::middleware::Next| async move {
+                if request
+                    .headers()
+                    .get(reqwest::header::AUTHORIZATION)
+                    .and_then(|value| value.to_str().ok())
+                    != Some("Bearer EXAMPLE-fixture-token")
+                {
+                    return Err(axum::http::StatusCode::UNAUTHORIZED);
+                }
+                Ok::<_, axum::http::StatusCode>(next.run(request).await)
+            },
+        ));
+        command
+            .arg("--http")
+            .arg(format!(
+                "https://localhost:{}/mcp",
+                listener.local_addr()?.port()
+            ))
+            .arg("--ca-file")
+            .arg(ca)
+            .arg("--bearer-env")
+            .arg("SHIIN_EXAMPLE_MCP_TOKEN")
+            .env("SHIIN_EXAMPLE_MCP_TOKEN", "EXAMPLE-fixture-token");
+        Ok(tokio::spawn(async move {
+            loop {
+                let (stream, _) = listener.accept().await?;
+                let acceptor = acceptor.clone();
+                let router = router.clone();
+                tokio::spawn(async move {
+                    if let Ok(tls) = acceptor.accept(stream).await {
+                        let io = hyper_util::rt::TokioIo::new(tls);
+                        let service = hyper_util::service::TowerToHyperService::new(router);
+                        let _ = hyper_util::server::conn::auto::Builder::new(
+                            hyper_util::rt::TokioExecutor::new(),
+                        )
+                        .serve_connection_with_upgrades(io, service)
+                        .await;
+                    }
+                });
+            }
+        }))
     }
 
     async fn redirects_are_not_followed() -> Result<(), Box<dyn std::error::Error>> {
@@ -274,6 +353,43 @@ mod unix {
         assert_eq!(followed.load(Ordering::SeqCst), 0);
         server.abort();
         let _ = server.await;
+        Ok(())
+    }
+
+    async fn configuration_errors_do_not_disclose_credentials()
+    -> Result<(), Box<dyn std::error::Error>> {
+        for (endpoint, variable, value) in [
+            (
+                "http://127.0.0.1/mcp",
+                "SHIIN_EXAMPLE_TOKEN",
+                Some("EXAMPLE-private-token"),
+            ),
+            ("https://mcp.example/mcp", "SHIIN_EXAMPLE_TOKEN", None),
+            (
+                "https://mcp.example/mcp",
+                "SHIIN_EXAMPLE_TOKEN",
+                Some("EXAMPLE-private token"),
+            ),
+        ] {
+            let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_shiin-mcp-proxy"));
+            command
+                .arg("--workspace")
+                .arg(std::env::current_dir()?)
+                .arg("--http")
+                .arg(endpoint)
+                .arg("--bearer-env")
+                .arg(variable)
+                .env("SHIIN_DAEMON", "1")
+                .env_remove("SHIIN_SOCKET")
+                .env_remove(variable);
+            if let Some(value) = value {
+                command.env(variable, value);
+            }
+            let output = command.output().await?;
+            assert!(!output.status.success());
+            assert!(!String::from_utf8_lossy(&output.stderr).contains("EXAMPLE-private"));
+            assert!(output.stdout.is_empty());
+        }
         Ok(())
     }
 }

@@ -76,6 +76,8 @@ fn parse_args() -> Result<(String, downstream::Endpoint), String> {
     let mut command = None;
     let mut downstream_args = Vec::new();
     let mut http = None;
+    let mut bearer_env = None;
+    let mut ca_file = None;
     while let Some(argument) = args.next() {
         if argument == "--" {
             if http.is_some() {
@@ -103,8 +105,23 @@ fn parse_args() -> Result<(String, downstream::Endpoint), String> {
             )?);
             continue;
         }
+        if argument == "--bearer-env" && bearer_env.is_none() {
+            bearer_env = Some(
+                args.next()
+                    .ok_or("--bearer-env requires an environment variable name")?
+                    .into_string()
+                    .map_err(|_| "credential variable name must be UTF-8")?,
+            );
+            continue;
+        }
+        if argument == "--ca-file" && ca_file.is_none() {
+            ca_file = Some(PathBuf::from(
+                args.next().ok_or("--ca-file requires a certificate path")?,
+            ));
+            continue;
+        }
         return Err(
-            "usage: shiin-mcp-proxy --workspace PATH (-- SERVER [ARG ...] | --http URL)".to_owned(),
+            "usage: shiin-mcp-proxy --workspace PATH (-- SERVER [ARG ...] | --http URL [--bearer-env NAME] [--ca-file ABSOLUTE_PATH])".to_owned(),
         );
     }
     let workspace = workspace.ok_or("--workspace is required")?;
@@ -123,6 +140,14 @@ fn parse_args() -> Result<(String, downstream::Endpoint), String> {
                 "select exactly one HTTP endpoint or absolute downstream server command".to_owned(),
             );
         }
+    };
+    let endpoint = match ca_file {
+        Some(path) => endpoint.with_ca_file(&path)?,
+        None => endpoint,
+    };
+    let endpoint = match bearer_env {
+        Some(variable) => endpoint.with_bearer_env(&variable)?,
+        None => endpoint,
     };
     let workspace = workspace
         .into_os_string()

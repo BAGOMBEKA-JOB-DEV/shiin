@@ -88,6 +88,10 @@ Its process integration test also checks that daemon unavailability prevents dow
 The downstream HTTP transport retains that authorization path and requires an explicitly configured endpoint.
 TLS is required outside literal loopback addresses; URL credentials, query strings, redirects, automatic HTTP retries, environment proxies, and expired-session reconnection are refused or disabled.
 Endpoint and redirect regression tests cover these boundaries; real remote-server authentication and independent transport review remain open (ST-I-02, ST-T-02).
+Provisioned MCP bearer credentials now come from an explicitly named environment variable and are sent only to an HTTPS endpoint with redirects disabled.
+Sensitive header marking, temporary-buffer zeroization, bounded credential/CA input, and fixed setup errors reduce accidental disclosure; tests check invalid/plaintext configuration and an authenticated TLS fixture (ST-I-02).
+An explicit operator CA can extend trust without disabling hostname or certificate checks.
+OAuth acquisition/refresh, external authenticated-server validation, and independent transport review remain open.
 The cooperative command wrapper binds the exact executable/argument list and starts a child only after a durable allow.
 Its process tests cover pending, denial, damaged policy/audit state, unavailable services, literal argument forwarding, and child status propagation ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md), [ADR-0030](../adr/0030-audit-durability.md)).
 Commands launched outside the wrapper and the internals of allowed child processes remain outside its interception point.
