@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=draft implementation=complete milestone=m0 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=spec status=draft implementation=complete milestone=m0 reviewed=2026-10-16 -->
 
 # Test vectors
 
@@ -50,6 +50,16 @@ Optional fields carry the remaining engine inputs, so that every vector can be d
 ## Running
 
 Implementations run every vector and check the decision matches.
+The source runner checks the reason code as well as the decision.
+
+```console
+$ cargo xtask conformance
+```
+
+This writes `target/conformance/report.json` with the tested Git revision, per-case expected/actual outcomes, and SHA-256 digests of the copied vectors and schemas.
+An optional directory argument selects the bundle location.
+The documentation workflow publishes the `core-conformance` artifact for third-party implementations to download and compare.
+The report covers core engine behavior; it is unsigned and does not establish host interception, identity assurance, external MCP conformance, or independent security review.
 
 ## Revision history
 

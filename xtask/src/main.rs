@@ -7,6 +7,7 @@
 //! - `dependency-check`: refuse network stacks and async runtimes in engine crates.
 //! - `fuzz-smoke`: seed and run bounded parser fuzzing on the pinned nightly.
 
+mod conformance;
 mod dependency_check;
 mod docs_check;
 mod fuzz_smoke;
@@ -17,6 +18,9 @@ mod performance_scaling;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("conformance") {
+        return conformance::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("performance-scaling") {
         return performance_scaling::run();
     }

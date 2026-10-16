@@ -49,11 +49,11 @@ fn fixture() -> Result<(Workspace, ActionRequest), Box<dyn std::error::Error>> {
             .clone(),
     )?;
     "fs.read".clone_into(&mut action.action_type);
-    action.workspace.root = workspace
+    workspace
         .0
         .to_str()
         .ok_or("workspace must be UTF-8")?
-        .to_owned();
+        .clone_into(&mut action.workspace.root);
     for effect in &mut action.effects {
         effect.value = format!("{}/src/EXAMPLE.rs", workspace.0.display());
     }

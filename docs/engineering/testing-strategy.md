@@ -19,6 +19,7 @@
 ## Test vectors
 
 Every test vector in `docs/spec/test-vectors/` must pass before a milestone is considered complete.
+`cargo xtask conformance` packages the core vectors, schemas, and a revision-bound result report; the documentation workflow publishes the bundle as a downloadable artifact.
 The CLI evidence tests also sign, encrypt, verify, decrypt, and replay each vector, using fixture keys without a live OS keyring.
 Client integration tests connect to the actual Unix daemon service over a local socket to check both sides of the JSON-RPC contract.
 `cargo xtask intent-evaluation` reports the task-labelled corpus against a policy-only baseline and fails if a decision or reason disagrees with its label.

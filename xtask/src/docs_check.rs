@@ -115,6 +115,7 @@ pub(crate) fn print_usage() {
     eprintln!();
     eprintln!("commands:");
     eprintln!("  docs-check    validate docs/ against the documentation style guide");
+    eprintln!("  conformance [directory] publish core vectors, schemas, and a result report");
     eprintln!("  dependency-check        reject engine network and async dependencies");
     eprintln!("  fuzz-smoke              run bounded parser fuzzing on the pinned nightly");
     eprintln!("  performance [binary]    measure local latency against the performance budgets");
