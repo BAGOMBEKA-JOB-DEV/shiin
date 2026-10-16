@@ -97,7 +97,7 @@ The table lists every product crate in the workspace, its responsibility, and th
 | `shiin-ipc` | Local transport over Unix domain sockets and Windows named pipes | v0.3 (Unix source; Windows validation open) |
 | `shiind` | The per-user daemon | v0.3 (Unix source; platform validation open) |
 | `shiin-client` | The Rust client for daemon evaluation and policy validation | v0.5 (early source; conformance open) |
-| `shiin-mcp-proxy` | The stdio MCP proxy for downstream tools | v0.5 (early source; conformance open) |
+| `shiin-mcp-proxy` | The MCP proxy with upstream stdio and downstream stdio or Streamable HTTP | v0.5 (HTTP: v0.6; external conformance open) |
 | `shiin-platform` | The only crate allowed to contain `unsafe` code; created only if needed | as needed |
 | `xtask` | Repository tooling | exists |
 | `fuzz/` | Fuzz targets; a separate workspace, not a member crate | v0.1 |

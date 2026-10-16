@@ -1,4 +1,4 @@
-//! Stdio MCP proxy that authorizes each downstream tool call through Shiin.
+//! MCP proxy that authorizes each downstream tool call through Shiin.
 
 #![expect(
     clippy::print_stderr,
@@ -11,8 +11,8 @@ use rmcp::{
         CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, ListToolsResult,
         PaginatedRequestParams, ProtocolVersion, ServerCapabilities, ServerConfig,
     },
-    service::{ClientLifecycleMode, ClientServiceExt, RequestContext, ServiceExt},
-    transport::{TokioChildProcess, stdio},
+    service::{RequestContext, ServiceExt},
+    transport::stdio,
 };
 use sha2::{Digest, Sha256};
 use shiin_client::Client;
@@ -20,7 +20,8 @@ use shiin_schema::{
     ActionRequest, Agent, Assurance, Confidence, DecisionValue, Effect, Host, Workspace, clock,
 };
 use std::{borrow::Cow, env, path::PathBuf, process::ExitCode};
-use tokio::process::Command;
+
+mod downstream;
 
 type Downstream = rmcp::service::RunningService<RoleClient, ()>;
 
@@ -38,28 +39,19 @@ fn main() -> ExitCode {
 
 #[tokio::main]
 async fn run() -> Result<(), String> {
-    let (workspace, command, arguments) = parse_args()?;
+    let (workspace, endpoint) = parse_args()?;
     if !shiin_ipc_enabled() {
         return Err("configure SHIIN_DAEMON=1 or an absolute SHIIN_SOCKET".to_owned());
     }
-    let transport = TokioChildProcess::new(command_with_args(command, arguments))
-        .map_err(|_| "could not start downstream MCP server")?;
-    let downstream = ()
-        .serve_with_lifecycle(
-            transport,
-            ClientLifecycleMode::Discover {
-                preferred_versions: vec![ProtocolVersion::V_2026_07_28],
-            },
-        )
-        .await
-        .map_err(|_| "could not connect to downstream MCP server")?;
+    let client = Client::from_environment().map_err(|_| "local daemon configuration failed")?;
+    let downstream = endpoint.connect().await?;
     let session = clock::new_id();
     if session.is_empty() {
         return Err("OS randomness failed".to_owned());
     }
     let service = Proxy {
         downstream,
-        client: Client::from_environment().map_err(|_| "local daemon configuration failed")?,
+        client,
         workspace,
         session,
     }
@@ -78,31 +70,41 @@ fn shiin_ipc_enabled() -> bool {
         || env::var("SHIIN_DAEMON").is_ok_and(|value| value == "1")
 }
 
-fn command_with_args(command: PathBuf, arguments: Vec<std::ffi::OsString>) -> Command {
-    let mut child = Command::new(command);
-    child.args(arguments);
-    child
-}
-
-fn parse_args() -> Result<(String, PathBuf, Vec<std::ffi::OsString>), String> {
+fn parse_args() -> Result<(String, downstream::Endpoint), String> {
     let mut args = env::args_os().skip(1);
     let mut workspace = None;
     let mut command = None;
     let mut downstream_args = Vec::new();
+    let mut http = None;
     while let Some(argument) = args.next() {
         if argument == "--" {
-            command = args.next().map(PathBuf::from);
+            if http.is_some() {
+                return Err("HTTP and subprocess transports are mutually exclusive".to_owned());
+            }
+            command = Some(PathBuf::from(
+                args.next().ok_or("downstream server command missing")?,
+            ));
             downstream_args.extend(args);
             break;
         }
         if argument == "--workspace" {
+            if workspace.is_some() {
+                return Err("--workspace may be specified only once".to_owned());
+            }
             workspace = Some(PathBuf::from(
                 args.next().ok_or("--workspace requires a path")?,
             ));
             continue;
         }
+        if argument == "--http" && http.is_none() {
+            let value = args.next().ok_or("--http requires an endpoint")?;
+            http = Some(downstream::http_endpoint(
+                value.to_str().ok_or("endpoint must be UTF-8")?,
+            )?);
+            continue;
+        }
         return Err(
-            "usage: shiin-mcp-proxy --workspace ABSOLUTE_PATH -- SERVER [ARG ...]".to_owned(),
+            "usage: shiin-mcp-proxy --workspace PATH (-- SERVER [ARG ...] | --http URL)".to_owned(),
         );
     }
     let workspace = workspace.ok_or("--workspace is required")?;
@@ -110,15 +112,23 @@ fn parse_args() -> Result<(String, PathBuf, Vec<std::ffi::OsString>), String> {
     if !workspace.is_dir() {
         return Err("workspace must be a directory".to_owned());
     }
-    let command = command.ok_or("downstream server command is required after --")?;
-    if !command.is_absolute() {
-        return Err("downstream server command must be an absolute path".to_owned());
-    }
-    Ok((
-        workspace.to_string_lossy().into_owned(),
-        command,
-        downstream_args,
-    ))
+    let endpoint = match (command, http) {
+        (Some(command), None) if command.is_absolute() => downstream::Endpoint::Stdio {
+            command,
+            arguments: downstream_args,
+        },
+        (None, Some(http)) => http,
+        _ => {
+            return Err(
+                "select exactly one HTTP endpoint or absolute downstream server command".to_owned(),
+            );
+        }
+    };
+    let workspace = workspace
+        .into_os_string()
+        .into_string()
+        .map_err(|_| "workspace must be UTF-8")?;
+    Ok((workspace, endpoint))
 }
 
 struct Proxy {

@@ -1,4 +1,4 @@
-//! Runs the real stdio proxy between an SDK client, a test server, and the daemon service.
+//! Runs the proxy against stdio and Streamable HTTP fixtures and the daemon service.
 
 #[cfg(not(unix))]
 fn main() {}
@@ -19,6 +19,9 @@ mod unix {
         PaginatedRequestParams, ProtocolVersion, ServerCapabilities, ServerConfig, Tool,
     };
     use rmcp::service::{ClientLifecycleMode, ClientServiceExt, RequestContext};
+    use rmcp::transport::streamable_http_server::{
+        StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
+    };
     use rmcp::transport::{TokioChildProcess, stdio};
     use rmcp::{ErrorData, RoleServer, ServerHandler, ServiceExt};
     use serde_json::json;
@@ -122,6 +125,12 @@ mod unix {
     }
 
     pub(super) async fn exercise() -> Result<(), Box<dyn std::error::Error>> {
+        exercise_transport(false).await?;
+        exercise_transport(true).await?;
+        redirects_are_not_followed().await
+    }
+
+    async fn exercise_transport(http: bool) -> Result<(), Box<dyn std::error::Error>> {
         let root = std::env::temp_dir().join(format!("sm-{}", shiin_schema::clock::new_id()));
         fs::create_dir_all(root.join(".shiin"))?;
         fs::create_dir_all(root.join("daemon"))?;
@@ -142,11 +151,17 @@ mod unix {
         command
             .arg("--workspace")
             .arg(&workspace.0)
-            .arg("--")
-            .arg(std::env::current_exe()?)
-            .arg("--reference-server")
-            .arg(&forwarded)
             .env("SHIIN_SOCKET", &socket);
+        let http_server = if http {
+            Some(http_fixture(&mut command, forwarded.clone()).await?)
+        } else {
+            command
+                .arg("--")
+                .arg(std::env::current_exe()?)
+                .arg("--reference-server")
+                .arg(&forwarded);
+            None
+        };
         let transport = TokioChildProcess::new(command)?;
         let client = ()
             .serve_with_lifecycle(
@@ -190,6 +205,75 @@ mod unix {
             !fs::read_to_string(workspace.0.join(".shiin/audit.jsonl"))?
                 .contains("EXAMPLE-argument")
         );
+        if let Some(server) = http_server {
+            server.abort();
+            let _ = server.await;
+        }
+        Ok(())
+    }
+
+    async fn http_fixture(
+        command: &mut tokio::process::Command,
+        log: PathBuf,
+    ) -> Result<tokio::task::JoinHandle<std::io::Result<()>>, Box<dyn std::error::Error>> {
+        let service: StreamableHttpService<ReferenceServer, LocalSessionManager> =
+            StreamableHttpService::new(
+                move || Ok(ReferenceServer(log.clone())),
+                Default::default(),
+                StreamableHttpServerConfig::default().with_legacy_session_mode(false),
+            );
+        let router = axum::Router::new().nest_service("/mcp", service);
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+        command
+            .arg("--http")
+            .arg(format!("http://{}/mcp", listener.local_addr()?));
+        Ok(tokio::spawn(
+            async move { axum::serve(listener, router).await },
+        ))
+    }
+
+    async fn redirects_are_not_followed() -> Result<(), Box<dyn std::error::Error>> {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        let followed = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&followed);
+        let router = axum::Router::new()
+            .route(
+                "/redirect",
+                axum::routing::any(|| async { axum::response::Redirect::temporary("/trap") }),
+            )
+            .route(
+                "/trap",
+                axum::routing::any(move || {
+                    observed.fetch_add(1, Ordering::SeqCst);
+                    async { "EXAMPLE redirect target" }
+                }),
+            );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+        let url = format!("http://{}/redirect", listener.local_addr()?);
+        let server = tokio::spawn(async move { axum::serve(listener, router).await });
+        let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_shiin-mcp-proxy"));
+        command
+            .arg("--workspace")
+            .arg(std::env::current_dir()?)
+            .arg("--http")
+            .arg(url)
+            .env("SHIIN_DAEMON", "1")
+            .env_remove("SHIIN_SOCKET");
+        let result = ()
+            .serve_with_lifecycle(
+                TokioChildProcess::new(command)?,
+                ClientLifecycleMode::Discover {
+                    preferred_versions: vec![ProtocolVersion::V_2026_07_28],
+                },
+            )
+            .await;
+        assert!(result.is_err(), "redirect must fail connection setup");
+        assert_eq!(followed.load(Ordering::SeqCst), 0);
+        server.abort();
+        let _ = server.await;
         Ok(())
     }
 }

@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Dependencies and supply chain
 
@@ -17,6 +17,13 @@ Reviewers weigh:
 - Whether a safe alternative of similar quality exists.
 
 ## Declaring dependencies
+
+The v0.6 downstream MCP HTTP transport admits `reqwest` for HTTP and TLS rather than implementing either protocol in Shiin.
+It is confined to the proxy binary; it does not enter the engine crates.
+The SDK transport uses its asynchronous client with redirects, automatic retries, and environment proxies disabled.
+`axum` is admitted only as a development dependency to run the HTTP MCP fixture; it adds no product listener.
+Both dependencies disable default features and are checked by the existing dependency-policy CI job.
+Transitive HTTP/TLS dependencies still require supply-chain review before a release.
 
 Every dependency is declared in `[workspace.dependencies]` with a version requirement and `default-features = false`.
 Members reference it with `workspace = true` and enable only the features they use.

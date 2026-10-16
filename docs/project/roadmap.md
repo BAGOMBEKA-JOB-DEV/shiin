@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Roadmap
 
@@ -85,7 +85,7 @@
 **Exit criteria.**
 
 - Intent-binding test vectors pass for all three hosts.
-- The intent-binding evaluation plan in [Intent binding](../spec/intent-binding.md) has produced its first measurements.
+- The intent-binding evaluation plan in [Intent binding](../spec/intent-binding.md#evaluation-plan) has produced its first measurements. Done for the nine-case labelled task corpus; independent real-workload evaluation remains open.
 
 ## v0.3: Approve
 
@@ -119,8 +119,8 @@
 
 **Exit criteria.**
 
-- Receipts verify offline on every Tier 1 platform.
-- Replay reproduces every decision in the conformance corpus.
+- Receipts verify offline on every Tier 1 platform. Unit tests pass on Linux, macOS, and Windows; platform key-store interactions still need validation.
+- Replay reproduces every decision in the conformance corpus. Done for the 19-case signed/encrypted corpus through the CLI evaluation routine, including what-if and grant regression tests.
 
 ## v0.5: MCP and SDK
 
@@ -146,7 +146,7 @@
 **Scope.**
 
 - Remote approvers through signed webhooks ([ADR-0041](../adr/0041-remote-approver-transport.md) must be decided first).
-- Streamable-HTTP MCP transport.
+- Streamable-HTTP MCP transport. A downstream HTTP source implementation exists; the upstream connection remains stdio, and authenticated remote endpoints and external conformance remain open.
 - Shell wrapper for hosts without hooks. `shiin exec` now has a Unix source implementation; live host routing and platform validation remain open.
 - Windows promoted toward Tier 1.
 - Additional hosts, each with its hook behavior verified and documented.

@@ -95,6 +95,8 @@ $ cargo xtask intent-evaluation
 ```
 
 The documentation CI job runs this measurement and keeps its report in the job log.
+The [2026-10-16 hosted measurement](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/38876644402/job/116893396635) at commit `141dbe1` matched all nine task cases, including their reason codes.
+Eight outcomes changed from the policy-only baseline; the corpus recorded zero false allows among eight non-allow labels and zero false denials among one allow label.
 The small specification corpus establishes reproducible behavior on the declared constraints, not real-world false-positive or false-negative rates.
 The next evaluation requires independently labelled task/action sequences, named host versions, interception results, and operator review of unnecessary holds and missed task violations.
 Task declarations remain experimental until that broader evaluation is available.

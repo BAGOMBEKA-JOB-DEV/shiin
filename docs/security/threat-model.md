@@ -80,8 +80,11 @@ Adapters declare their enforcement level honestly; hook-based controls can be di
 
 **[ST-E-03]** An agent runs code that bypasses Shiin.
 Shiin cannot see what an allowed command does; a sandbox covers that gap.
-The stdio MCP proxy forwards a tool call only after `allow`; its unit test confirms that `deny` and `pending` are not forwarded.
+The MCP proxy forwards a tool call only after `allow`; its unit test confirms that `deny` and `pending` are not forwarded.
 Its process integration test also checks that daemon unavailability prevents downstream execution and that plaintext tool arguments are omitted from audit events.
+The downstream HTTP transport retains that authorization path and requires an explicitly configured endpoint.
+TLS is required outside literal loopback addresses; URL credentials, query strings, redirects, automatic HTTP retries, environment proxies, and expired-session reconnection are refused or disabled.
+Endpoint and redirect regression tests cover these boundaries; real remote-server authentication and independent transport review remain open (ST-I-02, ST-T-02).
 The cooperative command wrapper binds the exact executable/argument list and starts a child only after a durable allow.
 Its process tests cover pending, denial, damaged policy/audit state, unavailable services, literal argument forwarding, and child status propagation ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md), [ADR-0030](../adr/0030-audit-durability.md)).
 Commands launched outside the wrapper and the internals of allowed child processes remain outside its interception point.

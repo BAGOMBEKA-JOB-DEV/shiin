@@ -1,7 +1,7 @@
 [package]
 name = "shiin-mcp-proxy"
 version = "0.0.0"
-description = "Shiin's stdio MCP authorization proxy"
+description = "Shiin's MCP authorization proxy"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -23,7 +23,8 @@ path = "tests/conformance.rs"
 harness = false
 
 [dependencies]
-rmcp = { version = "3.0.0", default-features = false, features = ["client", "server", "transport-child-process", "transport-io"] }
+rmcp = { version = "3.0.0", default-features = false, features = ["client", "server", "transport-child-process", "transport-io", "transport-streamable-http-client-reqwest"] }
+reqwest = { workspace = true, features = ["rustls"] }
 serde_json.workspace = true
 sha2.workspace = true
 shiin-client.workspace = true
@@ -32,6 +33,8 @@ shiin-schema.workspace = true
 tokio = { workspace = true, features = ["io-std", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
 
 [dev-dependencies]
+axum = { workspace = true, features = ["http1", "tokio"] }
+rmcp = { version = "3.0.0", default-features = false, features = ["transport-streamable-http-server"] }
 shiin-ipc.workspace = true
 shiind = { path = "../shiind" }
 tokio = { workspace = true, features = ["net", "io-util"] }

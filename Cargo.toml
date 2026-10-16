@@ -52,6 +52,8 @@ shiin-schema = { path = "crates/shiin-schema" }
 thiserror = "2"
 toml = "0.9"
 regex = "1.13"
+reqwest = { version = "0.13.2", default-features = false }
+axum = { version = "0.8", default-features = false }
 serde_json = "1.0.151"
 walkdir = "2.5"
 
