@@ -84,7 +84,7 @@ impl Client {
         let result = self
             .call(
                 "shiin.policy.validate",
-                json!({"policy":policy,"workspace":workspace}),
+                json!({"source":policy,"workspace":workspace}),
             )
             .await?;
         if result.get("valid") == Some(&Value::Bool(true)) {
@@ -110,7 +110,8 @@ impl Client {
             .await?;
         let decision: Decision =
             serde_json::from_value(value).map_err(|_| ClientError::InvalidResponse)?;
-        if decision.request_id != request.id {
+        if decision.schema != shiin_schema::versions::DECISION || decision.request_id != request.id
+        {
             return Err(ClientError::InvalidResponse);
         }
         Ok(decision)
@@ -198,7 +199,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn preserves_deny_and_pending_and_rejects_mismatched_decision_ids() {
+    fn preserves_deny_and_pending() {
         use serde_json::{Value, json};
         use std::io::{BufRead as _, Write as _};
         use std::os::unix::net::UnixListener;
@@ -246,41 +247,56 @@ mod tests {
             server.join().expect("server thread completes");
             std::fs::remove_file(path).expect("remove test socket");
         }
+    }
 
-        let path = test_socket_path("mismatched-id");
-        let listener = UnixListener::bind(&path).expect("bind test endpoint");
-        let server = thread::spawn(move || {
-            let (stream, _) = listener.accept().expect("accept client");
-            let mut reader = std::io::BufReader::new(stream);
-            let mut line = String::new();
-            reader.read_line(&mut line).expect("read request frame");
-            let request: Value = serde_json::from_str(&line).expect("valid JSON-RPC request");
-            let result = json!({
-                "schema":"shiin.decision/v1-draft.1",
-                "request_id":"0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0c",
-                "decision":"allow",
-                "reason":"allow.policy",
-                "message":"The action is allowed."
+    #[cfg(unix)]
+    #[test]
+    fn rejects_unsupported_schema_and_mismatched_decision_ids() {
+        use serde_json::{Value, json};
+        use std::io::{BufRead as _, Write as _};
+        use std::os::unix::net::UnixListener;
+        use std::thread;
+
+        for bad_schema in [false, true] {
+            let path = test_socket_path(if bad_schema {
+                "bad-schema"
+            } else {
+                "mismatched-id"
             });
-            writeln!(
-                reader.get_mut(),
-                "{}",
-                json!({"jsonrpc":"2.0","id":request["id"],"result":result})
-            )
-            .expect("write response frame");
-        });
-        let client = Client::at(&path).expect("construct client");
-        let action = request();
-        let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("create test runtime");
-        assert!(matches!(
-            runtime.block_on(client.evaluate(&action)),
-            Err(ClientError::InvalidResponse)
-        ));
-        server.join().expect("server thread completes");
-        std::fs::remove_file(path).expect("remove test socket");
+            let listener = UnixListener::bind(&path).expect("bind test endpoint");
+            let server = thread::spawn(move || {
+                let (stream, _) = listener.accept().expect("accept client");
+                let mut reader = std::io::BufReader::new(stream);
+                let mut line = String::new();
+                reader.read_line(&mut line).expect("read request frame");
+                let request: Value = serde_json::from_str(&line).expect("valid JSON-RPC request");
+                let result = json!({
+                    "schema":if bad_schema { "shiin.decision/v999" } else { "shiin.decision/v1-draft.1" },
+                    "request_id":if bad_schema { request["params"]["id"].clone() } else { json!("0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0c") },
+                    "decision":"allow",
+                    "reason":"allow.policy",
+                    "message":"The action is allowed."
+                });
+                writeln!(
+                    reader.get_mut(),
+                    "{}",
+                    json!({"jsonrpc":"2.0","id":request["id"],"result":result})
+                )
+                .expect("write response frame");
+            });
+            let client = Client::at(&path).expect("construct client");
+            let action = request();
+            let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("create test runtime");
+            assert!(matches!(
+                runtime.block_on(client.evaluate(&action)),
+                Err(ClientError::InvalidResponse)
+            ));
+            server.join().expect("server thread completes");
+            std::fs::remove_file(path).expect("remove test socket");
+        }
     }
 
     fn request() -> ActionRequest {

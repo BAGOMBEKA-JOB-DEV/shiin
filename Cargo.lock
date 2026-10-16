@@ -2380,6 +2380,7 @@ name = "shiin-cli"
 version = "0.0.0"
 dependencies = [
  "base64 0.22.1",
+ "ed25519-dalek",
  "jsonschema",
  "rpassword",
  "serde_json",
@@ -2400,7 +2401,9 @@ version = "0.0.0"
 dependencies = [
  "serde_json",
  "shiin-ipc",
+ "shiin-policy",
  "shiin-schema",
+ "shiind",
  "thiserror",
 ]
 

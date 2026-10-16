@@ -102,9 +102,17 @@ pub(super) fn replay_evidence(
         serde_json::from_value(verified).map_err(|error| error.to_string())?;
     let record: ReplayInputs<Store> =
         serde_json::from_slice(&keys.decrypt(&encrypted)?).map_err(|error| error.to_string())?;
+    replay_record(record, &encrypted.request_id, alternate_policy)
+}
+
+fn replay_record(
+    record: ReplayInputs<Store>,
+    encrypted_request_id: &str,
+    alternate_policy: Option<&str>,
+) -> Result<String, String> {
     if record.schema != "shiin.replay-input/v1-draft.1"
         || record.engine_version != shiin_engine::ENGINE_VERSION
-        || record.request.id != encrypted.request_id
+        || record.request.id != encrypted_request_id
     {
         return Err("unsupported or mismatched replay inputs".to_owned());
     }
@@ -156,3 +164,7 @@ pub(super) fn replay_evidence(
         }
     ))
 }
+
+#[cfg(test)]
+#[path = "evidence/tests.rs"]
+mod tests;

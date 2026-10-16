@@ -31,6 +31,7 @@ shiin-policy = { workspace = true }
 shiin-schema = { workspace = true }
 
 [dev-dependencies]
+ed25519-dalek.workspace = true
 jsonschema = { workspace = true }
 toml = { workspace = true }
 

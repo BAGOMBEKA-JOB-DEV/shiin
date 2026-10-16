@@ -15,5 +15,9 @@ shiin-ipc.workspace = true
 shiin-schema.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+shiin-policy.workspace = true
+shiind = { path = "../shiind" }
+
 [lints]
 workspace = true

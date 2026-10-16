@@ -114,6 +114,11 @@ No reviewer has supplied that record yet.
 
 ## Local approval service changes
 
+The Rust client now exercises the real daemon contract over a local socket, including policy validation, non-allow decisions, and stale snapshots.
+Unsupported decision versions are rejected before an integration can act on them; this tightens failure handling without changing policy decisions ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md)).
+Replay regression tests now exercise the signed/encrypted conformance corpus through the CLI's evaluation routine, plus input bindings, grant coverage, deny precedence, and what-if comparisons.
+These tests use explicit fixture keys without accessing or replacing the operator's OS keyring.
+
 The v0.3 source implementation addresses ST-E-01 and ST-E-02 by requiring an out-of-band operator credential for resolution, listing, and revocation.
 The local transport authenticates the peer's Unix user identity; an asserted agent role is insufficient to administer approvals.
 Tests reject missing or incorrect credentials and generated transition sequences check that a single-use grant cannot authorize twice.

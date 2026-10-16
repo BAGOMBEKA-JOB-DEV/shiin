@@ -7,7 +7,7 @@
 > The Unix daemon implements JSON-RPC evaluation, policy validation, and operator approval methods; `shiin-client` exposes evaluation and policy validation.
 > Windows named pipes and attested agent identity remain unimplemented.
 >
-> Version: `shiin.local-api/v1-draft.1`.
+> Version: `shiin.local-api/v1-draft.2`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -34,6 +34,9 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
 | `shiin.pending` | List pending requests; requires the operator credential. |
 | `shiin.grants` | List grants; requires the operator credential. |
 | `shiin.revoke` | Revoke a request or grant; requires the operator credential. |
+
+**[API-007]** Evaluation methods MUST carry an action request as `params`.
+Policy validation MUST carry `source` (the policy text) and `workspace` (the workspace root) as string fields in `params`.
 
 ## Authentication
 
@@ -62,12 +65,27 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
     ],
     "task": null,
     "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-    "host": { "name": "custom-agent" }
+    "host": { "name": "custom-agent" },
+    "workspace": { "root": "/home/dev/project" }
+  }
+}
+```
+
+<!-- validate: spec/schemas/local-api.v1.schema.json -->
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "EXAMPLE-policy-validation",
+  "method": "shiin.policy.validate",
+  "params": {
+    "source": "version = 1\n[defaults]\ndecision = 'deny'\n",
+    "workspace": "/home/dev/project"
   }
 }
 ```
 
 ## Revision history
 
+- v1-draft.2 (2026-10-16): Bind evaluation and policy-validation parameters to their schemas; the Rust client uses the daemon's `source` field and rejects unsupported decision versions.
 - v1-draft.1 (2026-10-01): Initial draft.
 - Implementation update (2026-10-16): Documented the existing Unix daemon methods and Rust client. Windows transport and identity binding remain open.
