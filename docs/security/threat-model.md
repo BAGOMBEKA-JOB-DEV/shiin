@@ -81,6 +81,7 @@ Adapters declare their enforcement level honestly; hook-based controls can be di
 **[ST-E-03]** An agent runs code that bypasses Shiin.
 Shiin cannot see what an allowed command does; a sandbox covers that gap.
 The stdio MCP proxy forwards a tool call only after `allow`; its unit test confirms that `deny` and `pending` are not forwarded.
+Its process integration test also checks that daemon unavailability prevents downstream execution and that plaintext tool arguments are omitted from audit events.
 
 ## Out of scope
 

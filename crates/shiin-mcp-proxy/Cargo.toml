@@ -17,6 +17,11 @@ dist = true
 name = "shiin-mcp-proxy"
 path = "src/main.rs"
 
+[[test]]
+name = "conformance"
+path = "tests/conformance.rs"
+harness = false
+
 [dependencies]
 rmcp = { version = "3.0.0", default-features = false, features = ["client", "server", "transport-child-process", "transport-io"] }
 serde_json.workspace = true
@@ -25,6 +30,11 @@ shiin-client.workspace = true
 shiin-policy.workspace = true
 shiin-schema.workspace = true
 tokio = { workspace = true, features = ["io-std", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
+
+[dev-dependencies]
+shiin-ipc.workspace = true
+shiind = { path = "../shiind" }
+tokio = { workspace = true, features = ["net", "io-util"] }
 
 [lints]
 workspace = true

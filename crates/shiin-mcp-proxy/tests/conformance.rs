@@ -1,0 +1,190 @@
+//! Runs the real stdio proxy between an SDK client, a test server, and the daemon service.
+
+#[cfg(not(unix))]
+fn main() {}
+
+#[cfg(unix)]
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().nth(1).as_deref() == Some("--reference-server") {
+        return unix::reference_server().await;
+    }
+    tokio::time::timeout(std::time::Duration::from_secs(30), unix::exercise()).await?
+}
+
+#[cfg(unix)]
+mod unix {
+    use rmcp::model::{
+        CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, ListToolsResult,
+        PaginatedRequestParams, ProtocolVersion, ServerCapabilities, ServerConfig, Tool,
+    };
+    use rmcp::service::{ClientLifecycleMode, ClientServiceExt, RequestContext};
+    use rmcp::transport::{TokioChildProcess, stdio};
+    use rmcp::{ErrorData, RoleServer, ServerHandler, ServiceExt};
+    use serde_json::json;
+    use std::borrow::Cow;
+    use std::fs::{self, OpenOptions};
+    use std::io::Write as _;
+    use std::path::PathBuf;
+    use tokio::io::AsyncWriteExt as _;
+
+    struct ReferenceServer(PathBuf);
+
+    impl ServerHandler for ReferenceServer {
+        fn supported_protocol_versions(&self) -> Cow<'static, [ProtocolVersion]> {
+            Cow::Borrowed(&[ProtocolVersion::V_2026_07_28])
+        }
+
+        fn get_info(&self) -> ServerConfig {
+            let mut config =
+                ServerConfig::new(ServerCapabilities::builder().enable_tools().build());
+            config.protocol_version = ProtocolVersion::V_2026_07_28;
+            config
+        }
+
+        async fn list_tools(
+            &self,
+            _: Option<PaginatedRequestParams>,
+            _: RequestContext<RoleServer>,
+        ) -> Result<ListToolsResult, ErrorData> {
+            let schema = serde_json::Map::from_iter([("type".to_owned(), json!("object"))]);
+            Ok(ListToolsResult::with_all_items(
+                ["echo", "hold", "denied"]
+                    .into_iter()
+                    .map(|name| Tool::new(name, "EXAMPLE fixture tool", schema.clone()))
+                    .collect(),
+            ))
+        }
+
+        async fn call_tool(
+            &self,
+            request: CallToolRequestParams,
+            _: RequestContext<RoleServer>,
+        ) -> Result<CallToolResponse, ErrorData> {
+            let mut log = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&self.0)
+                .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
+            writeln!(
+                log,
+                "{}",
+                serde_json::to_string(&request)
+                    .map_err(|_| ErrorData::internal_error("fixture encoding failed", None))?
+            )
+            .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
+            Ok(
+                CallToolResult::success(vec![ContentBlock::text("EXAMPLE downstream result")])
+                    .into(),
+            )
+        }
+    }
+
+    pub async fn reference_server() -> Result<(), Box<dyn std::error::Error>> {
+        let path = std::env::args_os()
+            .nth(2)
+            .ok_or("fixture log argument missing")?;
+        ReferenceServer(PathBuf::from(path))
+            .serve(stdio())
+            .await?
+            .waiting()
+            .await?;
+        Ok(())
+    }
+
+    struct Workspace(PathBuf);
+
+    impl Drop for Workspace {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    async fn daemon(
+        mut service: shiind::Service,
+        listener: tokio::net::UnixListener,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        loop {
+            let (stream, _) = listener.accept().await?;
+            let (mut stream, frame) = shiin_ipc::receive(stream).await?;
+            let request: shiin_ipc::Request = serde_json::from_str(&frame)?;
+            let response = match service.dispatch(&request.method, request.params) {
+                Ok(result) => json!({"jsonrpc":"2.0", "id":request.id, "result":result}),
+                Err(_) => shiin_ipc::failure(&request.id, -32000, "Request refused"),
+            };
+            stream.write_all(format!("{response}\n").as_bytes()).await?;
+        }
+    }
+
+    pub async fn exercise() -> Result<(), Box<dyn std::error::Error>> {
+        let root = std::env::temp_dir().join(format!("sm-{}", shiin_schema::clock::new_id()));
+        fs::create_dir_all(root.join(".shiin"))?;
+        fs::create_dir_all(root.join("daemon"))?;
+        let workspace = Workspace(fs::canonicalize(root)?);
+        fs::write(
+            workspace.0.join(".shiin/policy.toml"),
+            "version = 1\n[defaults]\ndecision = 'pending'\n[[rule]]\nid = 'echo'\neffect = 'allow'\naction_types = ['mcp.tool.echo']\n[[rule]]\nid = 'denied'\neffect = 'deny'\naction_types = ['mcp.tool.denied']\n",
+        )?;
+        let socket = workspace.0.join("s");
+        let listener = tokio::net::UnixListener::bind(&socket)?;
+        let service = shiind::Service::open(
+            &workspace.0.join("daemon"),
+            shiind::OperatorKey::generate()?,
+        )?;
+        let daemon = tokio::spawn(daemon(service, listener));
+        let forwarded = workspace.0.join("forwarded.jsonl");
+        let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_shiin-mcp-proxy"));
+        command
+            .arg("--workspace")
+            .arg(&workspace.0)
+            .arg("--")
+            .arg(std::env::current_exe()?)
+            .arg("--reference-server")
+            .arg(&forwarded)
+            .env("SHIIN_SOCKET", &socket);
+        let transport = TokioChildProcess::new(command)?;
+        let client = ()
+            .serve_with_lifecycle(
+                transport,
+                ClientLifecycleMode::Discover {
+                    preferred_versions: vec![ProtocolVersion::V_2026_07_28],
+                },
+            )
+            .await?;
+        let tools = client.list_tools(None).await?;
+        assert_eq!(
+            tools
+                .tools
+                .iter()
+                .map(|tool| tool.name.as_ref())
+                .collect::<Vec<_>>(),
+            ["echo", "hold", "denied"]
+        );
+        let allowed = client
+            .call_tool(CallToolRequestParams::new("echo").with_arguments(
+                serde_json::Map::from_iter([("value".to_owned(), json!("EXAMPLE-argument"))]),
+            ))
+            .await?;
+        assert_ne!(allowed.is_error, Some(true));
+        for tool in ["hold", "denied"] {
+            let refused = client.call_tool(CallToolRequestParams::new(tool)).await?;
+            assert_eq!(refused.is_error, Some(true), "{tool} reached downstream");
+            if tool == "hold" {
+                assert!(serde_json::to_string(&refused)?.contains("Ticket:"));
+            }
+        }
+        daemon.abort();
+        let _ = daemon.await;
+        let unavailable = client.call_tool(CallToolRequestParams::new("echo")).await?;
+        assert_eq!(unavailable.is_error, Some(true));
+        client.cancel().await?;
+        let calls = fs::read_to_string(forwarded)?;
+        assert_eq!(calls.lines().count(), 1, "only allow may forward a call");
+        assert!(calls.contains("EXAMPLE-argument"));
+        assert!(
+            !fs::read_to_string(workspace.0.join(".shiin/audit.jsonl"))?
+                .contains("EXAMPLE-argument")
+        );
+        Ok(())
+    }
+}

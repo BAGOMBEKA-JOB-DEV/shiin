@@ -19,6 +19,10 @@ The proxy maps each tool name to an `mcp.tool.*` action type, records the full t
 
 The target is the [MCP specification revision 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28), checked on 2026-10-16. The current proxy does not use tool annotations to change its decision; annotation handling and conformance remain open.
 
+The Rust integration test launches the actual stdio proxy between an SDK client, a fixture server, and the Unix daemon service.
+It covers discovery, allow/deny/pending, argument forwarding, and daemon unavailability.
+The test uses the [official Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk) (verified 2026-10-16); this coverage does not establish conformance against external reference servers.
+
 ## What it cannot see
 
 - Traffic not routed through the proxy.

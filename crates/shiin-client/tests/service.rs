@@ -45,7 +45,7 @@ impl Drop for Workspace {
     }
 }
 
-fn serve_requests(mut service: Service, listener: UnixListener) -> Result<(), String> {
+fn serve_requests(mut service: Service, listener: &UnixListener) -> Result<(), String> {
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
     let deadline = Instant::now() + Duration::from_secs(15);
     for _ in 0..7 {
@@ -84,7 +84,7 @@ fn custom_agent_and_service_obey_the_local_contract() -> Result<(), Box<dyn std:
     let socket = workspace.0.join("s");
     let listener = UnixListener::bind(&socket)?;
     let service = Service::open(&workspace.0.join("daemon"), OperatorKey::generate()?)?;
-    let server = std::thread::spawn(move || serve_requests(service, listener));
+    let server = std::thread::spawn(move || serve_requests(service, &listener));
     let client = Client::at(&socket)?;
     let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
         .enable_all()
