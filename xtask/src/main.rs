@@ -3,13 +3,18 @@
 //! Run `cargo xtask <command>`. Commands:
 //!
 //! - `docs-check`: validate `docs/` against `docs/project/docs-style-guide.md`.
+//! - `intent-evaluation`: measure task constraints against the labelled corpus.
 
 mod docs_check;
+mod intent_evaluation;
 mod performance;
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("intent-evaluation") {
+        return intent_evaluation::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("performance") {
         return performance::run();
     }

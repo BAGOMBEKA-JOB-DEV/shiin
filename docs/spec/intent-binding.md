@@ -6,7 +6,7 @@
 > **Specification: draft.**
 > Implemented in part in the source build. Remaining requirements and external validation are not complete.
 >
-> Version: `shiin.intent-binding/v1-draft.1`.
+> Version: `shiin.intent-binding/v1-draft.2`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -82,6 +82,22 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RE
   "reason": "deny.intent"
 }
 ```
+
+## Evaluation plan
+
+The first evaluation uses every published conformance vector that carries a task declaration.
+Each case is evaluated with its recorded task, counters, mode, and time, then evaluated again with the task removed.
+The report records the expected and actual decision/reason, changes from the policy-only baseline, false allows against non-allow labels, and false denials against allow labels.
+Any disagreement with a labelled case fails the command.
+
+```console
+$ cargo xtask intent-evaluation
+```
+
+The documentation CI job runs this measurement and keeps its report in the job log.
+The small specification corpus establishes reproducible behavior on the declared constraints, not real-world false-positive or false-negative rates.
+The next evaluation requires independently labelled task/action sequences, named host versions, interception results, and operator review of unnecessary holds and missed task violations.
+Task declarations remain experimental until that broader evaluation is available.
 
 ## Revision history
 
