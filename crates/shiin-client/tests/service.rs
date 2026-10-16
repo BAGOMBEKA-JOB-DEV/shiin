@@ -110,7 +110,7 @@ fn custom_agent_and_service_obey_the_local_contract() -> Result<(), Box<dyn std:
             .evaluate(&workspace.action(".shiin/policy.toml")?)
             .await?;
         assert_eq!(denied.decision, DecisionValue::Deny);
-        assert_eq!(denied.reason, "deny.builtin");
+        assert_eq!(denied.reason, "deny.policy");
         let action = workspace.action("migrations/EXAMPLE.sql")?;
         let pending = client.evaluate(&action).await?;
         assert_eq!(pending.decision, DecisionValue::Pending);
