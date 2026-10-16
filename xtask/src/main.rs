@@ -5,15 +5,20 @@
 //! - `docs-check`: validate `docs/` against `docs/project/docs-style-guide.md`.
 //! - `intent-evaluation`: measure task constraints against the labelled corpus.
 //! - `dependency-check`: refuse network stacks and async runtimes in engine crates.
+//! - `fuzz-smoke`: seed and run bounded parser fuzzing on the pinned nightly.
 
 mod dependency_check;
 mod docs_check;
+mod fuzz_smoke;
 mod intent_evaluation;
 mod performance;
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("fuzz-smoke") {
+        return fuzz_smoke::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("dependency-check") {
         return dependency_check::run();
     }

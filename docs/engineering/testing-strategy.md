@@ -27,12 +27,17 @@ CI separately checks the isolated engine for WebAssembly and tests the schema cr
 
 ## Fuzzing
 
-Fuzz targets are planned in `fuzz/`, a separate nightly workspace.
-That workspace and its CI jobs do not exist yet; ordinary fault-injection tests do not establish fuzzing coverage.
+`fuzz/` is a separate nightly workspace with wire-request and classification targets.
+The wire target parses and validates action requests and checks that validated records survive a serialization round trip.
+The classification target exercises shell tokenization and verifies that unsupported SQL syntax stays opaque.
+`cargo xtask fuzz-smoke` seeds the targets from published action vectors and representative command/SQL inputs, then runs each for twenty seconds with a 64-KiB input bound and a 1-GiB resident-memory limit.
+The hosted robustness workflow runs this command on `nightly-2026-10-15`; no fuzz build is required on a developer's laptop.
+These bounded smoke runs do not establish exhaustive parser or engine security coverage.
 
 ## Miri
 
-Miri coverage on a dated nightly is planned and is not currently configured in CI.
+The hosted robustness workflow interprets the schema tests without runtime clocks or randomness on `nightly-2026-10-15`.
+This covers pure wire validation and timestamp formatting, not native Cedar, TLS, OS key stores, or IPC.
 
 ## Property tests
 

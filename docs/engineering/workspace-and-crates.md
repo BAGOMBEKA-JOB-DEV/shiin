@@ -23,7 +23,7 @@ The decision behind the layout is [ADR-0035](../adr/0035-workspace-layout.md).
 | `.cargo/config.toml` | exists | Defines the `cargo xtask` alias |
 | `xtask/` | exists | Repository tooling; today it provides `cargo xtask docs-check` |
 | `crates/` | exists | Product crates, each created in the milestone that needs it |
-| `fuzz/` | planned: v0.1 | Fuzz targets in a separate workspace |
+| `fuzz/` | exists | Wire-request and classification fuzz targets in a separate nightly workspace |
 
 The workspace section of today's `Cargo.toml` is:
 
@@ -64,7 +64,7 @@ rustfmt.toml           formatter settings
 .cargo/config.toml     cargo aliases, including `cargo xtask`
 crates/<name>/         twelve product crates with milestone validation in progress
 xtask/                 repository tooling, never published
-fuzz/                  fuzz targets, a separate nightly workspace (planned: v0.1)
+fuzz/                  fuzz targets, a separate nightly workspace
 docs/                  this documentation
 ```
 
@@ -74,7 +74,7 @@ docs/                  this documentation
 - `xtask/` follows the `cargo xtask` convention for repository automation written in Rust.
   It sets `publish = false`.
   Product crates never depend on it.
-- The planned `fuzz/` directory will have its own `[workspace]` table and lockfile.
+- The `fuzz/` directory has its own `[workspace]` table and lockfile.
   Its nightly-only dependencies never enter the main workspace, its lockfile, or its MSRV check.
   See [Testing strategy](testing-strategy.md).
 - Every member inherits `edition`, `rust-version`, `license`, `repository`, and `authors` from `[workspace.package]`.

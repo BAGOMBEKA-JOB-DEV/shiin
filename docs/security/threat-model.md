@@ -128,6 +128,8 @@ These tests use explicit fixture keys without accessing or replacing the operato
 The schema runtime feature now separates OS clock/randomness functions from pure wire types and deterministic timestamp formatting.
 Adapters explicitly retain the runtime feature and its fail-closed randomness behavior; isolated engine builds omit it.
 The WebAssembly check and dependency guard check this separation without changing an authorization outcome (ST-T-01, ST-D-01).
+The separate fuzz workspace exercises action-request parsing/validation and shell/SQL classification with bounded inputs and memory.
+Miri interprets pure schema tests; these robustness checks supplement the existing fault-injection tests and do not constitute independent review (ST-T-02, ST-D-01).
 
 The v0.3 source implementation addresses ST-E-01 and ST-E-02 by requiring an out-of-band operator credential for resolution, listing, and revocation.
 The local transport authenticates the peer's Unix user identity; an asserted agent role is insufficient to administer approvals.

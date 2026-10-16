@@ -116,6 +116,7 @@ pub(crate) fn print_usage() {
     eprintln!("commands:");
     eprintln!("  docs-check    validate docs/ against the documentation style guide");
     eprintln!("  dependency-check        reject engine network and async dependencies");
+    eprintln!("  fuzz-smoke              run bounded parser fuzzing on the pinned nightly");
     eprintln!("  performance [binary]    measure local latency against the performance budgets");
     eprintln!(
         "  intent-evaluation       compare task constraints against labelled conformance cases"
