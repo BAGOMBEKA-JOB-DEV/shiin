@@ -153,21 +153,15 @@ impl ServerHandler for Proxy {
         request: CallToolRequestParams,
         _context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, McpError> {
-        let action = match action_request(&request, &self.workspace, &self.session) {
-            Ok(action) => action,
-            Err(_) => {
-                return Ok(tool_error(
-                    "Shiin could not construct a safe authorization request.",
-                ));
-            }
+        let Ok(action) = action_request(&request, &self.workspace, &self.session) else {
+            return Ok(tool_error(
+                "Shiin could not construct a safe authorization request.",
+            ));
         };
-        let decision = match self.client.evaluate(&action).await {
-            Ok(decision) => decision,
-            Err(_) => {
-                return Ok(tool_error(
-                    "Shiin could not authorize this MCP tool call. The action was stopped.",
-                ));
-            }
+        let Ok(decision) = self.client.evaluate(&action).await else {
+            return Ok(tool_error(
+                "Shiin could not authorize this MCP tool call. The action was stopped.",
+            ));
         };
         if !should_forward(decision.decision) {
             let ticket = decision
