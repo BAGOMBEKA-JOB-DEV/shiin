@@ -42,36 +42,40 @@ mod unix {
             config
         }
 
-        async fn list_tools(
+        fn list_tools(
             &self,
             _: Option<PaginatedRequestParams>,
             _: RequestContext<RoleServer>,
-        ) -> Result<ListToolsResult, ErrorData> {
+        ) -> impl std::future::Future<Output = Result<ListToolsResult, ErrorData>> + Send + '_
+        {
             let schema = serde_json::Map::from_iter([("type".to_owned(), json!("object"))]);
-            Ok(ListToolsResult::with_all_items(
+            std::future::ready(Ok(ListToolsResult::with_all_items(
                 ["echo", "hold", "denied"]
                     .into_iter()
                     .map(|name| Tool::new(name, "EXAMPLE fixture tool", schema.clone()))
                     .collect(),
-            ))
+            )))
         }
 
-        async fn call_tool(
+        fn call_tool(
             &self,
             request: CallToolRequestParams,
             _: RequestContext<RoleServer>,
-        ) -> Result<CallToolResponse, ErrorData> {
-            let mut log = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&self.0)
-                .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
-            writeln!(
-                log,
-                "{}",
-                serde_json::to_string(&request)
-                    .map_err(|_| ErrorData::internal_error("fixture encoding failed", None))?
-            )
+        ) -> impl std::future::Future<Output = Result<CallToolResponse, ErrorData>> + Send + '_
+        {
+            std::future::ready((|| {
+                let mut log = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&self.0)
+                    .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
+                writeln!(
+                    log,
+                    "{}",
+                    serde_json::to_string(&request)
+                        .map_err(|_| ErrorData::internal_error("fixture encoding failed", None))?
+                )
+            })())
             .map_err(|_| ErrorData::internal_error("fixture log unavailable", None))?;
             Ok(
                 CallToolResult::success(vec![ContentBlock::text("EXAMPLE downstream result")])
@@ -80,7 +84,7 @@ mod unix {
         }
     }
 
-    pub async fn reference_server() -> Result<(), Box<dyn std::error::Error>> {
+    pub(super) async fn reference_server() -> Result<(), Box<dyn std::error::Error>> {
         let path = std::env::args_os()
             .nth(2)
             .ok_or("fixture log argument missing")?;
@@ -116,7 +120,7 @@ mod unix {
         }
     }
 
-    pub async fn exercise() -> Result<(), Box<dyn std::error::Error>> {
+    pub(super) async fn exercise() -> Result<(), Box<dyn std::error::Error>> {
         let root = std::env::temp_dir().join(format!("sm-{}", shiin_schema::clock::new_id()));
         fs::create_dir_all(root.join(".shiin"))?;
         fs::create_dir_all(root.join("daemon"))?;
