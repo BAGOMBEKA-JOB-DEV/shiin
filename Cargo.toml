@@ -51,7 +51,7 @@ shiin-hooks = { path = "crates/shiin-hooks" }
 shiin-policy = { path = "crates/shiin-policy" }
 shiin-schema = { path = "crates/shiin-schema", default-features = false }
 thiserror = "2"
-toml = "0.9"
+toml = "1.1"
 regex = "1.13"
 reqwest = { version = "0.13.2", default-features = false }
 axum = { version = "0.8", default-features = false }
