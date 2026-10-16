@@ -249,6 +249,12 @@ pub struct Rule {
     /// Agent identifiers the rule applies to. Empty means every agent.
     #[serde(default)]
     pub agents: Vec<String>,
+    /// Sessions selected by the operator; empty means every session.
+    #[serde(default)]
+    pub sessions: Vec<String>,
+    /// Active task identifiers selected by the operator; empty means every task.
+    #[serde(default)]
+    pub tasks: Vec<String>,
     /// Operator-facing explanation, shown when the rule decides.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
@@ -302,6 +308,52 @@ impl RiskSetting {
     }
 }
 
+/// A coarse action-class grant or refusal, separate from authorization rules.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Capability {
+    /// Operator-selected unique identifier, equal to its table key.
+    pub id: String,
+    /// Explicit grant; exactly one of allow or deny is true and present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allow: Option<bool>,
+    /// Explicit refusal; exactly one of allow or deny is true and present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deny: Option<bool>,
+    /// Action classes covered by the capability; empty never grants a class.
+    #[serde(default)]
+    pub action_types: Vec<String>,
+    /// Asserted agent identifiers matched by this declaration.
+    #[serde(default)]
+    pub agents: Vec<String>,
+}
+
+impl Capability {
+    /// Validates explicit capability declarations before compilation.
+    ///
+    /// # Errors
+    /// Missing/ambiguous effects, empty classes, and invalid patterns are refused.
+    pub fn validate(&self, key: &str) -> Result<(), &'static str> {
+        if self.id.is_empty()
+            || self.id != key
+            || !matches!(
+                (self.allow, self.deny),
+                (Some(true), None) | (None, Some(true))
+            )
+            || self.action_types.is_empty()
+            || self.action_types.iter().any(|pattern| {
+                pattern.is_empty() || pattern.strip_suffix('*').unwrap_or(pattern).contains('*')
+            })
+            || self.agents.iter().any(String::is_empty)
+        {
+            return Err(
+                "capability requires a matching id, explicit allow or deny, and valid action types",
+            );
+        }
+        Ok(())
+    }
+}
+
 /// A complete policy snapshot's source form.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -312,6 +364,9 @@ pub struct Policy {
     pub layers: Vec<Layer>,
     /// The decision when no rule matches. Never `allow`.
     pub default: DecisionValue,
+    /// Explicit coarse action-class grants and refusals, keyed by capability id.
+    #[serde(default)]
+    pub capabilities: BTreeMap<String, Capability>,
     /// Risk signal configuration, keyed by signal name.
     #[serde(default)]
     pub risk: BTreeMap<String, RiskSetting>,
@@ -435,6 +490,9 @@ pub struct Decision {
     pub reason: String,
     /// Fixed agent-facing explanation, without policy internals (`DEC-009`).
     pub message: String,
+    /// The approval request for a held action, when a daemon is configured.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval: Option<ApprovalRequest>,
     /// Results of all five stages, available to the operator in explain mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace: Option<Vec<StageTrace>>,
@@ -449,6 +507,68 @@ pub struct Decision {
     pub policy_snapshot: String,
     /// Version of the engine that decided.
     #[serde(skip)]
+    pub engine_version: String,
+}
+
+/// A human's resolution of a pending action (`APR-004`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Resolution {
+    /// Authorize one retry of exactly the normalized action.
+    AllowOnce,
+    /// Authorize a bounded, explicitly selected scope.
+    AllowAlways,
+    /// Refuse the pending action.
+    Deny,
+}
+
+/// The versioned approval request, separate from the normalized action shown to a human.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ApprovalRequest {
+    /// Wire version.
+    pub schema: String,
+    /// Original request identifier.
+    pub request_id: String,
+    /// Always pending for this request type.
+    pub decision: DecisionValue,
+    /// Stable reason for the hold.
+    pub reason: String,
+    /// Agent-facing generic explanation.
+    pub message: String,
+    /// Unpredictable identifier containing the normalized action binding digest.
+    pub ticket: String,
+    /// UTC creation time.
+    pub created_at: String,
+    /// UTC deadline, after which the request cannot be resolved.
+    pub expires_at: String,
+    /// Human resolution, if one exists.
+    pub resolution: Option<Resolution>,
+}
+
+/// Complete authoritative inputs retained inside an encrypted replay artifact.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReplayInputs<G> {
+    /// Replay wire version.
+    pub schema: String,
+    /// Normalized request before the action executes.
+    pub request: ActionRequest,
+    /// Policy snapshot used by the engine.
+    pub policy: Policy,
+    /// Active task declaration, if any.
+    pub task: Option<TaskDeclaration>,
+    /// Counters before evaluating this action.
+    pub usage: TaskUsage,
+    /// Original evaluation timestamp.
+    pub now: String,
+    /// Original attendance mode.
+    pub mode: Mode,
+    /// Decision being reproduced.
+    pub decision: Decision,
+    /// Approval snapshot before grant consumption.
+    pub grants: G,
+    /// Engine implementation version.
     pub engine_version: String,
 }
 
@@ -482,11 +602,13 @@ pub mod versions {
     /// Decision version.
     pub const DECISION: &str = "shiin.decision/v1-draft.1";
     /// Policy version.
-    pub const POLICY: &str = "shiin.policy/v1-draft.1";
+    pub const POLICY: &str = "shiin.policy/v1-draft.2";
 }
 
 /// Reason codes, as registered in `docs/spec/decision.md`.
 pub mod reasons {
+    /// A required action class has no explicit capability, or is explicitly denied.
+    pub const DENY_CAPABILITY: &str = "deny.capability";
     /// A policy rule allowed the action.
     pub const ALLOW_POLICY: &str = "allow.policy";
     /// A policy rule denied the action.

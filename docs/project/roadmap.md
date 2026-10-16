@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Roadmap
 
@@ -43,7 +43,7 @@
 
 - The action request, decision, evaluation, policy model, and adapter contract specifications are `accepted`. Done on 2026-10-12.
 - The threat model has been reviewed by at least one person outside the project. **Open: this is the last M0 criterion, and it needs a reviewer who is not the author.**
-- The core golden use cases have test vectors. The original eight-case corpus has grown to 19 cases, each decidable from its own inputs and checked in continuous integration.
+- The core golden use cases have test vectors. The original eight-case corpus has grown to 26 cases, each decidable from its own inputs and checked in continuous integration.
 - ADR-0014 is `accepted`. Done on 2026-10-12.
 
 ## v0.1: Gate
@@ -85,7 +85,7 @@
 **Exit criteria.**
 
 - Intent-binding test vectors pass for all three hosts.
-- The intent-binding evaluation plan in [Intent binding](../spec/intent-binding.md) has produced its first measurements.
+- The intent-binding evaluation plan in [Intent binding](../spec/intent-binding.md#evaluation-plan) has produced its first measurements. Done for the nine-case labelled task corpus; independent real-workload evaluation remains open.
 
 ## v0.3: Approve
 
@@ -115,12 +115,12 @@
 - `shiin verify` and `shiin replay`, including what-if replay against a different policy.
 - Key management and rotation.
 - Redaction of sensitive values in audit events.
-- cargo-vet enforced in CI.
+- `cargo-deny` enforced in CI, as selected in [ADR-0038](../adr/0038-supply-chain-policy.md).
 
 **Exit criteria.**
 
-- Receipts verify offline on every Tier 1 platform.
-- Replay reproduces every decision in the conformance corpus.
+- Receipts verify offline on every Tier 1 platform. Unit tests and native key-store lifecycle checks pass on hosted Linux, macOS, and Windows runners; independent review and live operator-environment qualification remain open.
+- Replay reproduces every decision in the conformance corpus. Done for the 26-case signed/encrypted corpus through the CLI evaluation routine, including capability, session/task, what-if, and grant regression tests.
 
 ## v0.5: MCP and SDK
 
@@ -132,7 +132,7 @@
 - Local API over the daemon.
 - `shiin-client`, the Rust client library.
 - Peer-credential identity (`attested-local`).
-- SQL and migration classifiers.
+- SQL and migration classifiers. Partial classifier primitives exist in source; host integration remains open.
 
 **Exit criteria.**
 
@@ -146,8 +146,8 @@
 **Scope.**
 
 - Remote approvers through signed webhooks ([ADR-0041](../adr/0041-remote-approver-transport.md) must be decided first).
-- Streamable-HTTP MCP transport.
-- Shell wrapper for hosts without hooks.
+- Streamable-HTTP MCP transport. Downstream HTTP and HTTPS with a provisioned bearer token have process-fixture coverage; the upstream connection remains stdio, and OAuth token acquisition/refresh and external conformance remain open.
+- Shell wrapper for hosts without hooks. `shiin exec` now has a Unix source implementation; live host routing and platform validation remain open.
 - Windows promoted toward Tier 1.
 - Additional hosts, each with its hook behavior verified and documented.
 

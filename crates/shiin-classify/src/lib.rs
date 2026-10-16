@@ -178,6 +178,86 @@ pub fn classify_command(command: &str, workspace_root: &str) -> (String, Vec<Eff
     ("shell.exec".to_owned(), effects)
 }
 
+/// Classifies a deliberately small, unambiguous subset of SQL statements.
+///
+/// Statements with comments, strings, function calls, multiple statements, or
+/// unsupported syntax retain their broad database class when the first keyword
+/// is known, but receive an opaque effect so the configured risk gate can hold
+/// them for review. Unknown statements remain opaque shell actions.
+#[must_use]
+pub fn classify_sql(statement: &str) -> (String, Vec<Effect>) {
+    let normalized = statement.trim();
+    let first = normalized
+        .split_ascii_whitespace()
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    let action_type = match first.as_str() {
+        "SELECT" | "SHOW" | "DESCRIBE" | "EXPLAIN" => Some("db.query"),
+        "INSERT" | "UPDATE" | "DELETE" | "MERGE" | "REPLACE" | "TRUNCATE" => Some("db.mutate"),
+        "CREATE" | "ALTER" | "DROP" | "RENAME" | "GRANT" | "REVOKE" => Some("db.schema_change"),
+        _ => None,
+    };
+    let has_query_side_effect = matches!(first.as_str(), "SELECT" | "EXPLAIN")
+        && normalized
+            .split_ascii_whitespace()
+            .any(|word| matches!(word.to_ascii_uppercase().as_str(), "INTO" | "ANALYZE"))
+        || first == "SELECT"
+            && normalized
+                .split_ascii_whitespace()
+                .collect::<Vec<_>>()
+                .windows(2)
+                .any(|pair| {
+                    pair[0].eq_ignore_ascii_case("FOR")
+                        && matches!(pair[1].to_ascii_uppercase().as_str(), "UPDATE" | "SHARE")
+                });
+    let simple = action_type.is_some()
+        && !has_query_side_effect
+        && !normalized.is_empty()
+        && normalized.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric()
+                || byte.is_ascii_whitespace()
+                || matches!(byte, b'_' | b'.' | b',' | b'=' | b'*' | b'<' | b'>')
+        })
+        && !normalized.contains("  ")
+        && normalized
+            .split_ascii_whitespace()
+            .all(|word| !word.is_empty());
+    let effect = Effect {
+        kind: "command".to_owned(),
+        value: normalized.to_owned(),
+        confidence: if simple {
+            Confidence::Exact
+        } else {
+            Confidence::Opaque
+        },
+        action_type: None,
+    };
+    (action_type.unwrap_or("shell.exec").to_owned(), vec![effect])
+}
+
+/// Classifies execution of a migration file as a schema change.
+///
+/// Migration contents are intentionally opaque because a migration may include
+/// dialect-specific commands or effects that this crate cannot inspect safely.
+#[must_use]
+pub fn classify_migration(path: &str, workspace_root: &str) -> (String, Vec<Effect>) {
+    let mut path = path_effect(path, workspace_root);
+    path.action_type = Some("db.schema_change".to_owned());
+    (
+        "db.schema_change".to_owned(),
+        vec![
+            path,
+            Effect {
+                kind: "command".to_owned(),
+                value: "database migration".to_owned(),
+                confidence: Confidence::Opaque,
+                action_type: None,
+            },
+        ],
+    )
+}
+
 /// Whether a command's real behavior cannot be determined before it runs.
 #[must_use]
 pub fn is_opaque(command: &str) -> bool {
@@ -327,5 +407,51 @@ mod tests {
             shell_words("git commit -m 'two words'"),
             vec!["git", "commit", "-m", "two words"]
         );
+    }
+
+    #[test]
+    fn sql_classifier_maps_simple_statements_and_holds_complex_forms() {
+        let (action, effects) = classify_sql("SELECT id FROM users");
+        assert_eq!(action, "db.query");
+        assert_eq!(effects[0].confidence, Confidence::Exact);
+
+        let (action, effects) = classify_sql("UPDATE users SET active = 1");
+        assert_eq!(action, "db.mutate");
+        assert_eq!(effects[0].confidence, Confidence::Exact);
+
+        let (action, effects) = classify_sql("SELECT dangerous() FROM users");
+        assert_eq!(action, "db.query");
+        assert_eq!(effects[0].confidence, Confidence::Opaque);
+
+        for statement in [
+            "SELECT value INTO new_table FROM users",
+            "SELECT value FROM users FOR UPDATE",
+            "EXPLAIN ANALYZE SELECT value FROM users",
+        ] {
+            let (action, effects) = classify_sql(statement);
+            assert!(matches!(action.as_str(), "db.query" | "db.schema_change"));
+            assert_eq!(effects[0].confidence, Confidence::Opaque, "{statement}");
+        }
+
+        let (action, effects) = classify_sql("SELECT 1; DROP TABLE users");
+        assert_eq!(action, "db.query");
+        assert_eq!(effects[0].confidence, Confidence::Opaque);
+
+        let (action, effects) =
+            classify_sql("WITH changed AS (DELETE FROM users RETURNING *) SELECT * FROM changed");
+        assert_eq!(action, "shell.exec");
+        assert_eq!(effects[0].confidence, Confidence::Opaque);
+    }
+
+    #[test]
+    fn migration_classifier_binds_the_path_and_keeps_contents_opaque() {
+        let (action, effects) = classify_migration("migrations/001.sql", ROOT);
+        assert_eq!(action, "db.schema_change");
+        assert_eq!(
+            effects[0].value,
+            "/shiin-test-root/project/migrations/001.sql"
+        );
+        assert_eq!(effects[0].action_type.as_deref(), Some("db.schema_change"));
+        assert_eq!(effects[1].confidence, Confidence::Opaque);
     }
 }

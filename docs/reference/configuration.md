@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
 
 # Configuration
 
@@ -20,8 +20,8 @@ Paths are relative to the workspace, which is the directory the host reports as 
 working directory. Under [ADR-0016](../adr/0016-built-in-protected-resources.md) everything
 under `.shiin/` is a built-in protected resource, so no policy can let an agent change it.
 
-A per-user state directory in the usual operating-system locations arrives with the
-daemon in v0.3; see [state and storage](../architecture/state-and-storage.md).
+The Unix daemon uses a private per-user runtime directory.
+Its default socket and approval state, plus workspace evidence paths, are listed in [State and storage](../architecture/state-and-storage.md).
 
 ## Environment variables
 
@@ -30,6 +30,9 @@ daemon in v0.3; see [state and storage](../architecture/state-and-storage.md).
 | `SHIIN_WORKSPACE` | Overrides the workspace root. Useful when a host reports no working directory | works today |
 | `SHIIN_UNATTENDED` | If set to any value, a `pending` decision becomes a denial, because no approver can be reached | works today |
 | `CI` | Treated the same as `SHIIN_UNATTENDED`, since continuous integration has no approver | works today |
+| `SHIIN_DAEMON` | Set to `1` to require local daemon evaluation; an unavailable configured service denies the action | source implementation on Unix |
+| `SHIIN_SOCKET` | Absolute Unix socket override; setting it requires the daemon even without `SHIIN_DAEMON=1` | source implementation on Unix |
+| `SHIIN_EVIDENCE` | Set to `1` when starting the daemon to enable signed receipts/checkpoints and encrypted replay records; unavailable keys prevent startup | source implementation; OS key-store validation remains open |
 | `SHIIN_LOG` | Log level filter | planned, v0.2 |
 
 ## Options

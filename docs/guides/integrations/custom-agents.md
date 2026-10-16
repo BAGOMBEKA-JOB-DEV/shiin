@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.5 reviewed=2026-10-01 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.5 reviewed=2026-10-16 -->
 
 # Custom agents
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.5. Nothing on this page works yet.
+> [!NOTE]
+> **Guide: draft.**
+> The Unix local API and Rust client exist in source. Windows transport, attested agent identity, and independent validation remain open.
 
 ## Enforcement level
 
@@ -13,12 +13,28 @@ The agent asks Shiin for decisions through the local API.
 
 ## Interception
 
-A custom agent built with `shiin-client` calls the local API over a Unix domain socket or Windows named pipe.
-The API is JSON-RPC 2.0.
+A custom agent built with `shiin-client` calls the local API over a Unix domain socket.
+The API uses JSON-RPC 2.0. The client returns an error for an unavailable daemon or malformed response; the caller must stop the action unless Shiin returns `allow`.
+
+```rust
+use shiin_client::Client;
+use shiin_schema::DecisionValue;
+
+let client = Client::from_environment()?;
+let decision = client.evaluate(&request).await?;
+if decision.decision != DecisionValue::Allow {
+    return Err("Shiin did not allow the action".into());
+}
+```
 
 ## What it cannot see
 
-- A decision made when the daemon is unreachable, which is a fail-closed `deny`.
+The client/service integration tests exercise real Unix RPCs for policy validation, allow/deny/pending, unattended mode, stale snapshots, operator proof, single-use and scoped grants, revocation, and built-in denial precedence.
+They verify grant transition events and that operator credentials do not enter the audit log.
+This source conformance coverage does not establish interception or identity binding in an external agent.
+
+- Agent identity assurance: the daemon authenticates the local Unix user but does not yet bind that identity to the request's agent id.
+- Windows named-pipe transport.
 
 ## Read next
 

@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-16 -->
 
 # Landscape
 
@@ -120,8 +120,8 @@ Gateways sit in the traffic between an agent and the tool servers or other agent
 - **Belay**, described under [open-source agent action gates](#open-source-agent-action-gates), can also work as an MCP proxy.
 
 **How Shiin relates.**
-Shiin's MCP proxy (planned: v0.5) is an L2 mediated adapter with a narrower role than a general gateway.
-It is designed to turn MCP tool calls into [action requests](../glossary.md#action-request) and apply the same policy that hook adapters use.
+Shiin's early MCP proxy implementation (v0.5) is an L2 mediated adapter with a narrower role than a general gateway.
+It turns supported MCP tool calls into [action requests](../glossary.md#action-request); conformance and end-to-end policy validation remain open.
 MCP tool annotations can make a decision stricter but never more permissive.
 If what you need is access control for MCP or A2A traffic shared across many agents, a general gateway may be the better fit.
 
@@ -191,10 +191,10 @@ The last column includes current and planned design; the [roadmap](../project/ro
 | Agent-agnostic | Does one configuration apply across several agents and hosts? | Policy refers to normalized [action types](../spec/action-types.md), not host tool names, and each host gets an [adapter](../glossary.md#adapter) ([ADR-0025](../adr/0025-adapter-roadmap.md)) |
 | Interception point and enforcement level | Where is the action caught, and can the agent route around that point? | Every adapter is labeled L1 cooperative, L2 mediated, or L3 OS-enforced, together with what it cannot see ([Enforcement levels](../security/enforcement-levels.md)) |
 | Decision determinism | Do the same inputs always produce the same decision, and can model output change it? | The same action request and policy snapshot always produce the same decision; no language-model or machine-learning output is an input ([ADR-0009](../adr/0009-deterministic-enforcement.md)) |
-| Approval model | How does a person approve, and is the approval format specified beyond one application? | A versioned [approval protocol](../spec/approval-protocol.md) with single-use and scoped grants (planned: v0.3) |
-| Evidence | What record remains, and can someone else verify it? | A hash-chained [audit log](../glossary.md#audit-log) (planned: v0.1), then signed checkpoints and [receipts](../glossary.md#receipt) (planned: v0.4) |
+| Approval model | How does a person approve, and is the approval format specified beyond one application? | A versioned [approval protocol](../spec/approval-protocol.md) with single-use and scoped grants (partial source implementation; v0.3 validation remains open) |
+| Evidence | What record remains, and can someone else verify it? | A source-implemented hash-chained [audit log](../glossary.md#audit-log), with signed checkpoints and [receipts](../glossary.md#receipt) (partial source implementation; v0.4 validation remains open) |
 | Policy portability | Can policy be reviewed, tested, and reused outside one host? | TOML compiled to Cedar ([ADR-0014](../adr/0014-cedar-policy-engine-with-toml-front-end.md), accepted); direct Cedar input is planned |
-| Task-intent binding | Can a decision depend on the constraints of the current task, not only on standing rules? | Structured, human-confirmed [task declarations](../glossary.md#task-declaration) (planned: v0.2, experimental) |
+| Task-intent binding | Can a decision depend on the constraints of the current task, not only on standing rules? | Structured, human-confirmed [task declarations](../glossary.md#task-declaration) (experimental source; measurements open) |
 | Local-first | Does it run on the developer's machine without a hosted service or telemetry? | Runs locally with no telemetry, and every network feature is opt-in ([ADR-0007](../adr/0007-no-telemetry.md)) |
 
 ## Projects at a glance
@@ -248,11 +248,11 @@ intercepting actions through hooks, returning allow-or-deny outcomes, keeping an
 ### Differences
 
 Shiin's case rests on the four differentiators in the [vision](vision.md#what-makes-shiin-different).
-Each is a design commitment; the source implements task constraints, core wire contracts, policy evaluation, and cooperative hooks.
-Approval services and stronger enforcement remain planned.
+Each is a design commitment; the source implements task constraints, core wire contracts, policy evaluation, cooperative hooks, Unix approval services, evidence, and early integrations.
+Host validation and stronger enforcement remain open.
 
 1. **Task-intent binding.**
-   Shiin is designed to check each action against the constraints of a human-confirmed [task declaration](../glossary.md#task-declaration), not only against standing policy (planned: v0.2, experimental).
+   Shiin checks actions against constraints in experimental, human-confirmed [task declarations](../glossary.md#task-declaration), as well as standing policy; measurements and host validation remain open.
    This page records no verified fact that another project listed here binds decisions to per-task constraints.
    If one does, please request a correction.
 2. **An open, agent-neutral contract.**
@@ -276,12 +276,12 @@ Until Shiin ships, the projects above are the ones you can use.
 
 | If you need | Consider | Relationship to Shiin |
 |---|---|---|
-| A tool you can use today | One of the [open-source agent action gates](#open-source-agent-action-gates) | Instead, for now: Shiin has no implementation |
+| A tool you can use today | One of the [open-source agent action gates](#open-source-agent-action-gates) | Instead, for now: Shiin has a pre-alpha source implementation, but no release or package |
 | Controls for one host, where its built-in settings meet your needs | [Host-native controls](#host-native-controls) | Instead or alongside: keep them enabled even if you adopt Shiin |
 | To limit what an allowed command, or the code it runs, can reach | [An OS sandbox, container, or virtual machine](#os-sandboxes-and-isolation) | Alongside: Shiin does not isolate processes |
 | To restrict where an agent's traffic can go, or to inspect that traffic | [Network egress controls](#network-egress-controls) | Alongside: Shiin does not inspect traffic and cannot see data leaving through an allowed action |
 | Access control for MCP or A2A traffic shared across many agents | [MCP and agent gateways](#mcp-and-agent-gateways) | Instead or alongside, depending on whether you also want per-action policy and task binding on the developer's machine |
-| A desktop approval app with diffs and command previews | [mikepenz/agent-belay](https://github.com/mikepenz/agent-belay) (verified 2026-09-14) | Instead or alongside: Shiin's approval protocol is planned for v0.3, and its first approver is a command-line tool |
+| A desktop approval app with diffs and command previews | [mikepenz/agent-belay](https://github.com/mikepenz/agent-belay) (verified 2026-09-14) | Instead or alongside: Shiin's Unix approval protocol and command-line approver exist in source; desktop approvers remain future work |
 | To check tool-call arguments against live systems of record | [ToolJet/ActionRail](https://github.com/ToolJet/ActionRail) (verified 2026-09-14) | Alongside: Shiin's engine performs no I/O and decides from the action request and local policy alone |
 | Policies written in Rego | [eqtylab/cupcake](https://github.com/eqtylab/cupcake), or [microsoft/regorus](https://github.com/microsoft/regorus) to build your own (verified 2026-09-14) | Instead: Shiin proposes Cedar |
 | A broad agent-governance toolkit in Python | [microsoft/agent-governance-toolkit](https://github.com/microsoft/agent-governance-toolkit) (verified 2026-09-14) | Instead or alongside |

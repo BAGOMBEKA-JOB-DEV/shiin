@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Cryptography
 
@@ -16,8 +16,11 @@
 
 ## Key management
 
-Planned for v0.4: signing keys live in the OS keyring, following [ADR-0032](../adr/0032-signing-key-storage.md).
-Key generation and rotation are not implemented.
+Signing key generation, rotation, and public-key export use the OS keyring, following [ADR-0032](../adr/0032-signing-key-storage.md).
+Replay encryption keys are stored alongside the signing key in the keyring.
+Native key-store lifecycle checks pass on hosted Linux, macOS, and Windows runners, including persistence, rotation, retained-key replay, and corrupt-entry refusal.
+The [testing strategy](../engineering/testing-strategy.md#native-key-stores) describes the isolated fixture and its limits.
+Live operator-environment qualification and independent review remain open.
 
 ## Randomness
 

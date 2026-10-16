@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=accepted implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Evaluation
 
@@ -13,8 +13,8 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RE
 The [engine](../glossary.md#engine) evaluates an [action request](action-request.md) against a [policy snapshot](../glossary.md#policy-snapshot) and produces a [decision](decision.md).
 The engine performs no I/O and is deterministic: the same inputs always produce the same decision ([ADR-0009](../adr/0009-deterministic-enforcement.md), [ADR-0010](../adr/0010-pure-synchronous-engine.md)).
 
-Current identity and capability stages return `pass`; grant evaluation is planned for v0.3.
-Policy, task constraints, risk escalation, unattended denials, and five-stage traces exist in source.
+The identity stage currently returns `pass`; the capability gate requires explicit action/effect-class grants, and Unix approval grants are evaluated by the daemon path in source.
+Policy, task constraints, risk escalation, unattended denials, and five-stage traces exist in source. Host and cross-platform validation remain open.
 
 ## Stages
 

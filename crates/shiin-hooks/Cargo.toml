@@ -13,7 +13,7 @@ publish = false
 serde = { workspace = true }
 serde_json = { workspace = true }
 shiin-classify = { workspace = true }
-shiin-schema = { workspace = true }
+shiin-schema = { workspace = true, features = ["runtime"] }
 
 [lints]
 workspace = true

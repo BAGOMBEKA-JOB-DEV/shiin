@@ -1,13 +1,18 @@
 [workspace]
 resolver = "3"
 members = [
+  "crates/shiin-approval",
   "crates/shiin-audit",
   "crates/shiin-classify",
+  "crates/shiin-client",
   "crates/shiin-cli",
   "crates/shiin-engine",
   "crates/shiin-hooks",
+  "crates/shiin-ipc",
+  "crates/shiin-mcp-proxy",
   "crates/shiin-policy",
   "crates/shiin-schema",
+  "crates/shiind",
   "xtask",
 ]
 
@@ -19,6 +24,19 @@ repository = "https://github.com/BAGOMBEKA-JOB-DEV/shiin"
 authors = ["The Shiin Contributors"]
 
 [workspace.dependencies]
+allocation-counter = { version = "0.8.1", default-features = false }
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }
+tokio = { version = "1.53", default-features = false }
+subtle = { version = "2.6", default-features = false }
+rpassword = { version = "7", default-features = false }
+base64 = { version = "0.22", default-features = false, features = ["std"] }
+ed25519-dalek = { version = "3", default-features = false, features = ["fast", "zeroize"] }
+keyring = { version = "4.2", default-features = false, features = ["v1"] }
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["std"] }
+zeroize = { version = "1.8", default-features = false, features = ["std"] }
+shiin-approval = { path = "crates/shiin-approval" }
+shiin-ipc = { path = "crates/shiin-ipc" }
+shiin-mcp-proxy = { path = "crates/shiin-mcp-proxy" }
 cedar-policy = "4"
 getrandom = "0.3"
 globset = "0.4"
@@ -27,13 +45,20 @@ serde = { version = "1.0.228", features = ["derive"] }
 sha2 = "0.10"
 shiin-audit = { path = "crates/shiin-audit" }
 shiin-classify = { path = "crates/shiin-classify" }
+shiin-client = { path = "crates/shiin-client" }
 shiin-engine = { path = "crates/shiin-engine" }
 shiin-hooks = { path = "crates/shiin-hooks" }
 shiin-policy = { path = "crates/shiin-policy" }
-shiin-schema = { path = "crates/shiin-schema" }
+shiin-schema = { path = "crates/shiin-schema", default-features = false }
 thiserror = "2"
 toml = "0.9"
 regex = "1.13"
+reqwest = { version = "0.13.2", default-features = false }
+axum = { version = "0.8", default-features = false }
+rcgen = { version = "0.14", default-features = false }
+rustls = { version = "0.23", default-features = false }
+tokio-rustls = { version = "0.26", default-features = false }
+hyper-util = { version = "0.1", default-features = false }
 serde_json = "1.0.151"
 walkdir = "2.5"
 

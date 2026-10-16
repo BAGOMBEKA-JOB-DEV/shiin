@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # Architecture overview
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
+> Authorization, approvals, evidence, and early client/integration code exist in source; platform, host, and milestone validation remain incomplete.
 
 Shiin is a local, agent-agnostic authorization layer for AI agent actions.
 It sits between agents and the files, commands, networks, and services they act on.
@@ -47,7 +47,7 @@ The engine crates are `shiin-schema`, `shiin-classify`, `shiin-policy`, and `shi
 ## Deployment
 
 Shiin is local-first and daemonless in v0.1 ([ADR-0022](../adr/0022-local-first-daemonless-deployment.md)).
-A per-user daemon is planned for v0.3.
+The Unix per-user daemon is implemented in source for approvals; Windows transport and broader platform validation remain open.
 See [Deployment models](deployment-models.md).
 
 ## Read next

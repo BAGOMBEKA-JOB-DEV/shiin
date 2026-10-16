@@ -17,6 +17,10 @@ use std::process::ExitCode;
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::Duration;
 
+mod evidence;
+mod exec;
+use evidence::{key_command, key_public, replay_evidence, verify_evidence};
+
 use shiin_audit::AuditLog;
 use shiin_engine::{Inputs, decide, vectors};
 use shiin_hooks::claude_code::{self, HookResponse, PreToolUse};
@@ -42,9 +46,17 @@ const LOCK_PATH: &str = ".shiin/state.lock";
 /// Internal deadline, including reading the host's input.
 const HOOK_TIMEOUT: Duration = Duration::from_secs(2);
 
+/// The binary owns its IPC runtime; engine and service libraries create none.
+static DAEMON_RUNTIME: std::sync::OnceLock<shiin_ipc::Runtime> = std::sync::OnceLock::new();
+
 /// The policy written by `shiin init`.
 const STARTER_POLICY: &str = r#"# Shiin policy. See docs/guides/writing-policies.md
 version = 1
+
+[capabilities.workspace]
+id = "workspace"
+allow = true
+action_types = ["fs.*", "shell.exec"]
 
 # Anything no rule allows is denied.
 [defaults]
@@ -79,6 +91,12 @@ privilege_escalation = "pending"
 "#;
 
 fn main() -> ExitCode {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|argument| argument == "exec")
+    {
+        return exec::run(&std::env::args_os().skip(2).collect::<Vec<_>>());
+    }
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     let words: Vec<&str> = arguments.iter().map(String::as_str).collect();
     let panic_host = if words.as_slice() == ["hook", "cursor"] {
@@ -89,6 +107,23 @@ fn main() -> ExitCode {
         HostKind::ClaudeCode
     };
     install_panic_hook(panic_host);
+    if shiin_ipc::enabled()
+        || words
+            .first()
+            .is_some_and(|command| ["pending", "approve", "grants", "revoke"].contains(command))
+    {
+        let runtime = shiin_ipc::RuntimeBuilder::new_current_thread()
+            .enable_all()
+            .build();
+        match runtime {
+            Ok(runtime) => {
+                let _ = DAEMON_RUNTIME.set(runtime);
+            }
+            Err(error) => {
+                return report(Err(format!("cannot initialize local transport: {error}")));
+            }
+        }
+    }
     match words.as_slice() {
         ["init"] => report(init()),
         ["policy", "validate"] => report(validate(Path::new(POLICY_PATH))),
@@ -106,9 +141,32 @@ fn main() -> ExitCode {
             report(show_log(count))
         }
         ["verify"] => report(verify()),
+        ["verify", artifact, public] => report(verify_evidence(artifact, public)),
+        ["replay", artifact] => report(replay_evidence(artifact, None)),
+        ["replay", artifact, policy] => report(replay_evidence(artifact, Some(policy))),
+        ["key", "init"] => report(key_command(false)),
+        ["key", "rotate"] => report(key_command(true)),
+        ["key", "public"] => report(key_public()),
         ["doctor"] => report(Ok(doctor())),
         ["version" | "--version" | "-V"] => report(Ok(version())),
         ["task", rest @ ..] => report(task_command(rest)),
+        ["pending"] => report(operator_call("shiin.pending", serde_json::json!({}))),
+        ["grants"] => report(operator_call("shiin.grants", serde_json::json!({}))),
+        ["revoke", id] => report(operator_call("shiin.revoke", serde_json::json!({"id":id}))),
+        ["approve", ticket, resolution, lifetime] => report(operator_call(
+            "shiin.approve.resolve",
+            serde_json::json!({
+                "ticket":ticket, "resolution":resolution, "lifetime":lifetime.parse::<u64>().unwrap_or(0), "scope":null
+            }),
+        )),
+        ["approve", ticket, "allow_always", lifetime, scope] => {
+            let outcome = fs::read_to_string(scope).map_err(|error| error.to_string())
+                .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).map_err(|error| error.to_string()))
+                .and_then(|scope| operator_call("shiin.approve.resolve", serde_json::json!({
+                    "ticket":ticket, "resolution":"allow_always", "lifetime":lifetime.parse::<u64>().unwrap_or(0), "scope":scope
+                })));
+            report(outcome)
+        }
         _ => {
             usage();
             ExitCode::FAILURE
@@ -167,10 +225,18 @@ fn usage() {
     eprintln!("  hook claude-code          serve a Claude Code PreToolUse hook on stdin");
     eprintln!("  hook codex                serve an OpenAI Codex CLI hook on stdin");
     eprintln!("  hook cursor               serve a Cursor hook on stdin");
+    eprintln!("  exec --session ID -- /PROGRAM [ARG ...]   authorize and execute one command");
     eprintln!("  log [count]               show recent audit events");
     eprintln!("  verify                    check the audit log's hash chain");
+    eprintln!("  verify <evidence.json> <public.json>   verify signed evidence offline");
+    eprintln!("  replay <encrypted-replay.json> [policy.toml]   reproduce or compare a decision");
+    eprintln!("  key init / rotate / public   manage OS-keyring evidence keys");
     eprintln!("  doctor                    check this workspace's setup");
     eprintln!("  version                   print the version of this build");
+    eprintln!("  pending / grants          inspect daemon state from an operator terminal");
+    eprintln!("  approve <ticket> <allow_once|deny> <seconds>   resolve an action");
+    eprintln!("  approve <ticket> allow_always <seconds> <scope.json>   create a scoped grant");
+    eprintln!("  revoke <ticket-or-grant>   revoke a pending request or grant");
     eprintln!();
     eprintln!("  task start <description> [options]   declare what the agent is working on");
     eprintln!("  task show                            show the active task and its usage");
@@ -199,6 +265,59 @@ fn report(outcome: Result<String, String>) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// Operator credentials are read from a separate terminal, never stdin payloads or environment variables.
+fn operator_call(method: &str, mut params: serde_json::Value) -> Result<String, String> {
+    use std::io::IsTerminal;
+    if !std::io::stdin().is_terminal()
+        || !std::io::stderr().is_terminal()
+        || !std::io::stdout().is_terminal()
+    {
+        return Err("approval administration requires your own operator terminal".to_owned());
+    }
+    eprintln!(
+        "Enter the credential displayed by shiind --operator (never share it with an agent):"
+    );
+    let proof = rpassword::read_password().map_err(|error| error.to_string())?;
+    if method == "shiin.approve.resolve" {
+        let ticket = params["ticket"].as_str().ok_or("approval ticket missing")?;
+        let pending = daemon_call(
+            "shiin.pending",
+            serde_json::json!({"proof":proof, "ticket":ticket}),
+        )?;
+        let item = pending
+            .as_array()
+            .ok_or("invalid pending response")?
+            .iter()
+            .find(|item| item["approval"]["ticket"].as_str() == Some(ticket))
+            .ok_or("ticket is no longer pending")?;
+        eprintln!(
+            "Normalized action and approval request:\n{}",
+            serde_json::to_string_pretty(item).map_err(|error| error.to_string())?
+        );
+        if !params["scope"].is_null() {
+            eprintln!("Requested scope: {}", params["scope"]);
+        }
+        let resolution = params["resolution"].as_str().ok_or("resolution missing")?;
+        eprintln!(
+            "Lifetime: {} seconds. Type {resolution} to confirm:",
+            params["lifetime"]
+        );
+        if rpassword::read_password().map_err(|error| error.to_string())? != resolution {
+            return Err("resolution was not confirmed".to_owned());
+        }
+    }
+    params["proof"] = serde_json::json!(proof);
+    let result = daemon_call(method, params)?;
+    serde_json::to_string_pretty(&result).map_err(|error| error.to_string())
+}
+
+fn daemon_call(method: &str, params: serde_json::Value) -> Result<serde_json::Value, String> {
+    let runtime = DAEMON_RUNTIME
+        .get()
+        .ok_or("local transport runtime is unavailable")?;
+    shiin_ipc::call(runtime, method, params)
 }
 
 fn init() -> Result<String, String> {
@@ -675,9 +794,9 @@ fn respond(kind: HostKind, decision: Result<&Decision, &str>) -> Result<String, 
 
 /// Builds the action request for a host's payload, then decides it.
 fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
-    let _lock = lock_workspace()?;
+    let workspace_lock = lock_workspace()?;
     let fallback = workspace_root();
-    let (mut request, root) = match kind {
+    let (request, root) = match kind {
         HostKind::ClaudeCode => {
             let payload: PreToolUse = serde_json::from_str(input)
                 .map_err(|error| format!("the hook payload is not valid: {error}"))?;
@@ -706,13 +825,42 @@ fn decide_for_host(kind: HostKind, input: &str) -> Result<Decision, String> {
         }
     };
 
-    let (source, compiled) = load_policy(Path::new(POLICY_PATH), &root)?;
+    decide_normalized(request, &root, workspace_lock)
+}
+
+/// Evaluates one normalized request while holding the workspace transaction lock.
+fn decide_normalized(
+    mut request: ActionRequest,
+    root: &str,
+    workspace_lock: File,
+) -> Result<Decision, String> {
+    let (source, compiled) = load_policy(Path::new(POLICY_PATH), root)?;
     request.policy_snapshot = source
         .layers
         .first()
         .map(|layer| layer.digest.clone())
         .unwrap_or_default();
     request.validate().map_err(str::to_owned)?;
+
+    if shiin_ipc::enabled() {
+        drop(workspace_lock);
+        let method = if mode() == Mode::Unattended {
+            "shiin.evaluate.unattended"
+        } else {
+            "shiin.evaluate"
+        };
+        let value = daemon_call(
+            method,
+            serde_json::to_value(&request).map_err(|error| error.to_string())?,
+        )?;
+        let decision: Decision =
+            serde_json::from_value(value).map_err(|error| error.to_string())?;
+        if decision.schema != shiin_schema::versions::DECISION || decision.request_id != request.id
+        {
+            return Err("local service returned an invalid decision".to_owned());
+        }
+        return Ok(decision);
+    }
 
     let task = load_task()?;
     request.task = task.as_ref().map(|task| task.id.clone());

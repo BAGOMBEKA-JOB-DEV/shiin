@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # Decision pipeline
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
+> Authorization, approvals, evidence, and early client/integration code exist in source; platform, host, and milestone validation remain incomplete.
 
 The decision pipeline is the path an [action](../glossary.md#action) takes from proposal to enforcement.
 
@@ -29,25 +29,26 @@ Any failure produces `deny` ([ADR-0013](../adr/0013-fail-closed-failure-semantic
 
 ## Diagram
 
-This diagram describes the planned v0.3 approval service.
-The current engine returns a decision to the hook service, which performs the audit I/O.
-Identity and capability gates currently pass through; grant evaluation is unimplemented.
+This diagram shows the Unix daemon path when approval handling is enabled.
+The daemon evaluates and audits the request, creates a ticket for `pending`, and lets a separate operator terminal resolve it.
+The identity gate currently passes through; the capability gate denies missing or explicitly refused action/effect classes.
 
 ```mermaid
 sequenceDiagram
     participant Host as Host and agent
-    participant Adapter as Adapter
-    participant Engine as Engine
+    participant Adapter as Host adapter
+    participant Daemon as Unix daemon
     participant Approver as Approver
     participant Audit as Audit log
     Host->>Adapter: proposed action (host payload)
-    Adapter->>Engine: action request
-    Engine->>Engine: identity, capability, policy, intent, risk
-    Engine->>Audit: request received, decision made
-    Engine-->>Adapter: pending
-    Adapter->>Approver: approval request
-    Approver-->>Adapter: resolution (allow once)
-    Adapter->>Audit: approval resolved, grant used
+    Adapter->>Daemon: action request
+    Daemon->>Daemon: identity, capability, policy, intent, risk
+    Daemon->>Audit: request received, decision made
+    Daemon-->>Adapter: pending ticket
+    Adapter->>Approver: ticket shown in operator terminal
+    Approver->>Daemon: authenticated resolution
+    Daemon->>Audit: approval resolved, grant consumed
+    Daemon-->>Adapter: allow
     Adapter-->>Host: allow
 ```
 

@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
 
 # Audit and evidence
 
@@ -15,7 +15,7 @@ It is tamper-evident, not tamper-proof.
 
 Hook requests and decisions produce audit events before the hook responds.
 Offline `check` and `explain` do not write hook audit events.
-Approval and grant events are planned for v0.3.
+Approval and grant events exist in the Unix daemon's source implementation.
 Command and URL values are recorded as digests, as described in [audit events](../spec/audit-events.md).
 
 ## Verification
@@ -24,11 +24,11 @@ Command and URL values are recorded as digests, as described in [audit events](.
 
 ## Replay
 
-Planned for v0.4: `shiin replay` re-evaluates past requests, including against a proposed new policy, to show what would have changed.
+`shiin replay` re-evaluates captured requests with the originating replay key and can compare a different policy.
 
 ## Receipts
 
-From v0.4, signed receipts attest that a decision was made.
+Signed receipts attest that a decision was made when evidence recording is enabled in the daemon.
 A receipt proves who signed a statement about a decision, not that the action's real outcome was correct.
 
 ## Read next

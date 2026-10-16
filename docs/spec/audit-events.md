@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
 
 # Audit events
 
 > [!NOTE]
 > **Specification: draft.**
-> Requests, decisions, hash chaining, redacted summaries, and local verification exist in source.
-> Approval and grant events are reserved for v0.3; signed evidence and replay are planned for v0.4.
+> Requests, decisions, approval and grant events, hash chaining, redacted summaries, and local verification exist in source.
+> Signed evidence and replay are implemented in part; platform and conformance validation remain open.
 >
 > Version: `shiin.audit-events/v1-draft.2`.
 
@@ -68,7 +68,7 @@ Current summaries retain request, agent, session, task, host, workspace, decisio
 Command, URL, and other effect values are replaced with `value_digest`.
 File contents, raw host payloads, free-text messages, and unknown fields are omitted.
 The resulting summary is not a complete action request.
-Exact replay of redacted requests is not implemented; its storage design remains v0.4 work.
+An audit summary alone cannot support exact replay because sensitive effect values are redacted. The daemon stores replay inputs separately in encrypted evidence; replay and its key path have a source implementation, with platform and external review still open.
 
 ## Durability
 

@@ -1,0 +1,48 @@
+[package]
+name = "shiin-mcp-proxy"
+version = "0.0.0"
+description = "Shiin's MCP authorization proxy"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+# `publish = false` would otherwise hide this executable from cargo-dist.
+[package.metadata.dist]
+dist = true
+
+[[bin]]
+name = "shiin-mcp-proxy"
+path = "src/main.rs"
+
+[[test]]
+name = "conformance"
+path = "tests/conformance.rs"
+harness = false
+
+[dependencies]
+rmcp = { version = "3.0.0", default-features = false, features = ["client", "server", "transport-child-process", "transport-io", "transport-streamable-http-client-reqwest"] }
+reqwest = { workspace = true, features = ["rustls"] }
+serde_json.workspace = true
+sha2.workspace = true
+zeroize.workspace = true
+shiin-client.workspace = true
+shiin-policy.workspace = true
+shiin-schema = { workspace = true, features = ["runtime"] }
+tokio = { workspace = true, features = ["io-std", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
+
+[dev-dependencies]
+rcgen = { workspace = true, features = ["crypto", "aws_lc_rs", "pem"] }
+rustls = { workspace = true, features = ["std", "aws_lc_rs"] }
+tokio-rustls.workspace = true
+hyper-util = { workspace = true, features = ["server-auto", "service", "tokio"] }
+axum = { workspace = true, features = ["http1", "tokio"] }
+rmcp = { version = "3.0.0", default-features = false, features = ["transport-streamable-http-server"] }
+shiin-ipc.workspace = true
+shiind = { path = "../shiind" }
+tokio = { workspace = true, features = ["net", "io-util"] }
+
+[lints]
+workspace = true

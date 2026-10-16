@@ -1,14 +1,15 @@
-<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=policy status=draft implementation=n/a milestone=n/a reviewed=2026-10-16 -->
 
 # Workspace and crates
 
 > [!NOTE]
 > **Project policy: draft.**
 > This page is the only home of Shiin's crate list.
-> The workspace has seven product crates and `xtask`; later milestone crates remain planned.
+> The workspace has twelve product crates and `xtask`, including partial approval, evidence, and integration implementations.
+> Host, platform, and milestone validation remain incomplete.
 
 Shiin is built as a single Cargo workspace.
-This page describes the repository layout, the crates the workspace will contain, what each crate is responsible for,
+This page describes the repository layout, the crates in the workspace, what each crate is responsible for,
 and the rules that keep the crate graph small, acyclic, and honest about what exists.
 The decision behind the layout is [ADR-0035](../adr/0035-workspace-layout.md).
 
@@ -22,7 +23,7 @@ The decision behind the layout is [ADR-0035](../adr/0035-workspace-layout.md).
 | `.cargo/config.toml` | exists | Defines the `cargo xtask` alias |
 | `xtask/` | exists | Repository tooling; today it provides `cargo xtask docs-check` |
 | `crates/` | exists | Product crates, each created in the milestone that needs it |
-| `fuzz/` | planned: v0.1 | Fuzz targets in a separate workspace |
+| `fuzz/` | exists | Wire-request and classification fuzz targets in a separate nightly workspace |
 
 The workspace section of today's `Cargo.toml` is:
 
@@ -30,13 +31,18 @@ The workspace section of today's `Cargo.toml` is:
 [workspace]
 resolver = "3"
 members = [
+  "crates/shiin-approval",
   "crates/shiin-audit",
   "crates/shiin-classify",
+  "crates/shiin-client",
   "crates/shiin-cli",
   "crates/shiin-engine",
   "crates/shiin-hooks",
+  "crates/shiin-ipc",
+  "crates/shiin-mcp-proxy",
   "crates/shiin-policy",
   "crates/shiin-schema",
+  "crates/shiind",
   "xtask",
 ]
 ```
@@ -56,9 +62,9 @@ rust-toolchain.toml    pinned toolchain
 rustfmt.toml           formatter settings
 .editorconfig          editor settings
 .cargo/config.toml     cargo aliases, including `cargo xtask`
-crates/<name>/         seven implemented product crates
+crates/<name>/         twelve product crates with milestone validation in progress
 xtask/                 repository tooling, never published
-fuzz/                  fuzz targets, a separate nightly workspace (planned: v0.1)
+fuzz/                  fuzz targets, a separate nightly workspace
 docs/                  this documentation
 ```
 
@@ -68,7 +74,7 @@ docs/                  this documentation
 - `xtask/` follows the `cargo xtask` convention for repository automation written in Rust.
   It sets `publish = false`.
   Product crates never depend on it.
-- The planned `fuzz/` directory will have its own `[workspace]` table and lockfile.
+- The `fuzz/` directory has its own `[workspace]` table and lockfile.
   Its nightly-only dependencies never enter the main workspace, its lockfile, or its MSRV check.
   See [Testing strategy](testing-strategy.md).
 - Every member inherits `edition`, `rust-version`, `license`, `repository`, and `authors` from `[workspace.package]`.
@@ -76,23 +82,22 @@ docs/                  this documentation
 
 ## Crates
 
-The table lists every crate the project plans, the one responsibility each has, and the [milestone](../project/roadmap.md) in which it is created.
-A crate that is listed here but not yet created does not exist in any form, including on crates.io.
+The table lists every product crate in the workspace, its responsibility, and the [milestone](../project/roadmap.md) that owns its implementation and validation.
 
 | Crate | Responsibility | Milestone |
 |---|---|---|
 | `shiin-schema` | Wire types for action requests, decisions, approval messages, and audit events, matching the JSON Schemas in `docs/spec/schemas/` | v0.1 |
-| `shiin-classify` | Normalizers for paths, shell commands, URLs, and SQL, and the derivation of effects from them | v0.1 (SQL: v0.5) |
+| `shiin-classify` | Normalizers for paths, shell commands, URLs, and experimental SQL, and the derivation of effects from them | v0.1 (SQL: v0.5; host integration open) |
 | `shiin-policy` | The TOML front-end and its compilation to Cedar, policy layering, and diagnostics | v0.1 |
 | `shiin-engine` | The pure, synchronous evaluation pipeline | v0.1 |
-| `shiin-audit` | The hash-chained audit log, verification, and replay; receipts behind a feature | v0.1 (receipts: v0.4) |
+| `shiin-audit` | The hash-chained audit log, verification, replay, and receipts behind a feature | v0.1 (receipts: v0.4; external review open) |
 | `shiin-hooks` | Host hook adapters: a `claude_code` module, then `codex` and `cursor` modules | v0.1 (Codex and Cursor: v0.2) |
 | `shiin-cli` | The `shiin` binary: `init`, `check`, `explain`, `policy validate`, `policy test`, `hook`, `task`, `pending`, `approve`, `log`, `verify`, `replay`, and `doctor` | v0.1 |
-| `shiin-approval` | The approval state machine and grants | v0.3 |
-| `shiin-ipc` | Local transport over Unix domain sockets and Windows named pipes | v0.3 |
-| `shiind` | The per-user daemon | v0.3 |
-| `shiin-client` | The public Rust client library | v0.5 |
-| `shiin-mcp-proxy` | The MCP proxy | v0.5 |
+| `shiin-approval` | The approval state machine and grants | v0.3 (source; review open) |
+| `shiin-ipc` | Local transport over Unix domain sockets and Windows named pipes | v0.3 (Unix source; Windows validation open) |
+| `shiind` | The per-user daemon | v0.3 (Unix source; platform validation open) |
+| `shiin-client` | The Rust client for daemon evaluation and policy validation | v0.5 (early source; conformance open) |
+| `shiin-mcp-proxy` | The MCP proxy with upstream stdio and downstream stdio or Streamable HTTP | v0.5 (HTTP: v0.6; external conformance open) |
 | `shiin-platform` | The only crate allowed to contain `unsafe` code; created only if needed | as needed |
 | `xtask` | Repository tooling | exists |
 | `fuzz/` | Fuzz targets; a separate workspace, not a member crate | v0.1 |
@@ -139,11 +144,14 @@ Reviewing and disabling unnecessary defaults remains open supply-chain work.
 - The engine crates never open network connections and never depend on crates that do, such as HTTP clients, TLS stacks, or async runtimes.
 - `shiin-engine` performs no I/O of any kind ([ADR-0010](../adr/0010-pure-synchronous-engine.md)).
 - `shiin-classify` and `shiin-policy` may read the local file system where their job requires it, such as resolving a path or loading a policy file.
-- A planned `xtask` check inspects the normal (non-dev) dependency tree of each engine crate and fails if a forbidden crate appears.
+- `cargo xtask dependency-check` inspects the normal (non-dev) dependency tree of each engine crate and fails if a known network stack or async runtime appears.
+  The documentation CI job runs this check; the prohibited-crate list still needs review when new dependencies are admitted.
 
 ### `shiin-engine` builds for WebAssembly as a purity guard
 
 From v0.4, CI builds `shiin-engine` for the `wasm32-unknown-unknown` target on every pull request.
+The isolated check disables the schema crate's default runtime feature through its workspace dependency.
+OS clocks and randomness remain explicitly enabled by adapters and services; wire types and timestamp formatting do not require them.
 
 - The build fails if the engine, or anything it depends on, needs operating-system facilities that target lacks,
   such as native system libraries, platform-specific system calls, or an operating-system randomness source.

@@ -45,6 +45,22 @@ jobs:
       - name: Check documentation rules
         run: cargo xtask docs-check
 
+      - name: Measure intent binding against the labelled corpus
+        run: cargo xtask intent-evaluation
+
+      - name: Refuse network stacks and async runtimes in engine crates
+        run: cargo xtask dependency-check
+
+      - name: Generate the core conformance bundle
+        run: cargo xtask conformance
+
+      - name: Publish the core conformance bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: core-conformance
+          path: target/conformance
+          if-no-files-found: error
+
       - name: Run the tests, including the specification conformance corpus
         run: cargo test --workspace
 

@@ -1,12 +1,13 @@
-<!-- shiin-doc: kind=spec status=draft implementation=none milestone=v0.5 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.5 reviewed=2026-10-16 -->
 
 # Local API
 
 > [!NOTE]
 > **Specification: draft.**
-> Normative design. No implementation exists yet.
+> The Unix daemon implements JSON-RPC evaluation, policy validation, and operator approval methods; `shiin-client` exposes evaluation and policy validation.
+> Windows named pipes and attested agent identity remain unimplemented.
 >
-> Version: `shiin.local-api/v1-draft.1`.
+> Version: `shiin.local-api/v1-draft.2`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -27,16 +28,23 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
 | Method | Description |
 |---|---|
 | `shiin.evaluate` | Evaluate an action request and return a decision. |
+| `shiin.evaluate.unattended` | Evaluate without an available approver; `pending` becomes `deny`. |
 | `shiin.policy.validate` | Validate a policy and return diagnostics. |
 | `shiin.approve.resolve` | Resolve an approval request. |
+| `shiin.pending` | List pending requests; requires the operator credential. |
+| `shiin.grants` | List grants; requires the operator credential. |
+| `shiin.revoke` | Revoke a request or grant; requires the operator credential. |
+
+**[API-007]** Evaluation methods MUST carry an action request as `params`.
+Policy validation MUST carry `source` (the policy text) and `workspace` (the workspace root) as string fields in `params`.
 
 ## Authentication
 
-**[API-005]** The caller's identity MUST be established at the `attested-local` assurance level or higher.
+**[API-005]** The caller's identity MUST be established at the `attested-local` assurance level or higher. The current service verifies that Unix peers share the daemon user's UID but does not yet bind that credential to the request's agent identity.
 
 ## Failure
 
-**[API-006]** Any error, timeout, or unreachable daemon MUST produce a fail-closed `deny`.
+**[API-006]** Any error, timeout, or unreachable daemon MUST produce a fail-closed `deny`. `shiin-client` returns an error; callers MUST stop the requested action unless the decision is `allow`.
 
 ## Example
 
@@ -57,11 +65,27 @@ The local API lets custom agents and integrations ask Shiin for decisions ([ADR-
     ],
     "task": null,
     "policy_snapshot": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-    "host": { "name": "custom-agent" }
+    "host": { "name": "custom-agent" },
+    "workspace": { "root": "/home/dev/project" }
+  }
+}
+```
+
+<!-- validate: spec/schemas/local-api.v1.schema.json -->
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "EXAMPLE-policy-validation",
+  "method": "shiin.policy.validate",
+  "params": {
+    "source": "version = 1\n[defaults]\ndecision = 'deny'\n",
+    "workspace": "/home/dev/project"
   }
 }
 ```
 
 ## Revision history
 
+- v1-draft.2 (2026-10-16): Bind evaluation and policy-validation parameters to their schemas; the Rust client uses the daemon's `source` field and rejects unsupported decision versions.
 - v1-draft.1 (2026-10-01): Initial draft.
+- Implementation update (2026-10-16): Documented the existing Unix daemon methods and Rust client. Windows transport and identity binding remain open.

@@ -115,7 +115,16 @@ pub(crate) fn print_usage() {
     eprintln!();
     eprintln!("commands:");
     eprintln!("  docs-check    validate docs/ against the documentation style guide");
+    eprintln!("  conformance [directory] publish core vectors, schemas, and a result report");
+    eprintln!("  dependency-check        reject engine network and async dependencies");
+    eprintln!("  fuzz-smoke              run bounded parser fuzzing on the pinned nightly");
+    eprintln!("  native-keyring-check    validate native key-store lifecycle on a CI runner");
+    eprintln!("  memory                  check component heap use (feature: memory-profile)");
     eprintln!("  performance [binary]    measure local latency against the performance budgets");
+    eprintln!("  performance-scaling [binary]    check larger policies and audit logs");
+    eprintln!(
+        "  intent-evaluation       compare task constraints against labelled conformance cases"
+    );
 }
 
 /// Runs every documentation check and reports the result.

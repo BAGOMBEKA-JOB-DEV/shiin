@@ -1,0 +1,41 @@
+[package]
+name = "shiin-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+members = ["."]
+
+[dependencies]
+libfuzzer-sys = { version = "0.4", default-features = false, features = ["link_libfuzzer"] }
+serde_json = { version = "1.0.151", default-features = false, features = ["std"] }
+shiin-schema = { path = "../crates/shiin-schema", default-features = false }
+shiin-classify = { path = "../crates/shiin-classify" }
+shiin-engine = { path = "../crates/shiin-engine" }
+shiin-policy = { path = "../crates/shiin-policy" }
+
+[[bin]]
+name = "action-request"
+path = "fuzz_targets/action_request.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "classification"
+path = "fuzz_targets/classification.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "authorization"
+path = "fuzz_targets/authorization.rs"
+test = false
+doc = false
+bench = false

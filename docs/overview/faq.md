@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # FAQ
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
+> Authorization, approvals, evidence, and early client/integration code exist in source; platform, host, and milestone validation remain incomplete.
 
 ## What is Shiin?
 

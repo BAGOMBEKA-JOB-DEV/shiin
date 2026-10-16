@@ -203,6 +203,7 @@ mod tests {
             (DecisionValue::Pending, "deny"),
         ] {
             let decision = Decision {
+                approval: None,
                 schema: versions::DECISION.to_owned(),
                 request_id: "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b".to_owned(),
                 decision,

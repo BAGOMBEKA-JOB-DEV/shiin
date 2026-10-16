@@ -2,13 +2,17 @@
 //!
 //! These are the only impure parts of this crate. They are kept here so that every
 //! other crate takes time and identity as inputs rather than reading the clock,
-//! which is what keeps the engine replayable.
+//! which is what keeps the engine replayable. OS clock and randomness functions
+//! require the `runtime` feature; deterministic formatting is always available.
 
+#[cfg(feature = "runtime")]
 use std::fmt::Write as _;
+#[cfg(feature = "runtime")]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// The current time as an RFC 3339 timestamp in UTC, to the second.
 #[must_use]
+#[cfg(feature = "runtime")]
 pub fn now_rfc3339() -> String {
     let seconds = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -18,6 +22,7 @@ pub fn now_rfc3339() -> String {
 
 /// Seconds since the Unix epoch.
 #[must_use]
+#[cfg(feature = "runtime")]
 pub fn now_unix_seconds() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -68,6 +73,7 @@ fn civil_from_days(days: i64) -> (i64, u64, u64) {
 /// Returns an empty identifier if OS randomness fails. Action validation and state
 /// writers reject that sentinel rather than authorizing with a fabricated identifier.
 #[must_use]
+#[cfg(feature = "runtime")]
 pub fn new_id() -> String {
     let mut bytes = [0_u8; 16];
     if getrandom::fill(&mut bytes).is_err() {
@@ -107,6 +113,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "runtime")]
     fn identifiers_look_like_uuid_v4() {
         let id = new_id();
         assert_eq!(id.len(), 36);

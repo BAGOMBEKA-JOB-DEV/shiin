@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:capability:v1",
+  "title": "Shiin explicit capability declaration",
+  "type": "object",
+  "required": ["id", "action_types"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "allow": {"const": true},
+    "deny": {"const": true},
+    "action_types": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^(?:[^*]+\\*?|\\*)$"}},
+    "agents": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "oneOf": [
+    {"required": ["allow"], "not": {"required": ["deny"]}},
+    {"required": ["deny"], "not": {"required": ["allow"]}}
+  ],
+  "additionalProperties": false
+}

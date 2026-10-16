@@ -4,7 +4,7 @@
 
 > [!NOTE]
 > **Project status: pre-alpha.**
-> Core contracts have source implementations and conformance tests; approval, receipts, and local API implementations remain planned.
+> Core contracts have source implementations and conformance tests; approval, evidence, and local API implementations are partial and still need milestone validation.
 > No release has shipped; source builds are available.
 > Tests check implemented wire values against the schemas.
 
@@ -79,7 +79,7 @@ Every normative requirement in a specification starts with a bold, bracketed req
 | [Risk signals](risk-signals.md) | v0.1 | [schema](schemas/risk-signals.v1.schema.json) |
 | [Approval protocol](approval-protocol.md) | v0.3 | [schema](schemas/approval-protocol.v1.schema.json) |
 | [Audit events](audit-events.md) | v0.1 | [schema](schemas/audit-events.v1.schema.json) |
-| [Receipts](receipts.md) | v0.4 | [schema](schemas/receipts.v1.schema.json) |
+| [Receipts](receipts.md) | v0.4 | [receipt](schemas/receipts.v1.schema.json), [checkpoint](schemas/checkpoint.v1.schema.json), [encrypted replay](schemas/encrypted-replay.v1.schema.json) |
 | [Adapter contract](adapter-contract.md) | v0.1 | — |
 | [Local API](local-api.md) | v0.5 | [schema](schemas/local-api.v1.schema.json) |
 | [Test vectors](test-vectors/README.md) | m0 | [schema](schemas/test-vector.v1.schema.json) |

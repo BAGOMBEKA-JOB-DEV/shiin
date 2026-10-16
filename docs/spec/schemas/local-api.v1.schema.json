@@ -9,9 +9,39 @@
     "id": { "type": "string" },
     "method": {
       "type": "string",
-      "enum": ["shiin.evaluate", "shiin.policy.validate", "shiin.approve.resolve"]
+      "enum": [
+        "shiin.evaluate",
+        "shiin.evaluate.unattended",
+        "shiin.policy.validate",
+        "shiin.approve.resolve",
+        "shiin.pending",
+        "shiin.grants",
+        "shiin.revoke"
+      ]
     },
     "params": { "type": "object" }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "properties": { "method": { "enum": ["shiin.evaluate", "shiin.evaluate.unattended"] } } },
+      "then": { "properties": { "params": { "$ref": "urn:shiin:schema:action-request:v1" } } }
+    },
+    {
+      "if": { "properties": { "method": { "const": "shiin.policy.validate" } } },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "required": ["source", "workspace"],
+            "properties": {
+              "source": { "type": "string", "minLength": 1 },
+              "workspace": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ]
 }

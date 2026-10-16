@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Error codes
 
@@ -52,8 +52,9 @@ recorded is not allowed to proceed ([ADR-0030](../adr/0030-audit-durability.md))
 | `SHIIN-GEN-0001` | An internal error occurred, including a request that could not be evaluated. | emitted |
 | `SHIIN-GEN-0002` | The operation timed out. | reserved |
 
-`SHIIN-GEN-0002` is reserved for the daemon in v0.3. A source build evaluates in-process,
-so there is nothing to time out.
+`SHIIN-GEN-0002` remains reserved; current hook and daemon timeout paths return a fixed denial or transport error rather than emitting that stable code.
+Hook evaluation has a two-second deadline, and a local daemon exchange has a 1.5-second deadline.
+Neither timeout falls back to an allow decision.
 
 ## Read next
 

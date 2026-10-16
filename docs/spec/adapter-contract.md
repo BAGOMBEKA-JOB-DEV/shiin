@@ -33,8 +33,9 @@ Anything the adapter cannot classify MUST become an [opaque effect](../glossary.
 
 **[ADP-007]** For a `pending` decision, an adapter MUST either wait for an approver, use the host's native prompt, or deny with a ticket ([ADR-0028](../adr/0028-deny-with-ticket-for-non-waiting-hosts.md)).
 
-The current Codex and Cursor adapters deny pending actions without a ticket when native holding behavior is unsupported or unverified.
-They do not yet fully satisfy ADP-007; tickets and the approval workflow remain v0.3 work.
+With the local daemon configured, pending actions are denied with an approval ticket on all three adapters.
+Daemonless Codex and Cursor still deny pending actions without a ticket when native holding behavior is unsupported or unverified.
+The full approval workflow requires the configured local service; daemonless operation does not fully satisfy ADP-007.
 
 **[ADP-008]** An adapter MUST produce `deny` on any error, timeout, or crash ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md)).
 

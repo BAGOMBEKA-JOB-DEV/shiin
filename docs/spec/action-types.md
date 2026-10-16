@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Action types
 
@@ -73,6 +73,12 @@ Database effects.
 ## Unknown actions
 
 **[AT-007]** An action that the adapter cannot classify MUST be recorded with an [opaque effect](../glossary.md#opaque-effect) rather than an invented action type.
+
+## Classifier status
+
+`shiin-classify` exposes a narrow SQL classifier for simple statements and a migration classifier that marks migration contents opaque.
+Complex or unsupported SQL remains opaque.
+No host adapter invokes these functions yet, so they do not provide database interception.
 
 ## Revision history
 

@@ -1,13 +1,13 @@
-<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=spec status=draft implementation=partial milestone=v0.1 reviewed=2026-10-16 -->
 
 # Policy syntax
 
 > [!NOTE]
 > **Specification: draft.**
 > The source build implements the format below.
-> Capabilities and session/task rule matchers remain unimplemented.
+> Capabilities and session/task rule matchers are implemented in source; identity assurance and separately trusted layers remain open.
 >
-> Version: `shiin.policy-syntax/v1-draft.2`.
+> Version: `shiin.policy-syntax/v1-draft.3`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174) when, and only when, they appear in all capitals.
 
@@ -22,7 +22,8 @@ This page defines the TOML front-end.
 
 **[SYN-003]** A policy file MAY contain a top-level `capabilities` table.
 
-Capability declarations are planned and are currently rejected rather than ignored.
+The table maps capability identifiers to declarations; each declaration's `id` equals its table key.
+Omitting the table grants no action classes.
 
 ## Rules
 
@@ -36,8 +37,9 @@ Capability declarations are planned and are currently rejected rather than ignor
 
 **[SYN-008]** A rule MAY match on `action_types`, `resources`, `commands`, `agents`, `sessions`, and `tasks`.
 
-`sessions` and `tasks` matchers are planned and are currently rejected.
-The current matchers are `action_types`, `resources`, `commands`, and `agents`.
+Session and task selectors are exact identifier lists.
+Every nonempty selector must match; a task selector does not match an absent active task.
+The daemon replaces caller-supplied task claims with its active workspace task before evaluating these selectors.
 
 **[SYN-009]** Resource globs beginning with `./` MUST resolve against the canonical workspace root.
 
@@ -50,6 +52,11 @@ Absolute globs and operator-home globs beginning with `~/` are also supported.
 **[SYN-011]** A capability MUST be a table with `id` and either `allow` or `deny`.
 
 **[SYN-012]** A capability MAY match on `action_types` and `agents`.
+
+The `allow` or `deny` value is exactly `true`; false, absent, or simultaneous effects are rejected.
+`action_types` is a nonempty list using exact classes or a trailing `*` wildcard.
+Every matching denial wins, and every request/effect class needs an explicit matching grant.
+Empty agent selectors apply to every asserted identifier; they provide no attestation.
 
 ## Risk configuration
 
@@ -69,6 +76,7 @@ The `bulk_delete` default threshold is 20.
 ```json
 {
   "version": 1,
+  "capabilities": {"workspace": {"id": "workspace", "allow": true, "action_types": ["fs.*", "shell.exec"]}},
   "defaults": { "decision": "deny" },
   "rule": [
     {
@@ -94,5 +102,6 @@ The `bulk_delete` default threshold is 20.
 
 ## Revision history
 
+- v1-draft.3 (2026-10-16): Implemented explicit capability tables and session/task selectors, including validation and denial when a class lacks a grant.
 - v1-draft.2 (2026-10-15): Reconciled the draft with the implemented TOML front-end and its JSON representation; documented unsupported keys and fail-closed risk configuration.
 - v1-draft.1 (2026-10-01): Initial draft.

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
 
 # Limitations
 
 > [!NOTE]
 > **Design document: draft.**
-> The local authorization core exists in source; approval services, signed evidence, and mediated integrations remain planned.
+> Authorization, approval, evidence, and early client/integration code exist in source; host, platform, and milestone validation remain incomplete.
 
 Shiin decides whether an action should happen before it runs.
 These limits follow from where Shiin sits in the system.

@@ -30,7 +30,8 @@
     "policy_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "policy": {
-    "schema": "shiin.policy/v1-draft.1",
+    "capabilities": {"EXAMPLE-corpus": {"id": "EXAMPLE-corpus", "allow": true, "action_types": ["*"]}},
+    "schema": "shiin.policy/v1-draft.2",
     "layers": [
       {
         "name": "user",

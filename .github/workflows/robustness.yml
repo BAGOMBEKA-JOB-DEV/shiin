@@ -1,0 +1,97 @@
+name: robustness
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: robustness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-keyring:
+    name: native key store (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install stable toolchain
+        run: rustup toolchain install
+
+      - name: Cache Cargo build output
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: native-keyring
+
+      - name: Install Linux Secret Service fixture
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y gnome-keyring dbus-x11
+
+      - name: Validate Linux native key store
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- cargo xtask native-keyring-check
+
+      - name: Validate platform native key store
+        if: runner.os != 'Linux'
+        run: cargo xtask native-keyring-check
+
+  fuzz:
+    name: parser fuzz smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install stable and the dated nightly
+        run: |
+          rustup toolchain install
+          rustup toolchain install nightly-2026-10-15 --profile minimal
+
+      - name: Cache Cargo build output
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: fuzz
+          workspaces: |
+            . -> target
+            fuzz -> target
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Run seeded, bounded fuzz checks
+        run: cargo xtask fuzz-smoke
+
+  miri:
+    name: wire types under Miri
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Miri on the dated nightly
+        run: rustup toolchain install nightly-2026-10-15 --profile minimal --component miri
+
+      - name: Interpret the pure wire-type tests
+        run: cargo +nightly-2026-10-15 miri test --locked -p shiin-schema --no-default-features

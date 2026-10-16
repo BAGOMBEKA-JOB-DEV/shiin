@@ -6,7 +6,7 @@
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use shiin_schema::{DecisionValue, Layer, Policy, RiskSetting, Rule, versions};
+use shiin_schema::{Capability, DecisionValue, Layer, Policy, RiskSetting, Rule, versions};
 use std::collections::BTreeMap;
 
 use crate::PolicyError;
@@ -17,6 +17,8 @@ use crate::PolicyError;
 struct PolicyFile {
     /// Format version of the file. Only `1` is understood.
     version: u32,
+    #[serde(default)]
+    capabilities: BTreeMap<String, Capability>,
     /// Defaults applied when no rule matches.
     #[serde(default)]
     defaults: Defaults,
@@ -89,6 +91,13 @@ pub fn parse(text: &str) -> Result<Policy, PolicyError> {
         }
     }
 
+    for (key, capability) in &file.capabilities {
+        capability
+            .validate(key)
+            .map_err(|message| PolicyError::Syntax {
+                message: message.to_owned(),
+            })?;
+    }
     let digest = format!("sha256:{:x}", Sha256::digest(text.as_bytes()));
     Ok(Policy {
         schema: versions::POLICY.to_owned(),
@@ -98,6 +107,7 @@ pub fn parse(text: &str) -> Result<Policy, PolicyError> {
             rules: file.rules,
         }],
         default: file.defaults.decision,
+        capabilities: file.capabilities,
         risk: file.risk,
     })
 }
@@ -161,5 +171,26 @@ bulk_delete = { decision = "pending", threshold = 20 }
     #[test]
     fn an_unsupported_version_is_refused() {
         assert!(parse("version = 2\n").is_err());
+    }
+
+    #[test]
+    fn capabilities_require_an_explicit_unambiguous_grant_or_refusal() {
+        for body in [
+            "id='EXAMPLE'\naction_types=['shell.exec']",
+            "id='EXAMPLE'\nallow=false\naction_types=['shell.exec']",
+            "id='EXAMPLE'\nallow=true\ndeny=true\naction_types=['shell.exec']",
+            "id='OTHER-EXAMPLE'\nallow=true\naction_types=['shell.exec']",
+            "id='EXAMPLE'\nallow=true\naction_types=[]",
+            "id='EXAMPLE'\nallow=true\naction_types=['shell.*.exec']",
+            "id='EXAMPLE'\nallow=true\naction_types=['shell.exec']\nunknown=true",
+        ] {
+            assert!(
+                parse(&format!("version=1\n[capabilities.EXAMPLE]\n{body}\n")).is_err(),
+                "{body}"
+            );
+        }
+        for effect in ["allow", "deny"] {
+            assert!(parse(&format!("version=1\n[capabilities.EXAMPLE]\nid='EXAMPLE'\n{effect}=true\naction_types=['shell.exec']\n")).is_ok());
+        }
     }
 }

@@ -18,7 +18,7 @@ use shiin_engine::{Inputs, decide};
 use shiin_policy::{CompiledPolicy, toml_front_end};
 use shiin_schema::{ActionRequest, Mode, TaskUsage, clock};
 
-const POLICY: &str = "version = 1\n[[rule]]\nid = 'read-source'\neffect = 'allow'\naction_types = ['fs.read']\nresources = ['./src/**']\n[risk]\nopaque_command = 'pending'\nsecret_path = 'deny'\n";
+const POLICY: &str = "version = 1\n[capabilities.EXAMPLE]\nid = 'EXAMPLE'\nallow = true\naction_types = ['*']\n[[rule]]\nid = 'read-source'\neffect = 'allow'\naction_types = ['fs.read']\nresources = ['./src/**']\n[risk]\nopaque_command = 'pending'\nsecret_path = 'deny'\n";
 
 struct Workspace(PathBuf);
 
@@ -163,7 +163,7 @@ fn measure() -> Result<bool, Box<dyn std::error::Error>> {
     Ok(passed)
 }
 
-fn report(label: &str, samples: &mut [Duration], budget: Duration) -> bool {
+pub(super) fn report(label: &str, samples: &mut [Duration], budget: Duration) -> bool {
     samples.sort_unstable();
     let max = samples.last().copied().unwrap_or_default();
     let median = samples.get(samples.len() / 2).copied().unwrap_or_default();

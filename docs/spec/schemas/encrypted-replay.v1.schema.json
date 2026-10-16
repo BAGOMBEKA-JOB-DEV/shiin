@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shiin:schema:encrypted-replay:v1",
+  "title": "Shiin encrypted replay payload",
+  "type": "object",
+  "required": ["schema", "key_id", "request_id", "nonce", "ciphertext"],
+  "properties": {
+    "schema": { "type": "string", "const": "shiin.replay-encrypted/v1-draft.1" },
+    "key_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/sha256" },
+    "request_id": { "$ref": "urn:shiin:schema:common:v1#/$defs/uuid_v4" },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9+/]{32}$" },
+    "ciphertext": { "type": "string", "minLength": 24, "maxLength": 11184832, "pattern": "^[A-Za-z0-9+/]+={0,2}$" }
+  },
+  "additionalProperties": false
+}
