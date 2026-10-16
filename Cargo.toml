@@ -40,7 +40,7 @@ shiin-mcp-proxy = { path = "crates/shiin-mcp-proxy" }
 cedar-policy = "4"
 getrandom = "0.3"
 globset = "0.4"
-jsonschema = { version = "0.56", default-features = false }
+jsonschema = { version = "0.58", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
 sha2 = "0.10"
 shiin-audit = { path = "crates/shiin-audit" }
