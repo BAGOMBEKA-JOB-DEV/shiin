@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-16 -->
 
 # OpenAI Codex CLI
 
@@ -38,7 +38,9 @@ The adapter maps `pending` to `deny`.
 Codex documents `permissionDecision: "ask"` as unsupported: it reports a hook failure and continues the tool call
 (verified against [official hooks documentation](https://learn.chatgpt.com/docs/hooks#pretooluse) on 2026-10-15).
 A supported explicit denial is required to hold the action safely.
-There is no approval ticket or grant workflow yet; those belong to v0.3.
+With the Unix daemon enabled, a pending response carries an approval ticket for separate operator resolution and retry.
+Daemonless pending decisions remain denials without a ticket.
+See [Handling approvals](../handling-approvals.md).
 
 ## What it maps
 

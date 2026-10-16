@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.2 reviewed=2026-10-16 -->
 
 # Cursor
 
@@ -51,10 +51,11 @@ Shiin uses the first entry of `workspace_roots` as the workspace, falling back t
 
 - **Pending is denied by this adapter.** Live-host approval behavior has not been verified, so Shiin returns `deny` for both engine `deny` and `pending` decisions.
   The engine's pending reason remains in the local audit log.
-  This does not create an approval ticket or grant; those remain v0.3 work.
+  With the Unix daemon enabled, the response includes an approval ticket for separate operator resolution and retry; daemonless operation provides no ticket.
+  See [Handling approvals](../handling-approvals.md).
 - **Cloud agents skip the tool events**, so an action taken there never reaches Shiin.
 - **MCP calls are opaque by design.** Precise mapping of tool calls arrives with the MCP
-  proxy in v0.5, which sits in the data path instead of relying on a hook.
+  proxy source implementation, which sits in the configured data path.
 
 ## Read next
 

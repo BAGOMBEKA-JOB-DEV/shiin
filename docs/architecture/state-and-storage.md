@@ -14,9 +14,14 @@ Shiin stores its state on the developer's machine and collects no telemetry ([AD
 |---|---|---|
 | Policy | `.shiin/policy.toml` in the workspace | v0.1 |
 | Audit log | `.shiin/audit.jsonl` in the workspace | v0.1 |
-| Grants | `.shiin/grants.jsonl` in Shiin's state directory | v0.3 |
+| Approval requests and grants | `~/.shiin/runtime/approvals.json`, beside the Unix daemon socket | v0.3, source implementation |
 | Signing keys | OS keyring, following [ADR-0032](../adr/0032-signing-key-storage.md) | v0.4, partial source implementation |
 | Tasks | `.shiin/tasks/` in the workspace | v0.2 |
+| Receipts and encrypted replay | `.shiin/evidence/<request-id>.receipt.json` and `<request-id>.replay.json` | v0.4, when daemon evidence is enabled |
+| Signed checkpoint and public keys | `.shiin/evidence/checkpoint.json` and `<key-id>.public.json` | v0.4, when daemon evidence is enabled |
+
+An absolute `SHIIN_SOCKET` changes the daemon directory and places `approvals.json` beside that socket.
+The directory is private to the current Unix user; operator credentials are held in memory and change on restart.
 
 ## Durability
 
