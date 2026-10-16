@@ -1,6 +1,6 @@
 //! Verifies that intercepted callers cannot claim operator authority.
 
-#![expect(
+#![allow(
     clippy::unwrap_used,
     clippy::expect_used,
     reason = "tests construct controlled temporary state"

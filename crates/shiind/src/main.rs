@@ -1,7 +1,6 @@
 //! Shiin's per-user approval service. Operator credentials never enter agent responses.
 
 #![expect(
-    clippy::print_stdout,
     clippy::print_stderr,
     reason = "the daemon reports startup and operator instructions"
 )]
@@ -35,7 +34,6 @@ fn run() -> Result<(), String> {
 
 #[cfg(unix)]
 async fn serve() -> Result<(), String> {
-    use serde_json::{Value, json};
     use shiind::{OperatorKey, Service};
     use std::fs::{self, DirBuilder};
     use std::io::IsTerminal;
@@ -100,44 +98,51 @@ async fn serve() -> Result<(), String> {
         let service = Arc::clone(&service);
         tokio::spawn(async move {
             let _permit = permit;
-            let exchange = async {
-                let (mut stream, frame) = shiin_ipc::receive(stream).await?;
-                let parsed = serde_json::from_str::<shiin_ipc::Request>(&frame);
-                let response = match parsed {
-                    Ok(request) if request.jsonrpc == "2.0" && request.id.is_string() => {
-                        let id = request.id;
-                        let result = tokio::task::spawn_blocking(move || {
-                            let mut service = service
-                                .lock()
-                                .map_err(|_| "daemon state lock failed".to_owned())?;
-                            service.dispatch(&request.method, request.params)
-                        })
-                        .await;
-                        match result {
-                            Ok(Ok(result)) => json!({"jsonrpc":"2.0", "id":id, "result":result}),
-                            _ => shiin_ipc::failure(
-                                &id,
-                                -32000,
-                                "Shiin could not authorize this request",
-                            ),
-                        }
-                    }
-                    _ => shiin_ipc::failure(&Value::Null, -32600, "Invalid request"),
-                };
-                let mut bytes = serde_json::to_vec(&response)?;
-                bytes.push(b'\n');
-                if bytes.len() > shiin_ipc::MAX_FRAME {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "response too large",
-                    ));
-                }
-                stream.write_all(&bytes).await?;
-                Ok::<(), std::io::Error>(())
-            };
-            let _ = tokio::time::timeout(shiin_ipc::TIMEOUT, exchange).await;
+            handle_connection(stream, service).await;
         });
     }
     fs::remove_file(path).map_err(|error| error.to_string())?;
     Ok(())
+}
+
+#[cfg(unix)]
+async fn handle_connection(
+    stream: tokio::net::UnixStream,
+    service: std::sync::Arc<std::sync::Mutex<shiind::Service>>,
+) {
+    use serde_json::{Value, json};
+    use tokio::io::AsyncWriteExt;
+
+    let exchange = async {
+        let (mut stream, frame) = shiin_ipc::receive(stream).await?;
+        let parsed = serde_json::from_str::<shiin_ipc::Request>(&frame);
+        let response = match parsed {
+            Ok(request) if request.jsonrpc == "2.0" && request.id.is_string() => {
+                let id = request.id;
+                let result = tokio::task::spawn_blocking(move || {
+                    let mut service = service
+                        .lock()
+                        .map_err(|_| "daemon state lock failed".to_owned())?;
+                    service.dispatch(&request.method, request.params)
+                })
+                .await;
+                match result {
+                    Ok(Ok(result)) => json!({"jsonrpc":"2.0", "id":id, "result":result}),
+                    _ => shiin_ipc::failure(&id, -32000, "Shiin could not authorize this request"),
+                }
+            }
+            _ => shiin_ipc::failure(&Value::Null, -32600, "Invalid request"),
+        };
+        let mut bytes = serde_json::to_vec(&response)?;
+        bytes.push(b'\n');
+        if bytes.len() > shiin_ipc::MAX_FRAME {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "response too large",
+            ));
+        }
+        stream.write_all(&bytes).await?;
+        Ok::<(), std::io::Error>(())
+    };
+    let _ = tokio::time::timeout(shiin_ipc::TIMEOUT, exchange).await;
 }

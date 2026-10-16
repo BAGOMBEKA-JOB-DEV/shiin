@@ -451,7 +451,7 @@ mod tests {
                 .to_str()
                 .expect("the temporary directory is UTF-8"),
         );
-        let noncanonical = format!("{root}/../{}", root.trim_start_matches('/'));
+        let noncanonical = format!("{root}/..");
         let error = validate_evaluation_request(&request(noncanonical))
             .expect_err("a parent segment cannot reach policy evaluation");
         assert_eq!(error, "workspace must be canonical");
