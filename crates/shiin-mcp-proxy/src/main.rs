@@ -180,6 +180,7 @@ impl ServerHandler for Proxy {
         self.downstream
             .call_tool(request)
             .await
+            .map(Into::into)
             .map_err(|_| McpError::internal_error("downstream MCP server failed", None))
     }
 }
@@ -246,7 +247,7 @@ fn action_request_for(
         policy_snapshot: policy_snapshot.to_owned(),
         host: Host {
             name: "mcp-proxy".to_owned(),
-            tool: Some(tool.name.clone()),
+            tool: Some(tool.name.clone().into_owned()),
         },
     };
     request.validate().map_err(str::to_owned)?;

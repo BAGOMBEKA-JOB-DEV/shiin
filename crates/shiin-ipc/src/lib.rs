@@ -140,8 +140,14 @@ async fn exchange(path: &Path, method: &str, params: Value) -> Result<Value, Str
 }
 
 #[cfg(not(unix))]
-async fn exchange(_path: &Path, _method: &str, _params: Value) -> Result<Value, String> {
-    Err("the daemon transport is not supported on this platform yet".to_owned())
+fn exchange(
+    _path: &Path,
+    _method: &str,
+    _params: Value,
+) -> std::future::Ready<Result<Value, String>> {
+    std::future::ready(Err(
+        "the daemon transport is not supported on this platform yet".to_owned(),
+    ))
 }
 
 /// Returns the effective UID through a local socket pair, without unsafe code.
