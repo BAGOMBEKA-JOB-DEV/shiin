@@ -408,70 +408,6 @@ fn validate_evaluation_request(request: &ActionRequest) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::validate_evaluation_request;
-    use shiin_schema::{
-        ActionRequest, Agent, Assurance, Confidence, Effect, Host, Workspace, versions,
-    };
-
-    fn request(workspace: String) -> ActionRequest {
-        ActionRequest {
-            schema: versions::ACTION_REQUEST.to_owned(),
-            id: "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b".to_owned(),
-            session: "EXAMPLE-session".to_owned(),
-            agent: Agent {
-                id: "EXAMPLE-agent".to_owned(),
-                assurance: Assurance::Asserted,
-            },
-            action_type: "fs.write".to_owned(),
-            effects: vec![Effect {
-                kind: "path".to_owned(),
-                value: "EXAMPLE.txt".to_owned(),
-                confidence: Confidence::Exact,
-                action_type: None,
-            }],
-            task: None,
-            workspace: Workspace {
-                root: workspace,
-                vcs: None,
-            },
-            policy_snapshot: format!("sha256:{}", "0".repeat(64)),
-            host: Host {
-                name: "EXAMPLE-host".to_owned(),
-                tool: None,
-            },
-        }
-    }
-
-    #[test]
-    fn evaluation_rejects_noncanonical_workspace_roots() {
-        let root = shiin_classify::canonical_root(
-            std::env::temp_dir()
-                .to_str()
-                .expect("the temporary directory is UTF-8"),
-        );
-        let noncanonical = format!("{root}/..");
-        let error = validate_evaluation_request(&request(noncanonical))
-            .expect_err("a parent segment cannot reach policy evaluation");
-        assert_eq!(error, "workspace must be canonical");
-    }
-
-    #[test]
-    fn evaluation_rejects_oversized_normalized_actions() {
-        let root = shiin_classify::canonical_root(
-            std::env::temp_dir()
-                .to_str()
-                .expect("the temporary directory is UTF-8"),
-        );
-        let mut oversized = request(root);
-        oversized.effects[0].value = "x".repeat(shiin_ipc::MAX_FRAME / 4);
-        let error = validate_evaluation_request(&oversized)
-            .expect_err("an oversized action cannot consume daemon resources");
-        assert_eq!(error, "normalized action exceeds service limit");
-    }
-}
-
 fn base64_public(keys: &shiin_audit::keys::Keys) -> String {
     use base64::Engine as _;
     base64::engine::general_purpose::STANDARD.encode(keys.public())
@@ -546,4 +482,73 @@ pub fn persist(path: &Path, bytes: &[u8]) -> Result<(), String> {
         let _ = fs::remove_file(temporary);
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(
+        clippy::expect_used,
+        reason = "tests assert malformed-input rejection with explicit diagnostics"
+    )]
+
+    use super::validate_evaluation_request;
+    use shiin_schema::{
+        ActionRequest, Agent, Assurance, Confidence, Effect, Host, Workspace, versions,
+    };
+
+    fn request(workspace: String) -> ActionRequest {
+        ActionRequest {
+            schema: versions::ACTION_REQUEST.to_owned(),
+            id: "0190f3a0-1c2d-4e3f-8a4b-5c6d7e8f9a0b".to_owned(),
+            session: "EXAMPLE-session".to_owned(),
+            agent: Agent {
+                id: "EXAMPLE-agent".to_owned(),
+                assurance: Assurance::Asserted,
+            },
+            action_type: "fs.write".to_owned(),
+            effects: vec![Effect {
+                kind: "path".to_owned(),
+                value: "EXAMPLE.txt".to_owned(),
+                confidence: Confidence::Exact,
+                action_type: None,
+            }],
+            task: None,
+            workspace: Workspace {
+                root: workspace,
+                vcs: None,
+            },
+            policy_snapshot: format!("sha256:{}", "0".repeat(64)),
+            host: Host {
+                name: "EXAMPLE-host".to_owned(),
+                tool: None,
+            },
+        }
+    }
+
+    #[test]
+    fn evaluation_rejects_noncanonical_workspace_roots() {
+        let root = shiin_classify::canonical_root(
+            std::env::temp_dir()
+                .to_str()
+                .expect("the temporary directory is UTF-8"),
+        );
+        let noncanonical = format!("{root}/..");
+        let error = validate_evaluation_request(&request(noncanonical))
+            .expect_err("a parent segment cannot reach policy evaluation");
+        assert_eq!(error, "workspace must be canonical");
+    }
+
+    #[test]
+    fn evaluation_rejects_oversized_normalized_actions() {
+        let root = shiin_classify::canonical_root(
+            std::env::temp_dir()
+                .to_str()
+                .expect("the temporary directory is UTF-8"),
+        );
+        let mut oversized = request(root);
+        oversized.effects[0].value = "x".repeat(shiin_ipc::MAX_FRAME / 4);
+        let error = validate_evaluation_request(&oversized)
+            .expect_err("an oversized action cannot consume daemon resources");
+        assert_eq!(error, "normalized action exceeds service limit");
+    }
 }
