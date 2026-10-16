@@ -119,7 +119,7 @@
 
 **Exit criteria.**
 
-- Receipts verify offline on every Tier 1 platform. Unit tests pass on Linux, macOS, and Windows; platform key-store interactions still need validation.
+- Receipts verify offline on every Tier 1 platform. Unit tests and native key-store lifecycle checks pass on hosted Linux, macOS, and Windows runners; independent review and live operator-environment qualification remain open.
 - Replay reproduces every decision in the conformance corpus. Done for the 26-case signed/encrypted corpus through the CLI evaluation routine, including capability, session/task, what-if, and grant regression tests.
 
 ## v0.5: MCP and SDK

@@ -16,6 +16,8 @@ libfuzzer-sys = { version = "0.4", default-features = false, features = ["link_l
 serde_json = { version = "1.0.151", default-features = false, features = ["std"] }
 shiin-schema = { path = "../crates/shiin-schema", default-features = false }
 shiin-classify = { path = "../crates/shiin-classify" }
+shiin-engine = { path = "../crates/shiin-engine" }
+shiin-policy = { path = "../crates/shiin-policy" }
 
 [[bin]]
 name = "action-request"
@@ -27,6 +29,13 @@ bench = false
 [[bin]]
 name = "classification"
 path = "fuzz_targets/classification.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "authorization"
+path = "fuzz_targets/authorization.rs"
 test = false
 doc = false
 bench = false

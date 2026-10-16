@@ -29,9 +29,11 @@ The hosted release measurements also exercise 100/500-rule policies and hook cal
 
 ## Fuzzing
 
-`fuzz/` is a separate nightly workspace with wire-request and classification targets.
+`fuzz/` is a separate nightly workspace with wire-request, classification, and authorization targets.
 The wire target parses and validates action requests and checks that validated records survive a serialization round trip.
 The classification target exercises shell tokenization and verifies that unsupported SQL syntax stays opaque.
+The authorization target exercises deterministic decisions for validated arbitrary requests, unattended non-pending behavior, and refusal when capabilities are absent or explicitly denied.
+It uses a fixed compiled policy and re-evaluates the gate with stricter capability inputs; the seed requests come from the full golden corpus.
 `cargo xtask fuzz-smoke` seeds the targets from published action vectors and representative command/SQL inputs, then runs each for twenty seconds with a 64-KiB input bound and a 1-GiB resident-memory limit.
 The hosted robustness workflow runs this command on `nightly-2026-10-15`; no fuzz build is required on a developer's laptop.
 These bounded smoke runs do not establish exhaustive parser or engine security coverage.

@@ -27,6 +27,8 @@ fn exercise() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
     let requests = root.join("fuzz/corpus/action-request");
     fs::create_dir_all(&requests)?;
+    let authorization = root.join("fuzz/corpus/authorization");
+    fs::create_dir_all(&authorization)?;
     for entry in fs::read_dir(root.join("docs/spec/test-vectors"))? {
         let path = entry?.path();
         if path.extension().is_none_or(|extension| extension != "json") {
@@ -34,10 +36,9 @@ fn exercise() -> Result<(), Box<dyn std::error::Error>> {
         }
         let case: serde_json::Value = serde_json::from_slice(&fs::read(&path)?)?;
         let filename = path.file_name().ok_or("vector filename missing")?;
-        fs::write(
-            requests.join(filename),
-            serde_json::to_vec(&case["action_request"])?,
-        )?;
+        let input = serde_json::to_vec(&case["action_request"])?;
+        fs::write(requests.join(filename), &input)?;
+        fs::write(authorization.join(filename), &input)?;
     }
     let classification = root.join("fuzz/corpus/classification");
     fs::create_dir_all(&classification)?;
@@ -53,7 +54,7 @@ fn exercise() -> Result<(), Box<dyn std::error::Error>> {
     {
         fs::write(classification.join(format!("seed-{index}")), seed)?;
     }
-    for target in ["action-request", "classification"] {
+    for target in ["action-request", "classification", "authorization"] {
         let status = Command::new("rustup")
             .current_dir(&root)
             .args([
