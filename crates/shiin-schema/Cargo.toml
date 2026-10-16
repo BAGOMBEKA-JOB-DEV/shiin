@@ -9,8 +9,12 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
+[features]
+default = ["runtime"]
+runtime = ["dep:getrandom"]
+
 [dependencies]
-getrandom = { workspace = true }
+getrandom = { workspace = true, optional = true }
 serde = { workspace = true }
 
 [lints]

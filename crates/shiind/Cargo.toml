@@ -22,7 +22,7 @@ shiin-classify.workspace = true
 shiin-engine.workspace = true
 shiin-ipc.workspace = true
 shiin-policy.workspace = true
-shiin-schema.workspace = true
+shiin-schema = { workspace = true, features = ["runtime"] }
 tokio = { workspace = true, features = ["net", "io-util", "rt-multi-thread", "time", "sync", "signal", "macros"] }
 
 [lints]

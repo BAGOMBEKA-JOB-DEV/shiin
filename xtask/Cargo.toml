@@ -16,7 +16,7 @@ serde_json = { workspace = true }
 walkdir = { workspace = true }
 shiin-engine = { workspace = true }
 shiin-policy = { workspace = true }
-shiin-schema = { workspace = true }
+shiin-schema = { workspace = true, features = ["runtime"] }
 
 [lints]
 workspace = true

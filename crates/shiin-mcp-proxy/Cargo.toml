@@ -29,7 +29,7 @@ serde_json.workspace = true
 sha2.workspace = true
 shiin-client.workspace = true
 shiin-policy.workspace = true
-shiin-schema.workspace = true
+shiin-schema = { workspace = true, features = ["runtime"] }
 tokio = { workspace = true, features = ["io-std", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
 
 [dev-dependencies]

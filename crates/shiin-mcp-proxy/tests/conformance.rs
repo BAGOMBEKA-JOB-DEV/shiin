@@ -219,7 +219,7 @@ mod unix {
         let service: StreamableHttpService<ReferenceServer, LocalSessionManager> =
             StreamableHttpService::new(
                 move || Ok(ReferenceServer(log.clone())),
-                Default::default(),
+                std::sync::Arc::default(),
                 StreamableHttpServerConfig::default().with_legacy_session_mode(false),
             );
         let router = axum::Router::new().nest_service("/mcp", service);

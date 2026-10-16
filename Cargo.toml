@@ -48,7 +48,7 @@ shiin-client = { path = "crates/shiin-client" }
 shiin-engine = { path = "crates/shiin-engine" }
 shiin-hooks = { path = "crates/shiin-hooks" }
 shiin-policy = { path = "crates/shiin-policy" }
-shiin-schema = { path = "crates/shiin-schema" }
+shiin-schema = { path = "crates/shiin-schema", default-features = false }
 thiserror = "2"
 toml = "0.9"
 regex = "1.13"

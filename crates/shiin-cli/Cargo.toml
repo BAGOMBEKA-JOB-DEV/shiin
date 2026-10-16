@@ -29,7 +29,7 @@ shiin-engine = { workspace = true }
 shiin-hooks = { workspace = true }
 shiin-ipc = { workspace = true }
 shiin-policy = { workspace = true }
-shiin-schema = { workspace = true }
+shiin-schema = { workspace = true, features = ["runtime"] }
 
 [dev-dependencies]
 ed25519-dalek.workspace = true

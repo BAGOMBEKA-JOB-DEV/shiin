@@ -80,6 +80,29 @@ jobs:
       - name: Check engine, compilation, and hook latency budgets
         run: cargo run --release --locked -p xtask -- performance target/release/shiin
 
+  engine-purity:
+    name: engine WebAssembly purity
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned toolchain and WebAssembly target
+        run: rustup toolchain install --target wasm32-unknown-unknown
+
+      - name: Cache Cargo build output
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: engine-wasm
+
+      - name: Check isolated engine without runtime capabilities
+        run: cargo check --locked -p shiin-engine --target wasm32-unknown-unknown
+
+      - name: Test wire types without OS clock or randomness
+        run: cargo test --locked -p shiin-schema --no-default-features
+
   msrv:
     name: minimum supported Rust version
     runs-on: ubuntu-24.04

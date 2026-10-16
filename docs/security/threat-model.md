@@ -125,6 +125,9 @@ The Rust client now exercises the real daemon contract over a local socket, incl
 Unsupported decision versions are rejected before an integration can act on them; this tightens failure handling without changing policy decisions ([ADR-0013](../adr/0013-fail-closed-failure-semantics.md)).
 Replay regression tests now exercise the signed/encrypted conformance corpus through the CLI's evaluation routine, plus input bindings, grant coverage, deny precedence, and what-if comparisons.
 These tests use explicit fixture keys without accessing or replacing the operator's OS keyring.
+The schema runtime feature now separates OS clock/randomness functions from pure wire types and deterministic timestamp formatting.
+Adapters explicitly retain the runtime feature and its fail-closed randomness behavior; isolated engine builds omit it.
+The WebAssembly check and dependency guard check this separation without changing an authorization outcome (ST-T-01, ST-D-01).
 
 The v0.3 source implementation addresses ST-E-01 and ST-E-02 by requiring an out-of-band operator credential for resolution, listing, and revocation.
 The local transport authenticates the peer's Unix user identity; an asserted agent role is insufficient to administer approvals.

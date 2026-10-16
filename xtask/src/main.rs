@@ -4,7 +4,9 @@
 //!
 //! - `docs-check`: validate `docs/` against `docs/project/docs-style-guide.md`.
 //! - `intent-evaluation`: measure task constraints against the labelled corpus.
+//! - `dependency-check`: refuse network stacks and async runtimes in engine crates.
 
+mod dependency_check;
 mod docs_check;
 mod intent_evaluation;
 mod performance;
@@ -12,6 +14,9 @@ mod performance;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("dependency-check") {
+        return dependency_check::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("intent-evaluation") {
         return intent_evaluation::run();
     }

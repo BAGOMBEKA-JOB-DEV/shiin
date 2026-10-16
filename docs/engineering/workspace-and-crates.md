@@ -144,11 +144,14 @@ Reviewing and disabling unnecessary defaults remains open supply-chain work.
 - The engine crates never open network connections and never depend on crates that do, such as HTTP clients, TLS stacks, or async runtimes.
 - `shiin-engine` performs no I/O of any kind ([ADR-0010](../adr/0010-pure-synchronous-engine.md)).
 - `shiin-classify` and `shiin-policy` may read the local file system where their job requires it, such as resolving a path or loading a policy file.
-- A planned `xtask` check inspects the normal (non-dev) dependency tree of each engine crate and fails if a forbidden crate appears.
+- `cargo xtask dependency-check` inspects the normal (non-dev) dependency tree of each engine crate and fails if a known network stack or async runtime appears.
+  The documentation CI job runs this check; the prohibited-crate list still needs review when new dependencies are admitted.
 
 ### `shiin-engine` builds for WebAssembly as a purity guard
 
 From v0.4, CI builds `shiin-engine` for the `wasm32-unknown-unknown` target on every pull request.
+The isolated check disables the schema crate's default runtime feature through its workspace dependency.
+OS clocks and randomness remain explicitly enabled by adapters and services; wire types and timestamp formatting do not require them.
 
 - The build fails if the engine, or anything it depends on, needs operating-system facilities that target lacks,
   such as native system libraries, platform-specific system calls, or an operating-system randomness source.

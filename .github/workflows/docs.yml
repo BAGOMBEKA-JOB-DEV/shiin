@@ -48,6 +48,9 @@ jobs:
       - name: Measure intent binding against the labelled corpus
         run: cargo xtask intent-evaluation
 
+      - name: Refuse network stacks and async runtimes in engine crates
+        run: cargo xtask dependency-check
+
       - name: Run the tests, including the specification conformance corpus
         run: cargo test --workspace
 

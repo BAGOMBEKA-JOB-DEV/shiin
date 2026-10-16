@@ -22,6 +22,8 @@ Every test vector in `docs/spec/test-vectors/` must pass before a milestone is c
 The CLI evidence tests also sign, encrypt, verify, decrypt, and replay each vector, using fixture keys without a live OS keyring.
 Client integration tests connect to the actual Unix daemon service over a local socket to check both sides of the JSON-RPC contract.
 `cargo xtask intent-evaluation` reports the task-labelled corpus against a policy-only baseline and fails if a decision or reason disagrees with its label.
+`cargo xtask dependency-check` rejects known network stacks and async runtimes in the normal transitive dependency graph of the four engine crates.
+CI separately checks the isolated engine for WebAssembly and tests the schema crate without OS clock/randomness functions.
 
 ## Fuzzing
 
