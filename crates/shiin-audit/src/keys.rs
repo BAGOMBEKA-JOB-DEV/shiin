@@ -2,7 +2,8 @@
 
 use crate::receipts;
 use ed25519_dalek::SigningKey;
-use keyring::{Entry, Error};
+use keyring_core::{Entry, Error};
+use std::sync::LazyLock;
 use zeroize::Zeroizing;
 
 /// In-memory key material. Private bytes are never serialized or printed.
@@ -105,6 +106,9 @@ impl KeyStore<'_> {
     const PRODUCTION: Self = Self { service: "shiin" };
 
     fn entry(&self, username: &str) -> Result<Entry, String> {
+        if NATIVE_STORE.is_err() {
+            return Err("OS keyring is unavailable or unsupported".to_owned());
+        }
         Entry::new(self.service, username)
             .map_err(|_| "OS keyring is unavailable or unsupported".to_owned())
     }
@@ -159,6 +163,28 @@ impl KeyStore<'_> {
         }
         Ok(keys)
     }
+}
+
+// Initialize exactly one native store. Store failures never select a file or mock backend.
+static NATIVE_STORE: LazyLock<Result<(), Error>> = LazyLock::new(initialize_native_store);
+
+fn initialize_native_store() -> Result<(), Error> {
+    #[cfg(target_os = "macos")]
+    let store = apple_native_keyring_store::keychain::Store::new()?;
+    #[cfg(target_os = "windows")]
+    let store = windows_native_keyring_store::Store::new()?;
+    #[cfg(all(
+        unix,
+        not(any(target_os = "macos", target_os = "ios", target_os = "android"))
+    ))]
+    let store = dbus_secret_service_keyring_store::Store::new()?;
+    #[cfg(all(any(unix, windows), not(any(target_os = "ios", target_os = "android"))))]
+    {
+        keyring_core::set_default_store(store);
+        Ok(())
+    }
+    #[cfg(not(all(any(unix, windows), not(any(target_os = "ios", target_os = "android")))))]
+    Err(Error::NoDefaultStore)
 }
 
 #[cfg(test)]

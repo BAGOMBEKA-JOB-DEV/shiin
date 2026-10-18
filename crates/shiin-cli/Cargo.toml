@@ -1,6 +1,6 @@
 [package]
 name = "shiin-cli"
-version = "0.0.0"
+version.workspace = true
 description = "The shiin command-line interface"
 edition.workspace = true
 rust-version.workspace = true

@@ -1,6 +1,6 @@
 # Support
 
-Shiin is pre-alpha and available from source, with no published release.
+Shiin is experimental; source builds and published alpha releases are supported on a best-effort basis.
 Questions and reports about the implementation, integrations, and design are welcome.
 
 ## Where to go
@@ -14,7 +14,7 @@ Questions and reports about the implementation, integrations, and design are wel
 | A suspected way to bypass Shiin's decisions | Follow [SECURITY.md](SECURITY.md); never a public issue |
 | A larger design change | Read the [RFC process](docs/rfcs/README.md) first |
 
-`TODO(maintainer): enable GitHub Discussions and link it here for open-ended questions.`
+Use the issue forms for open-ended questions as well; a separate discussion service is not required.
 
 ## Before asking
 

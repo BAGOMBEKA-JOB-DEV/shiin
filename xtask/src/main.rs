@@ -14,15 +14,27 @@ mod dependency_check;
 mod docs_check;
 mod fuzz_smoke;
 mod intent_evaluation;
+mod link_health;
 #[cfg(feature = "memory-profile")]
 mod memory;
 mod native_keyring;
 mod performance;
 mod performance_scaling;
+mod release_ci;
+mod release_smoke;
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("link-health") {
+        return link_health::run();
+    }
+    if std::env::args().nth(1).as_deref() == Some("release-smoke") {
+        return release_smoke::run();
+    }
+    if std::env::args().nth(1).as_deref() == Some("release-ci-fix") {
+        return release_ci::run();
+    }
     #[cfg(feature = "memory-profile")]
     if std::env::args().nth(1).as_deref() == Some("memory") {
         return memory::run();

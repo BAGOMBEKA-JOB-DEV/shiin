@@ -6,9 +6,10 @@ The source implementation supports local hook evaluation, a Unix approval daemon
 Decisions are deterministic and never depend on the output of a language model.
 
 > [!IMPORTANT]
-> **Pre-alpha: available from source.**
+> **Experimental alpha.**
 > The policy engine, CLI, audit log, and experimental task constraints work from a source build.
-> Shiin has no releases and is not available from a package manager.
+> The first release candidate is `v0.1.0-alpha.1`; published downloads appear on [GitHub Releases](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases).
+> Initial binary distributions target Linux and macOS; registry packages are not published.
 > Codex CLI and Cursor adapters exist and have automated tests, but have not been validated against running hosts.
 > Approval, evidence, client, MCP, and command-wrapper implementations exist in source, with partial platform and integration coverage.
 > Remote approvals, Windows daemon transport, attested agent identity, and independent security review remain open.

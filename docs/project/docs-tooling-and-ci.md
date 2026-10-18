@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=policy status=accepted implementation=n/a milestone=n/a reviewed=2026-09-14 -->
+<!-- shiin-doc: kind=policy status=accepted implementation=n/a milestone=n/a reviewed=2026-10-18 -->
 
 # Documentation tooling and CI
 
@@ -95,11 +95,12 @@ The `docs` workflow in `.github/workflows/docs.yml` runs every check above on ea
 
 ## Planned additions
 
+The weekly external-link workflow, 180-day specification-review warning, and `main` book-publication workflow are now configured for the first alpha.
+`cargo xtask link-health` checks public links; `--report-issue` explicitly enables the CI bot's deduplicated issue report.
+Pull-request link checks remain offline.
+
 | Addition | When |
 |---|---|
-| Scheduled external link check that opens an issue on failure | Before the first release |
-| A warning when a specification's `reviewed` date is older than 180 days | Before the first release |
-| Publishing the built site to GitHub Pages from `main` | Before the first release |
 | Validating TOML policy examples with `shiin policy validate` | v0.1 |
 | Comparing `reference/cli.md` with the CLI's generated help | v0.1 |
 | Versioned documentation per release | After 1.0 |

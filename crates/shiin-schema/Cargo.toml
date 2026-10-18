@@ -1,6 +1,6 @@
 [package]
 name = "shiin-schema"
-version = "0.0.0"
+version.workspace = true
 description = "Wire types for Shiin's action requests, decisions, policies, and task declarations"
 edition.workspace = true
 rust-version.workspace = true

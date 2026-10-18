@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.4 reviewed=2026-10-16 -->
+<!-- shiin-doc: kind=reference status=draft implementation=partial milestone=v0.4 reviewed=2026-10-18 -->
 
 # CLI
 
 > [!NOTE]
 > **Reference: draft.**
 > The commands marked "works today" run from a source build.
-> Shiin has no releases yet, so there is nothing to install from a package manager.
+> Published alpha archives are described in [installation](../getting-started/installation.md); registry packages are not published.
 
 ```console
 $ shiin <command>

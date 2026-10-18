@@ -1,6 +1,6 @@
 [package]
 name = "shiin-policy"
-version = "0.0.0"
+version.workspace = true
 description = "Compiles Shiin policy to Cedar and evaluates the policy stage"
 edition.workspace = true
 rust-version.workspace = true

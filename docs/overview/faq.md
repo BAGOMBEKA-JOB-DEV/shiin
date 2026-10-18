@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=m0 reviewed=2026-10-18 -->
 
 # FAQ
 
@@ -13,7 +13,7 @@ It sits between agents and the files, commands, networks, and services they act 
 
 ## Is Shiin ready to use?
 
-Shiin is pre-alpha and available from source, with no published releases.
+Shiin is experimental; source builds and published alpha binaries are intended for evaluation.
 The engine, CLI, audit log, and experimental tasks exist; live-host validation and milestone exit criteria remain open.
 See [installation](../getting-started/installation.md) and the [roadmap](../project/roadmap.md).
 

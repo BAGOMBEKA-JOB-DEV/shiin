@@ -1,6 +1,6 @@
 [package]
 name = "shiin-approval"
-version = "0.0.0"
+version.workspace = true
 description = "Shiin's approval state machine and expiring grants"
 edition.workspace = true
 rust-version.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "shiind"
-version = "0.0.0"
+version.workspace = true
 description = "Shiin's local approval daemon"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,6 +8,17 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 publish = false
+
+[package.metadata.dist]
+dist = true
+installers = ["shell"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+  "x86_64-unknown-linux-musl",
+  "x86_64-apple-darwin",
+]
 
 [dependencies]
 base64.workspace = true

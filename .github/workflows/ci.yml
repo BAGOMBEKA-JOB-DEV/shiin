@@ -158,3 +158,6 @@ jobs:
             echo "::error::an action is pinned by tag or branch; pin it by commit SHA"
             exit 1
           fi
+
+      - name: Check generated release SBOM upload reference
+        run: cargo xtask release-ci-fix --check

@@ -142,6 +142,9 @@ These tests use explicit fixture keys without accessing or replacing the operato
 The separate native key-store lifecycle test uses the same storage methods under a random test-only service namespace on hosted runners ([ADR-0032](../adr/0032-signing-key-storage.md)).
 It checks key persistence, rotation and retained-key replay, plus refusal of corrupt, deleted, or mismatched entries without regenerating a selected key (ST-T-01, ST-I-02).
 The production service name remains fixed, and ordinary tests never access an operator's key store.
+The first-alpha dependency refresh selects native stores through `keyring-core` directly, replacing the Linux Zbus transport with the DBus Secret Service backend ([ADR-0032](../adr/0032-signing-key-storage.md)).
+Service/username bindings, key fingerprints, error handling, and refusal of a corrupt selected key stay unchanged; there is no plaintext or mock fallback (ST-I-02, ST-T-01).
+The native lifecycle test remains required on every supported operating system after this backend change.
 This validates storage behavior, not isolation from unmediated same-user processes or independent security review.
 The schema runtime feature now separates OS clock/randomness functions from pure wire types and deterministic timestamp formatting.
 Adapters explicitly retain the runtime feature and its fail-closed randomness behavior; isolated engine builds omit it.

@@ -7,21 +7,29 @@ members = ["cargo:."]
 cargo-dist-version = "0.32.0"
 # CI backends to support
 ci = "github"
-# ADR-0038 requires every action to be pinned by commit, and dist writes tag
-# references, so release.yml is edited after generation. This tells dist not to fail
-# on that difference; ci.yml enforces the pins instead.
+# Exercise packaging on hosted pull-request runners before publishing a tag.
+pr-run-mode = "upload"
+cargo-auditable = true
+cargo-cyclonedx = true
+# Rust automation repairs the upstream SBOM output reference after generation.
 allow-dirty = ["ci"]
 # The installers to generate for each app
-installers = ["shell", "powershell"]
+installers = ["shell"]
 # Target platforms to build apps for (Rust target-triple syntax)
 # Tier 1 first, then Tier 2; see docs/reference/platform-support.md.
 targets = [
   "x86_64-unknown-linux-gnu",
   "aarch64-unknown-linux-gnu",
   "aarch64-apple-darwin",
-  "x86_64-pc-windows-msvc",
   "x86_64-unknown-linux-musl",
   "x86_64-apple-darwin",
 ]
 # Build provenance, so a downloaded binary can be traced to this repository and commit.
 github-attestations = true
+
+[dist.github-action-commits]
+"actions/checkout" = "3d3c42e5aac5ba805825da76410c181273ba90b1"
+"actions/upload-artifact" = "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
+"actions/download-artifact" = "9000827ccba6bdab643e8b6fd33ac0654aef8333"
+"actions/attest" = "1e69f48acb82d1966a394da916b4c1698aa569d6"
+"swatinem/rust-cache" = "6323deb102c322ba6fcbdcafc7e3dddab59af2b6"

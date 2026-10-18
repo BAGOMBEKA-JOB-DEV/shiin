@@ -146,6 +146,20 @@ pub(crate) fn run() -> ExitCode {
     };
 
     let mut report = Report::default();
+    let cutoff = shiin_schema::clock::rfc3339_from_unix_seconds(
+        shiin_schema::clock::now_unix_seconds().saturating_sub(180 * 86_400),
+    );
+    for page in &pages {
+        if let Some(meta) = &page.meta
+            && meta.kind == "spec"
+            && meta.reviewed.as_str() < &cutoff[..10]
+        {
+            eprintln!(
+                "warning: {}: specification review is older than 180 days ({})",
+                page.rel, meta.reviewed
+            );
+        }
+    }
     metadata::check(&pages, &patterns, &mut report);
     summary::check(&pages, &patterns, &mut report);
     terms::check(&pages, &patterns, &mut report);
