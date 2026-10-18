@@ -54,7 +54,7 @@ fn check() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("non-UTF-8 artifact name")?;
         let cli = name.starts_with("shiin-cli-");
         if !(cli || name.starts_with("shiind-"))
-            || !(name.ends_with(".tar.xz") || name.ends_with(".zip"))
+            || !(name.ends_with(".tar.xz") || path.extension().is_some_and(|ext| ext == "zip"))
         {
             continue;
         }
@@ -76,7 +76,7 @@ fn check() -> Result<(), Box<dyn std::error::Error>> {
             .into_iter()
             .filter_map(Result::ok)
             .filter(|entry| entry.file_type().is_file() && entry.file_name() == executable.as_str())
-            .map(|entry| entry.into_path())
+            .map(walkdir::DirEntry::into_path)
             .collect();
         if binaries.len() != 1 {
             return Err("archive must contain exactly one expected executable".into());
@@ -124,7 +124,7 @@ fn verify_checksum(archive: &Path) -> Result<(), Box<dyn std::error::Error>> {
         .ok_or("missing archive checksum")?;
     let mut digest = Sha256::new();
     let mut file = fs::File::open(archive)?;
-    let mut buffer = [0_u8; 65_536];
+    let mut buffer = [0_u8; 8_192];
     loop {
         let count = file.read(&mut buffer)?;
         if count == 0 {
