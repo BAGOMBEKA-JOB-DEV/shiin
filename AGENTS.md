@@ -8,7 +8,7 @@ Work here accordingly: stay inside the task you were given, and leave an honest 
 
 ## What this repository is
 
-Shiin is pre-alpha and has no releases, so nothing here is installable from a package manager.
+Shiin is experimental. The first alpha has CLI and Unix-daemon archives on GitHub Releases; no package-manager release is published.
 
 What exists is the documentation set, the specifications and their conformance corpus, the decision records, a Rust tool (`xtask`) that checks the documentation, and the crates that decide actions today: `shiin-schema`, `shiin-classify`, `shiin-policy`, `shiin-engine`, `shiin-audit`, `shiin-hooks`, and the `shiin` command-line interface.
 

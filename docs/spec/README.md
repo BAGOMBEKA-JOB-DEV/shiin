@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-18 -->
 
 # About the specifications
 
 > [!NOTE]
 > **Project status: pre-alpha.**
 > Core contracts have source implementations and conformance tests; approval, evidence, and local API implementations are partial and still need milestone validation.
-> No release has shipped; source builds are available.
+> The first experimental CLI and Unix-daemon release is available; contracts remain subject to change before 1.0.
 > Tests check implemented wire values against the schemas.
 
 The specifications define the contracts that make Shiin interchangeable: the [action request](action-request.md), the [decision](decision.md), the [evaluation](evaluation.md) pipeline, and the [approval protocol](approval-protocol.md), along with JSON Schemas and test vectors that other tools can implement.

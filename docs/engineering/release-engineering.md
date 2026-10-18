@@ -32,8 +32,8 @@ Platform code signing and notarization are not configured; a provenance attestat
 
 ## What is wired up today
 
-The first release candidate is `v0.1.0-alpha.1`.
-Publication is complete only when its tag workflow succeeds and the [GitHub release](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases) contains the expected artifacts.
+The first published release is [`v0.1.0-alpha.1`](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases/tag/v0.1.0-alpha.1).
+Its tagged workflow publishes the CLI and Unix-daemon archives, installers, checksums, build provenance, and SBOMs.
 The candidate pipeline is exercised on pull requests before publication:
 
 | Piece | State |
@@ -65,10 +65,9 @@ The candidate implementation at `53cc41d2ae81b20e8b9430b901af8edfc7e4f3df` passe
 - [Release candidate artifacts](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/39137752563): all five Unix archive targets, archive smoke checks, build attestations, and global packaging.
 
 These results qualify that revision; they do not certify later source changes or establish live-host behavior.
-Candidate artifacts are workflow downloads, not a published version.
-The version tag has not been pushed, and the release has not been published.
-Before publication, the human maintainer supplies the DCO sign-offs required above and the [security-sensitive-change review](security-sensitive-changes.md) for the key-store backend change.
-Neither certification is supplied by an automated check.
+The published tag points to merge commit `687836ae55d280e4492c34256f3be9cd044f6362`, whose source tree matches the qualified final candidate `da83b04`.
+The [tagged publication run](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/39156253829) builds and qualifies the release archives before publication.
+Human DCO certification and [security-sensitive-change review](security-sensitive-changes.md) remain human responsibilities; automation does not supply either certification.
 
 ## Read next
 

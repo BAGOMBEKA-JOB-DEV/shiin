@@ -1,11 +1,11 @@
-<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-16 -->
+<!-- shiin-doc: kind=index status=draft implementation=partial milestone=m0 reviewed=2026-10-18 -->
 
 # Shiin documentation
 
 > [!NOTE]
 > **Project status: pre-alpha.**
-> The authorization core, CLI, hooks, Unix approvals, signed evidence/replay, Rust client, MCP proxy, and Unix command wrapper exist in source; no release has shipped.
-> Build from source using [installation](getting-started/installation.md); planned services are labeled separately.
+> The first experimental release provides CLI and Unix-daemon archives for Linux and macOS.
+> Rust client and MCP integrations remain available from source; see [installation](getting-started/installation.md) and the [roadmap](project/roadmap.md) for limits and remaining work.
 
 Shiin is an agent-agnostic authorization layer for AI agent actions.
 It sits between AI agents (Claude Code, Codex CLI, Cursor, MCP clients, and custom agents)

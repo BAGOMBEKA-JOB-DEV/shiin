@@ -8,7 +8,7 @@ Decisions are deterministic and never depend on the output of a language model.
 > [!IMPORTANT]
 > **Experimental alpha.**
 > The policy engine, CLI, audit log, and experimental task constraints work from a source build.
-> The first release candidate is `v0.1.0-alpha.1`; published downloads appear on [GitHub Releases](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases).
+> The first release is [`v0.1.0-alpha.1`](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases/tag/v0.1.0-alpha.1), with experimental CLI and Unix-daemon downloads for Linux and macOS.
 > Initial binary distributions target Linux and macOS; registry packages are not published.
 > Codex CLI and Cursor adapters exist and have automated tests, but have not been validated against running hosts.
 > Approval, evidence, client, MCP, and command-wrapper implementations exist in source, with partial platform and integration coverage.
@@ -309,7 +309,7 @@ The [roadmap](docs/project/roadmap.md) lists the scope and exit criteria of each
 | Milestone | Current state |
 |---|---|
 | M0: Specification | Core specifications and Cedar decision accepted; independent threat-model review open |
-| v0.1: Gate | Engine, policy, Claude Code adapter, CLI, and audit implemented in source; release and validation work remains |
+| v0.1: Gate | Engine, policy, Claude Code adapter, CLI, and audit included in the first experimental Unix release; live-host qualification remains |
 | v0.2: Tasks | Experimental task constraints, counters, policy tests, Codex CLI and Cursor adapters implemented; live-host validation remains |
 | v0.3: Approve | Unix daemon, operator approvals, grants, and lifecycle tests exist; independent review remains |
 | v0.4: Evidence | Signed receipts/checkpoints and encrypted replay exist; replay reproduces all 26 golden cases; native key-store CI validation added |

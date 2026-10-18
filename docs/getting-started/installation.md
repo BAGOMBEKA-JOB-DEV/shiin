@@ -4,8 +4,8 @@
 
 > [!NOTE]
 > **Guide: draft.**
-> Source builds work today. The first alpha candidate is `v0.1.0-alpha.1`, with Linux and macOS binary distributions.
-> A candidate becomes available for installation only after its GitHub release is published.
+> The first alpha, [`v0.1.0-alpha.1`](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases/tag/v0.1.0-alpha.1), provides Linux and macOS CLI and Unix-daemon archives.
+> Source builds remain available; the alpha does not freeze APIs or complete the roadmap.
 > Windows daemon transport and path qualification remain open; no Windows archive is included in this first alpha.
 
 ## Published alpha archives

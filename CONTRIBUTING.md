@@ -2,7 +2,7 @@
 
 Thank you for considering a contribution.
 Shiin is pre-alpha with an authorization core, CLI, hook adapters, audit log, and experimental task constraints available from source.
-No release has shipped; specifications, conformance tests, and independent review remain central to development.
+The first experimental CLI and Unix-daemon release is available; specifications, conformance tests, and independent review remain central to development.
 
 That makes this the cheapest moment to change the design, so review is the most valuable contribution right now.
 
