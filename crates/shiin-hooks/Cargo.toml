@@ -1,6 +1,6 @@
 [package]
 name = "shiin-hooks"
-version = "0.0.0"
+version.workspace = true
 description = "Host hook adapters for Shiin, starting with Claude Code"
 edition.workspace = true
 rust-version.workspace = true

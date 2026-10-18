@@ -1,6 +1,6 @@
 [package]
 name = "shiin-engine"
-version = "0.0.0"
+version.workspace = true
 description = "Shiin's pure, synchronous decision engine"
 edition.workspace = true
 rust-version.workspace = true

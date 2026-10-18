@@ -1,6 +1,6 @@
 [package]
 name = "shiin-audit"
-version = "0.0.0"
+version.workspace = true
 description = "Shiin's append-only, hash-chained audit log"
 edition.workspace = true
 rust-version.workspace = true

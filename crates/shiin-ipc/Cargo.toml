@@ -1,6 +1,6 @@
 [package]
 name = "shiin-ipc"
-version = "0.0.0"
+version.workspace = true
 description = "Bounded local-only JSON-RPC transport for Shiin"
 edition.workspace = true
 rust-version.workspace = true

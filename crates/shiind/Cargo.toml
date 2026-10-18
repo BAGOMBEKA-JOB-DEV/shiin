@@ -1,6 +1,6 @@
 [package]
 name = "shiind"
-version = "0.0.0"
+version.workspace = true
 description = "Shiin's local approval daemon"
 edition.workspace = true
 rust-version.workspace = true

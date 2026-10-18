@@ -206,7 +206,7 @@ fn lock_workspace() -> Result<File, String> {
 /// What this build is, so a bug report can name it.
 fn version() -> String {
     format!(
-        "shiin {} (engine {}, pre-alpha: no releases yet)",
+        "shiin {} (engine {}, experimental)",
         env!("CARGO_PKG_VERSION"),
         shiin_engine::ENGINE_VERSION
     )
