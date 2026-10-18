@@ -14,6 +14,7 @@ mod dependency_check;
 mod docs_check;
 mod fuzz_smoke;
 mod intent_evaluation;
+mod link_health;
 #[cfg(feature = "memory-profile")]
 mod memory;
 mod native_keyring;
@@ -25,6 +26,9 @@ mod release_smoke;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("link-health") {
+        return link_health::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("release-smoke") {
         return release_smoke::run();
     }
