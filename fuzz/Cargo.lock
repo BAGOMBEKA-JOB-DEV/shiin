@@ -1206,14 +1206,14 @@ dependencies = [
 
 [[package]]
 name = "shiin-classify"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "shiin-schema",
 ]
 
 [[package]]
 name = "shiin-engine"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "globset",
  "serde_json",
@@ -1235,7 +1235,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-policy"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "cedar-policy",
  "globset",
@@ -1248,7 +1248,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-schema"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "serde",
 ]

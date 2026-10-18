@@ -3198,7 +3198,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-approval"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "chrono",
  "globset",
@@ -3210,7 +3210,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-audit"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "base64 0.22.1",
  "chacha20poly1305",
@@ -3228,14 +3228,14 @@ dependencies = [
 
 [[package]]
 name = "shiin-classify"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "shiin-schema",
 ]
 
 [[package]]
 name = "shiin-cli"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "base64 0.22.1",
  "ed25519-dalek",
@@ -3256,7 +3256,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-client"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "serde_json",
  "shiin-ipc",
@@ -3268,7 +3268,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-engine"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "globset",
  "serde_json",
@@ -3278,7 +3278,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-hooks"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -3288,7 +3288,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-ipc"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -3298,7 +3298,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-mcp-proxy"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "axum",
  "hyper-util",
@@ -3320,7 +3320,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-policy"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "cedar-policy",
  "globset",
@@ -3333,7 +3333,7 @@ dependencies = [
 
 [[package]]
 name = "shiin-schema"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "getrandom 0.3.4",
  "serde",
@@ -3341,7 +3341,7 @@ dependencies = [
 
 [[package]]
 name = "shiind"
-version = "0.0.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "base64 0.22.1",
  "getrandom 0.3.4",
