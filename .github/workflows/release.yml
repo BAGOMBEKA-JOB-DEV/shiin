@@ -14,6 +14,9 @@
 # title/body based on your changelogs.
 
 name: Release
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   "contents": "write"
 
@@ -154,6 +157,8 @@ jobs:
           # Actually do builds and make zips and whatnot
           dist build ${{ needs.plan.outputs.tag-flag }} --print=linkage --output-format=json ${{ matrix.dist_args }} > dist-manifest.json
           echo "dist ran successfully"
+      - name: Validate packaged executables
+        run: cargo run --release --locked --target ${{ matrix.host }} -p xtask -- release-smoke target/distrib
       - name: Attest
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
         with:

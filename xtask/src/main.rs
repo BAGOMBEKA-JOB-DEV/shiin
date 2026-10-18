@@ -20,10 +20,14 @@ mod native_keyring;
 mod performance;
 mod performance_scaling;
 mod release_ci;
+mod release_smoke;
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("release-smoke") {
+        return release_smoke::run();
+    }
     if std::env::args().nth(1).as_deref() == Some("release-ci-fix") {
         return release_ci::run();
     }

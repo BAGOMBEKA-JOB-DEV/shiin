@@ -14,14 +14,13 @@ cargo-cyclonedx = true
 # Rust automation repairs the upstream SBOM output reference after generation.
 allow-dirty = ["ci"]
 # The installers to generate for each app
-installers = ["shell", "powershell"]
+installers = ["shell"]
 # Target platforms to build apps for (Rust target-triple syntax)
 # Tier 1 first, then Tier 2; see docs/reference/platform-support.md.
 targets = [
   "x86_64-unknown-linux-gnu",
   "aarch64-unknown-linux-gnu",
   "aarch64-apple-darwin",
-  "x86_64-pc-windows-msvc",
   "x86_64-unknown-linux-musl",
   "x86_64-apple-darwin",
 ]
