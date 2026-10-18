@@ -32,7 +32,10 @@ subtle = { version = "2.6", default-features = false }
 rpassword = { version = "7", default-features = false }
 base64 = { version = "0.22", default-features = false, features = ["std"] }
 ed25519-dalek = { version = "3", default-features = false, features = ["fast", "zeroize"] }
-keyring = { version = "4.2", default-features = false, features = ["v1"] }
+keyring-core = { version = "1.0.1", default-features = false }
+apple-native-keyring-store = { version = "1", default-features = false }
+windows-native-keyring-store = { version = "1", default-features = false }
+dbus-secret-service-keyring-store = { version = "1", default-features = false }
 chacha20poly1305 = { version = "0.10", default-features = false, features = ["std"] }
 zeroize = { version = "1.8", default-features = false, features = ["std"] }
 shiin-approval = { path = "crates/shiin-approval" }

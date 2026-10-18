@@ -18,6 +18,13 @@ Reviewers weigh:
 
 ## Declaring dependencies
 
+Key storage uses `keyring-core` with explicit native platform stores, following [ADR-0032](../adr/0032-signing-key-storage.md).
+The Linux store uses the vendored `dbus-secret-service-keyring-store` with its Rust cryptography feature; macOS and Windows retain their native stores.
+The [store contract](https://docs.rs/dbus-secret-service-keyring-store/1.0.1/dbus_secret_service_keyring_store/) uses the same `service` and `username` attributes and requires encrypted Secret Service communication (verified 2026-10-18).
+This removes the prior Zbus dependency chain identified by [RUSTSEC-2026-0370](https://rustsec.org/advisories/RUSTSEC-2026-0370), [RUSTSEC-2026-0371](https://rustsec.org/advisories/RUSTSEC-2026-0371), and [RUSTSEC-2026-0372](https://rustsec.org/advisories/RUSTSEC-2026-0372).
+No advisory or yanked-crate check is disabled.
+Vendored native DBus code adds a C dependency within the store; the native key-store lifecycle job exercises it against the runner's actual Secret Service.
+
 The v0.6 downstream MCP HTTP transport admits `reqwest` for HTTP and TLS rather than implementing either protocol in Shiin.
 It is confined to the proxy binary; it does not enter the engine crates.
 The SDK transport uses its asynchronous client with redirects, automatic retries, and environment proxies disabled.
