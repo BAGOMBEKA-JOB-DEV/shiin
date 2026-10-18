@@ -1,4 +1,4 @@
-<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-16 -->
+<!-- shiin-doc: kind=explanation status=draft implementation=partial milestone=n/a reviewed=2026-10-18 -->
 
 # Landscape
 
@@ -18,7 +18,7 @@ Deciding whether an agent's action proceeds, is refused, or waits for a person i
 Several open-source projects already do it, and [Open-source agent action gates](#open-source-agent-action-gates) credits them with sources.
 Shiin's case rests on the four differentiators described in the [vision](vision.md#what-makes-shiin-different):
 task-intent binding, an open agent-neutral contract, analyzable policy, and explicit enforcement levels.
-Shiin's authorization core and experimental tasks are available from source; no release has shipped.
+Shiin's first experimental CLI and Unix-daemon release is available for Linux and macOS; client and MCP integrations remain source-only.
 If you need a working tool today, evaluate the projects on this page.
 
 ### How to read this page
@@ -276,7 +276,7 @@ Until Shiin ships, the projects above are the ones you can use.
 
 | If you need | Consider | Relationship to Shiin |
 |---|---|---|
-| A tool you can use today | One of the [open-source agent action gates](#open-source-agent-action-gates) | Instead, for now: Shiin has a pre-alpha source implementation, but no release or package |
+| A tool you can use today | One of the [open-source agent action gates](#open-source-agent-action-gates) | Shiin also offers experimental CLI and Unix-daemon archives; see its [limitations](../concepts/limitations.md) before use |
 | Controls for one host, where its built-in settings meet your needs | [Host-native controls](#host-native-controls) | Instead or alongside: keep them enabled even if you adopt Shiin |
 | To limit what an allowed command, or the code it runs, can reach | [An OS sandbox, container, or virtual machine](#os-sandboxes-and-isolation) | Alongside: Shiin does not isolate processes |
 | To restrict where an agent's traffic can go, or to inspect that traffic | [Network egress controls](#network-egress-controls) | Alongside: Shiin does not inspect traffic and cannot see data leaving through an allowed action |

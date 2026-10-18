@@ -10,7 +10,7 @@ Alpha releases are experimental and do not imply that the roadmap or independent
 
 ## [0.1.0-alpha.1] - 2026-10-18
 
-The first release candidate; publication is complete only when the GitHub release and its artifacts exist.
+The first experimental CLI and Unix-daemon release, available as [GitHub release artifacts](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases/tag/v0.1.0-alpha.1).
 
 ### Included
 

@@ -1,10 +1,10 @@
-<!-- shiin-doc: kind=reference status=draft implementation=n/a milestone=n/a reviewed=2026-10-15 -->
+<!-- shiin-doc: kind=reference status=draft implementation=n/a milestone=n/a reviewed=2026-10-18 -->
 
 # Platform support
 
 > [!NOTE]
 > **Reference: draft.**
-> Source builds and CI configurations exist; no release has shipped.
+> The first alpha provides Linux and macOS CLI and Unix-daemon archives; Windows remains source-only.
 > See the limitations below before relying on path matching on Windows.
 
 ## Tiers

@@ -4,8 +4,8 @@
 
 > [!NOTE]
 > **Guide: draft.**
-> The first alpha candidate configures archive checksums, signed build provenance, dependency metadata, and SBOMs.
-> Apply these steps to a published release; an unpublished candidate has no download or attestation to verify.
+> The first alpha publishes archive checksums, signed build provenance, dependency metadata, and SBOMs.
+> Apply these steps to the assets on the [versioned release page](https://github.com/BAGOMBEKA-JOB-DEV/shiin/releases/tag/v0.1.0-alpha.1).
 
 A release is built by a workflow in this repository, from a tag, on GitHub's runners.
 Verifying one answers two questions: did I download what was published, and was it built
