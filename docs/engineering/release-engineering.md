@@ -55,6 +55,21 @@ Tag publication is never canceled by a newer pull-request candidate.
 The alpha remains experimental.
 It does not declare milestone exit criteria complete, freeze a public API, or replace independent security review.
 
+## First-alpha qualification record
+
+The candidate implementation at `53cc41d2ae81b20e8b9430b901af8edfc7e4f3df` passed its hosted qualification on 2026-10-18:
+
+- [Workspace and performance checks](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/39137752576): formatting, Clippy, tests on Linux/macOS/Windows, MSRV, WebAssembly engine isolation, dependency policy, Linux/macOS latency, and bounded heap measurements.
+- [Robustness checks](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/39137752565): native key-store lifecycle on all three systems, parser fuzzing, and wire types under Miri.
+- [Documentation and conformance](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/39137752560): documentation checks and the 26-case conformance artifact.
+- [Release candidate artifacts](https://github.com/BAGOMBEKA-JOB-DEV/shiin/actions/runs/39137752563): all five Unix archive targets, archive smoke checks, build attestations, and global packaging.
+
+These results qualify that revision; they do not certify later source changes or establish live-host behavior.
+Candidate artifacts are workflow downloads, not a published version.
+The version tag has not been pushed, and the release has not been published.
+Before publication, the human maintainer supplies the DCO sign-offs required above and the [security-sensitive-change review](security-sensitive-changes.md) for the key-store backend change.
+Neither certification is supplied by an automated check.
+
 ## Read next
 
 - [Versioning and stability](../project/versioning-and-stability.md)
