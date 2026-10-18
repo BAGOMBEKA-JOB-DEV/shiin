@@ -1,7 +1,8 @@
 # Security policy
 
-Shiin is pre-alpha and has no releases, so there are no supported versions yet.
-Reports about the design are still valuable: a flaw found in a specification costs nothing to fix now.
+Shiin is experimental and has no stable release or security-audit claim.
+The latest published alpha receives security fixes; older alpha versions receive no backports.
+Reports about the implementation and design are welcome.
 
 ## Reporting a vulnerability
 

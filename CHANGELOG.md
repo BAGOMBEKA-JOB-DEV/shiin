@@ -4,9 +4,31 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [Versioning and stability](docs/project/versioning-and-stability.md).
-Shiin has not been released yet, so every entry below is unreleased.
+Alpha releases are experimental and do not imply that the roadmap or independent security review is complete.
 
 ## [Unreleased]
+
+## [0.1.0-alpha.1] - 2026-10-18
+
+The first release candidate; publication is complete only when the GitHub release and its artifacts exist.
+
+### Included
+
+- Linux and macOS CLI and Unix daemon archives, shell installers, SHA-256 checksums, build provenance, dependency metadata, and CycloneDX bills of materials.
+- Explicit capabilities, Cedar policy, session/task selectors, structured task limits, hook evaluation, and a durable hash-chained audit log.
+- Operator-authenticated local approvals, expiring single-use/scoped grants, revocation, signed evidence, offline verification, and encrypted original-policy/what-if replay.
+- A cooperative Unix command wrapper, diagnostics, and 26 golden conformance cases with signed/encrypted replay coverage.
+- Native key-store lifecycle checks on Linux/macOS/Windows, bounded parser/authorization fuzzing, Miri, WebAssembly/dependency isolation, and hosted latency/heap measurements.
+- Archive-level smoke checks verify checksums, extraction, executable versions, hook allow/deny behavior, and audit verification before publication.
+
+### Compatibility and limits
+
+- Policies require explicit capability declarations and `shiin.policy/v1-draft.2`; older replay engine versions are refused.
+- MCP and custom-client integrations remain available from source; the first alpha installs the CLI and Unix daemon.
+- Attested agent identity, trusted policy layers, Windows daemon/path support, remote approvals, live-host qualification, and independent review remain open.
+- No stable API, specification freeze, independent audit, or completion of the v1.0 roadmap is claimed.
+
+## Earlier pre-alpha development
 
 ### Added
 
