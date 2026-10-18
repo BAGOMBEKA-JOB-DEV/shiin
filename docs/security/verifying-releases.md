@@ -1,12 +1,11 @@
-<!-- shiin-doc: kind=how-to status=draft implementation=none milestone=v0.1 reviewed=2026-10-12 -->
+<!-- shiin-doc: kind=how-to status=draft implementation=partial milestone=v0.1 reviewed=2026-10-18 -->
 
 # Verifying releases
 
-> [!WARNING]
-> **Design intent: not implemented.**
-> Planned for v0.1. Nothing on this page works yet, because nothing has been released.
-> The release workflow exists and is described below, but it has never run, so treat every
-> command here as the intended procedure rather than a tested one.
+> [!NOTE]
+> **Guide: draft.**
+> The first alpha candidate configures archive checksums, signed build provenance, dependency metadata, and SBOMs.
+> Apply these steps to a published release; an unpublished candidate has no download or attestation to verify.
 
 A release is built by a workflow in this repository, from a tag, on GitHub's runners.
 Verifying one answers two questions: did I download what was published, and was it built
@@ -38,11 +37,10 @@ do not run the binary.
 
 ## 3. Read the bill of materials
 
-Each release has a CycloneDX bill of materials, `shiin-<version>.cdx.json`, listing every
-crate the binary was built from and its version.
+Each release includes `shiin-cli.cdx.xml` and `shiind.cdx.xml`, listing package dependencies and versions in CycloneDX format.
 
 ```console
-$ gh release download <version> --pattern '*.cdx.json'
+$ gh release download <version> --pattern '*.cdx.xml'
 ```
 
 Use it to check whether a published advisory affects a release you already have.
@@ -56,10 +54,11 @@ Use it to check whether a published advisory affects a release you already have.
 - **That Shiin is enforcing anything.** A verified binary that no host calls does nothing.
   Run `shiin doctor` and read [enforcement levels](enforcement-levels.md).
 
-## Planned
+## Embedded dependency metadata
 
-`cargo auditable` metadata, which would let `cargo audit bin` read the dependency list
-straight out of the binary, needs support in the release tooling and is not wired up yet.
+The release configuration enables `cargo auditable` metadata in binaries.
+The [dist option](https://axodotdev.github.io/cargo-dist/book/reference/config.html#cargo-auditable) selects the auditable build command (verified 2026-10-18).
+The archive provenance and checksums remain the origin and integrity checks; embedded dependency metadata does not replace them.
 
 ## Read next
 
