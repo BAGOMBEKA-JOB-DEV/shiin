@@ -2,13 +2,34 @@
 
 #![expect(
     clippy::print_stderr,
-    reason = "the daemon reports startup and operator instructions"
+    clippy::print_stdout,
+    reason = "the daemon reports version, help, startup, and operator instructions"
 )]
 
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    match run() {
+    let arguments: Vec<_> = std::env::args().skip(1).collect();
+    let outcome = match arguments
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        ["version" | "--version" | "-V"] => {
+            println!("shiind {} (experimental)", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
+        ["help" | "--help" | "-h"] => {
+            println!(
+                "usage: shiind [--operator]\n       shiind --version\n\nRun in the foreground. --operator requires a dedicated terminal for approval credentials."
+            );
+            Ok(())
+        }
+        [] | ["--operator"] => run(),
+        _ => Err("unknown arguments; use shiind --help".to_owned()),
+    };
+    match outcome {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("shiind: {error}");
