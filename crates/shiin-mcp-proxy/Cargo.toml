@@ -9,9 +9,9 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
-# `publish = false` would otherwise hide this executable from cargo-dist.
+# The first alpha distributes the CLI and Unix daemon; this integration remains source-only.
 [package.metadata.dist]
-dist = true
+dist = false
 
 [[bin]]
 name = "shiin-mcp-proxy"
