@@ -2949,7 +2949,7 @@ dependencies = [
  "chrono",
  "dbus-secret-service-keyring-store",
  "ed25519-dalek",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "keyring-core",
  "serde",
  "serde_json",
@@ -3069,7 +3069,7 @@ dependencies = [
 name = "shiin-schema"
 version = "0.1.0-alpha.1"
 dependencies = [
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "serde",
 ]
 
@@ -3078,7 +3078,7 @@ name = "shiind"
 version = "0.1.0-alpha.1"
 dependencies = [
  "base64 0.22.1",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "serde",
  "serde_json",
  "sha2 0.10.9",
